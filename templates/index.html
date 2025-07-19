@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sand World Evil Financing</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@600&display=swap');
+    body {
+      font-family: 'Fira Code', monospace;
+      background: radial-gradient(ellipse at center, #0f0f0f 0%, #000000 100%);
+    }
+    h1, h2, h3 {
+      font-family: 'Orbitron', sans-serif;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body class="text-gray-100">
+
+  <!-- Navigation -->
+  <nav class="bg-black border-b border-gray-800 px-6 py-4 flex justify-between items-center">
+    <div class="text-yellow-400 font-bold text-2xl tracking-wider">SAND WORLD</div>
+    <ul class="flex space-x-6 text-sm font-mono">
+      <li><a href="{{ url_for('index') }}" class="text-gray-300 hover:text-yellow-400">Home</a></li>
+      <li><a href="{{ url_for('tournament') }}" class="text-gray-300 hover:text-yellow-400">OSU Tournament</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero -->
+  <section class="min-h-screen flex flex-col justify-center items-center text-center px-6 bg-black relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/asfalt-light.png')] mix-blend-overlay"></div>
+    <h1 class="text-5xl md:text-7xl font-extrabold text-yellow-400 drop-shadow-lg">Sand World</h1>
+    <h2 class="text-3xl md:text-4xl font-medium text-yellow-200 mt-2">Evil Financing</h2>
+    <p class="mt-6 text-xl text-gray-400 max-w-xl">Empowering your world domination schemes with capital, chaos, and confidence.</p>
+    <a href="#contact" class="mt-10 inline-block bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-8 rounded-full shadow-xl transition transform hover:scale-105">Apply for Funds</a>
+  </section>
+
+  <!-- About -->
+  <section class="py-24 px-6 bg-gray-900">
+    <div class="max-w-4xl mx-auto text-center">
+      <h2 class="text-4xl md:text-5xl font-bold text-yellow-400">What We Do</h2>
+      <p class="mt-8 text-lg text-gray-300 leading-relaxed">Founded in the ruins of a forgotten empire, Sand World Evil Financing provides high-risk capital to even higher-risk individuals. Our clientele? Shadowy. Our morals? Optional. Our impact? Catastrophic (in a good way).</p>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section class="py-24 px-6 bg-gradient-to-br from-black via-gray-900 to-black">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-4xl font-bold text-yellow-400 text-center mb-16">Our Sinister Services</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl hover:scale-105 transform transition duration-300">
+          <h3 class="text-2xl font-semibold text-yellow-300">Shadow Loans</h3>
+          <p class="mt-4 text-gray-400">Untraceable. Unforgiving. Perfect for your off-the-grid death ray project.</p>
+        </div>
+        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl hover:scale-105 transform transition duration-300">
+          <h3 class="text-2xl font-semibold text-yellow-300">Bribe Engineering</h3>
+          <p class="mt-4 text-gray-400">Need influence? We design elegant persuasion pipelines with plausible deniability.</p>
+        </div>
+        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl hover:scale-105 transform transition duration-300">
+          <h3 class="text-2xl font-semibold text-yellow-300">Underworld Investing</h3>
+          <p class="mt-4 text-gray-400">We don't ask questions. We just fund questionable things. Return on villainy guaranteed.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section id="contact" class="py-24 px-6 bg-gray-950">
+    <div class="max-w-3xl mx-auto text-center">
+      <h2 class="text-4xl md:text-5xl font-bold text-yellow-400">Dare to Collaborate?</h2>
+      <p class="mt-6 text-lg text-gray-300">Send us a coded raven. Or, if you're old school, an email will do. We only respond to the bold.</p>
+      <a href="mailto:darkmoney@sandworld.biz" class="mt-10 inline-block bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-4 px-10 rounded-full shadow-lg transition transform hover:scale-105">darkmoney@sandworld.biz</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-8 text-center text-sm text-gray-500 bg-black border-t border-gray-800">
+    &copy; 2025 Sand World Evil Financing. All rights denied. || Coded in shadows || Powered by ambition
+  </footer>
+
+</body>
+</html>

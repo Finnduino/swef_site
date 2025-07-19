@@ -1,0 +1,326 @@
+{
+  "competitors": [
+    {
+      "id": 1,
+      "name": "9",
+      "pp": 9000,
+      "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+    },
+    {
+      "id": 2,
+      "name": "8",
+      "pp": 8000,
+      "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+    },
+    {
+      "id": 3,
+      "name": "7",
+      "pp": 7000,
+      "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+    },
+    {
+      "id": 4,
+      "name": "6",
+      "pp": 6000,
+      "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+    },
+    {
+      "id": 5,
+      "name": "5",
+      "pp": 5980.92,
+      "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+    }
+  ],
+  "brackets": {
+    "upper": [
+      [
+        {
+          "id": "81c4d2a2-7d1f-40f1-92dc-b68a6aad152b",
+          "player1": {
+            "id": 1,
+            "name": "9",
+            "pp": 9000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+          },
+          "player2": {
+            "name": "BYE",
+            "id": null
+          },
+          "winner": {
+            "id": 1,
+            "name": "9",
+            "pp": 9000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+          }
+        },
+        {
+          "id": "4ada1d2f-92f0-4f52-a001-91648de2f730",
+          "player1": {
+            "id": 2,
+            "name": "8",
+            "pp": 8000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+          },
+          "player2": {
+            "name": "BYE",
+            "id": null
+          },
+          "winner": {
+            "id": 2,
+            "name": "8",
+            "pp": 8000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+          }
+        },
+        {
+          "id": "d8b5ff57-cb81-46dd-87b6-f996591f9e5a",
+          "player1": {
+            "id": 3,
+            "name": "7",
+            "pp": 7000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+          },
+          "player2": {
+            "name": "BYE",
+            "id": null
+          },
+          "winner": {
+            "id": 3,
+            "name": "7",
+            "pp": 7000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+          }
+        },
+        {
+          "id": "3b01d91a-efa7-4ec3-9715-657e8e23c05f",
+          "player1": {
+            "id": 4,
+            "name": "6",
+            "pp": 6000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 0
+          },
+          "player2": {
+            "id": 5,
+            "name": "5",
+            "pp": 5980.92,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+          },
+          "winner": {
+            "id": 5,
+            "name": "5",
+            "pp": 5980.92,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+          }
+        }
+      ],
+      [
+        {
+          "id": "131ab433-009c-4fe3-84a4-cd04f71109bf",
+          "player1": {
+            "id": 1,
+            "name": "9",
+            "pp": 9000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+          },
+          "player2": {
+            "id": 2,
+            "name": "8",
+            "pp": 8000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 1
+          },
+          "winner": {
+            "id": 1,
+            "name": "9",
+            "pp": 9000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+          }
+        },
+        {
+          "id": "e6d9a2d4-e7be-4e82-88a3-5ceacd3268f6",
+          "player1": {
+            "id": 3,
+            "name": "7",
+            "pp": 7000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 1
+          },
+          "player2": {
+            "id": 5,
+            "name": "5",
+            "pp": 5980.92,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+          },
+          "winner": {
+            "id": 5,
+            "name": "5",
+            "pp": 5980.92,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+          }
+        }
+      ],
+      [
+        {
+          "id": "03bcd34e-25de-4908-8469-1661740d66a9",
+          "player1": {
+            "id": 1,
+            "name": "9",
+            "pp": 9000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+          },
+          "player2": {
+            "id": 5,
+            "name": "5",
+            "pp": 5980.92,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 2
+          },
+          "winner": {
+            "id": 1,
+            "name": "9",
+            "pp": 9000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png"
+          }
+        }
+      ]
+    ],
+    "lower": [
+      [
+        {
+          "id": "886c9dd3-ee4a-4cd7-8a3e-d053765babf1",
+          "player1": {
+            "id": 4,
+            "name": "6",
+            "pp": 6000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 0
+          },
+          "player2": {
+            "id": 2,
+            "name": "8",
+            "pp": 8000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 1
+          },
+          "winner": {
+            "id": 4,
+            "name": "6",
+            "pp": 6000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 0
+          }
+        },
+        {
+          "id": "19e1031a-1305-457a-8093-574a2cb6b086",
+          "player1": {
+            "id": 3,
+            "name": "7",
+            "pp": 7000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 1
+          },
+          "player2": {
+            "name": "BYE",
+            "id": null
+          },
+          "winner": {
+            "id": 3,
+            "name": "7",
+            "pp": 7000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 1
+          }
+        }
+      ],
+      [
+        {
+          "id": "764d960c-0148-455a-ad40-07763701ded2",
+          "player1": {
+            "id": 4,
+            "name": "6",
+            "pp": 6000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 0
+          },
+          "player2": {
+            "id": 3,
+            "name": "7",
+            "pp": 7000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 1
+          },
+          "winner": {
+            "id": 3,
+            "name": "7",
+            "pp": 7000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 1
+          }
+        },
+        {
+          "id": "3f1ce8f8-0792-4c03-bd86-9fd9393d38e8",
+          "player1": {
+            "id": 5,
+            "name": "5",
+            "pp": 5980.92,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 2
+          },
+          "player2": {
+            "id": 5,
+            "name": "5",
+            "pp": 5980.92,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 2
+          },
+          "winner": {
+            "id": 5,
+            "name": "5",
+            "pp": 5980.92,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 2
+          }
+        }
+      ],
+      [
+        {
+          "id": "40451087-0634-4a89-a9f0-a0c439ca4a27",
+          "player1": {
+            "id": 3,
+            "name": "7",
+            "pp": 7000,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 1
+          },
+          "player2": {
+            "id": 5,
+            "name": "5",
+            "pp": 5980.92,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 2
+          },
+          "winner": null
+        },
+        {
+          "id": "89825b0c-d733-4ebd-b54b-875a162df9f9",
+          "player1": {
+            "id": 5,
+            "name": "5",
+            "pp": 5980.92,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 2
+          },
+          "player2": {
+            "id": 5,
+            "name": "5",
+            "pp": 5980.92,
+            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
+            "dropped_from_round": 2
+          },
+          "winner": null
+        }
+      ]
+    ]
+  }
+}

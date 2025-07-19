@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@600&display=swap');
+        body { font-family: 'Fira Code', monospace; background-color: #111827; color: #d1d5db; }
+        h1, h2, h3 { font-family: 'Orbitron', sans-serif; }
+    </style>
+</head>
+<body class="p-8">
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-4xl text-yellow-400 mb-8">Tournament Admin Panel</h1>
+
+        <!-- Competitors Management -->
+        <div class="bg-gray-800 p-6 rounded-lg mb-8">
+            <h2 class="text-2xl text-pink-500 mb-4">Competitors ({{ data.competitors|length }})</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {% for c in data.competitors %}
+                <div class="bg-gray-700 p-3 rounded flex justify-between items-center">
+                    <span>{{ c.name }}</span>
+                    <form action="{{ url_for('remove_competitor', user_id=c.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to remove {{ c.name }}?');">
+                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1 px-2 rounded">Remove</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Bracket Management -->
+        <div class="bg-gray-800 p-6 rounded-lg">
+            <h2 class="text-2xl text-pink-500 mb-4">Bracket Management</h2>
+            <form action="{{ url_for('reset_bracket') }}" method="POST" onsubmit="return confirm('Are you sure? This will reset all match progress!');" class="mb-6">
+                <button type="submit" class="bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-2 px-4 rounded">Reset Full Bracket</button>
+            </form>
+
+            <!-- Upper Bracket Rounds -->
+            <div class="mb-8">
+                <h3 class="text-xl text-pink-400 mb-4">Upper Bracket</h3>
+                {% for round_matches in data.brackets.upper %}
+                <div class="mb-6 border-l-2 border-pink-500 pl-4">
+                    <h4 class="text-lg mb-2">Round {{ loop.index }}</h4>
+                    {% for match in round_matches %}
+                    <div class="bg-gray-700 p-4 rounded-lg flex items-center justify-between mb-2">
+                        <div class="text-lg {% if match.winner and match.winner.id == match.player1.id %}text-yellow-400 font-bold{% endif %}">{{ match.player1.name }}</div>
+                        <div class="flex items-center gap-2">
+                            <form action="{{ url_for('set_winner') }}" method="POST">
+                                <input type="hidden" name="match_id" value="{{ match.id }}">
+                                <input type="hidden" name="winner_id" value="{{ match.player1.id }}">
+                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded" {% if match.player1.name == 'BYE' or match.winner %}}disabled{% endif %}>Win</button>
+                            </form>
+                            <span class="font-bold text-gray-500">VS</span>
+                            <form action="{{ url_for('set_winner') }}" method="POST">
+                                <input type="hidden" name="match_id" value="{{ match.id }}">
+                                <input type="hidden" name="winner_id" value="{{ match.player2.id }}">
+                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded" {% if match.player2.name == 'BYE' or match.winner %}}disabled{% endif %}>Win</button>
+                            </form>
+                        </div>
+                        <div class="text-lg text-right {% if match.winner and match.winner.id == match.player2.id %}text-yellow-400 font-bold{% endif %}">{{ match.player2.name }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Lower Bracket Rounds -->
+            <div>
+                <h3 class="text-xl text-blue-400 mb-4">Lower Bracket</h3>
+                {% for round_matches in data.brackets.lower %}
+                <div class="mb-6 border-l-2 border-blue-500 pl-4">
+                    <h4 class="text-lg mb-2">Round {{ loop.index }}</h4>
+                    {% for match in round_matches %}
+                     <div class="bg-gray-700 p-4 rounded-lg flex items-center justify-between mb-2">
+                        <div class="text-lg {% if match.winner and match.winner.id == match.player1.id %}text-yellow-400 font-bold{% endif %}">{{ match.player1.name }}</div>
+                        <div class="flex items-center gap-2">
+                            <form action="{{ url_for('set_winner') }}" method="POST">
+                                <input type="hidden" name="match_id" value="{{ match.id }}">
+                                <input type="hidden" name="winner_id" value="{{ match.player1.id }}">
+                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded" {% if match.player1.name == 'BYE' or match.winner %}}disabled{% endif %}>Win</button>
+                            </form>
+                            <span class="font-bold text-gray-500">VS</span>
+                            <form action="{{ url_for('set_winner') }}" method="POST">
+                                <input type="hidden" name="match_id" value="{{ match.id }}">
+                                <input type="hidden" name="winner_id" value="{{ match.player2.id }}">
+                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded" {% if match.player2.name == 'BYE' or match.winner %}}disabled{% endif %}>Win</button>
+                            </form>
+                        </div>
+                        <div class="text-lg text-right {% if match.winner and match.winner.id == match.player2.id %}text-yellow-400 font-bold{% endif %}">{{ match.player2.name }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

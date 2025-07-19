@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sand World OSU Tournament</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@600&display=swap');
+    body {
+      font-family: 'Fira Code', monospace;
+      background: radial-gradient(ellipse at center, #0f0f0f 0%, #000000 100%);
+    }
+    h1, h2 {
+      font-family: 'Orbitron', sans-serif;
+    }
+    /* --- Bracket Styles --- */
+    .bracket {
+      display: flex;
+      justify-content: center;
+    }
+    .round {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      width: 280px;
+      margin: 0 20px;
+    }
+    .match-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex-grow: 1;
+      position: relative;
+    }
+    .match {
+      background-color: #1f2937; /* gray-800 */
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin: 1rem 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+    }
+    .player {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #374151; /* gray-700 */
+      padding: 0.5rem;
+      border-radius: 0.25rem;
+    }
+    .player.bye {
+      color: #6b7280; /* gray-500 */
+    }
+    .player-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .player-info img {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 9999px;
+    }
+    .player-pp {
+      font-size: 0.875rem;
+      color: #9ca3af; /* gray-400 */
+    }
+    /* --- Connector Lines --- */
+    .connector {
+      display: flex;
+      align-items: center;
+      width: 40px;
+    }
+    .connector-line {
+      width: 100%;
+      height: 2px;
+      background-color: #4b5563; /* gray-600 */
+    }
+    .connector.vertical {
+      height: 100%;
+      width: 2px;
+      background-color: #4b5563; /* gray-600 */
+      margin: 0 auto;
+    }
+    .round-connectors {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .connector-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex-grow: 1;
+      position: relative;
+    }
+  </style>
+</head>
+<body class="text-gray-100">
+
+  <!-- Navigation -->
+  <nav class="bg-black border-b border-gray-800 px-6 py-4 flex justify-between items-center">
+    <div class="text-yellow-400 font-bold text-2xl tracking-wider">SAND WORLD</div>
+    <ul class="flex space-x-6 text-sm font-mono">
+      <li><a href="{{ url_for('index') }}" class="text-gray-300 hover:text-yellow-400">Home</a></li>
+    </ul>
+  </nav>
+
+  <!-- Tournament Info -->
+  <section class="py-24 px-6 bg-gray-900">
+    <div class="max-w-4xl mx-auto text-center">
+      <h1 class="text-4xl md:text-5xl font-bold text-yellow-400">Sand World OSU Tournament</h1>
+      <p class="mt-6 text-lg text-gray-300">
+        Welcome to the most unnecessarily intense rhythm showdown on the planet.
+        <br />
+        <span class="italic text-yellow-300">Only the boldest sliders survive.</span>
+      </p>
+
+      <div class="mt-10 text-left text-gray-200 inline-block">
+        <h2 class="text-2xl text-yellow-300">📝 Tournament Info</h2>
+        <p class="mt-2">Date: TBD<br>Format: Double Elimination<br>Prize Pool: The souls of the defeated (and maybe €20)</p>
+      </div>
+
+      <div class="mt-12">
+        <a href="{{ url_for('osu_login') }}" class="inline-block bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-10 rounded-full shadow-lg transition transform hover:scale-105">
+          Sign Up with osu!
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Competitor Showcase -->
+  <section class="py-24 px-6 bg-gradient-to-br from-black via-gray-900 to-black">
+    <div class="max-w-6xl mx-auto text-center">
+      <h2 class="text-3xl md:text-4xl font-bold text-yellow-400 mb-12">Registered Competitors</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+        {% for c in data.competitors %}
+        <div class="bg-gray-800 p-4 rounded-xl shadow-lg text-center">
+          <img src="{{ c.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" alt="{{ c.name }}'s avatar" class="w-24 h-24 rounded-full mx-auto border-2 border-yellow-400">
+          <h3 class="text-xl font-semibold text-yellow-300 mt-4">{{ c.name }}</h3>
+          <p class="text-sm text-gray-400">{{ "%.0f"|format(c.pp or 0) }}pp</p>
+        </div>
+        {% else %}
+        <p class="text-gray-400 col-span-full">No competitors have signed up yet. Be the first!</p>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- Double Elimination Bracket -->
+  <section class="py-24 px-6 bg-gray-900">
+    <div class="max-w-full mx-auto px-4">
+      <h2 class="text-3xl md:text-4xl font-bold text-yellow-400 mb-12 text-center">Double Elimination Bracket</h2>
+      
+      {% macro display_player(player, winner) %}
+        {% set is_winner = winner and player.id and winner.id == player.id %}
+        <div class="player 
+          {% if player.name == 'BYE' %}bye{% endif %} 
+          {% if is_winner %}border-2 border-yellow-400 bg-gray-600{% endif %}">
+          <div class="player-info">
+            {% if player.name != 'BYE' %}
+            <img src="{{ player.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" alt="{{ player.name }}'s avatar">
+            {% endif %}
+            <span class="{% if is_winner %}text-yellow-300 font-bold{% endif %}">{{ player.name }}</span>
+          </div>
+          {% if player.name != 'BYE' %}
+          <span class="player-pp">{{ "%.0f"|format(player.pp or 0) }}pp</span>
+          {% endif %}
+        </div>
+      {% endmacro %}
+
+      <div class="bracket">
+        <!-- Upper Bracket -->
+        <div class="flex">
+          {% for round_matches in data.brackets.upper %}
+          <div class="round">
+            <h3 class="text-xl font-semibold text-pink-500 mb-6 text-center">Round {{ loop.index }}</h3>
+            {% for match in round_matches %}
+            <div class="match-container">
+              <div class="match">
+                {{ display_player(match.player1, match.winner) }}
+                {{ display_player(match.player2, match.winner) }}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% if not loop.last %}
+          <div class="round-connectors">
+            {% for match in round_matches | batch(2) %}
+            <div class="connector-container">
+              <div class="connector"><div class="connector-line"></div></div>
+              <div class="connector vertical"></div>
+              <div class="connector"><div class="connector-line"></div></div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Lower Bracket -->
+      <div class="mt-16">
+        <h3 class="text-3xl md:text-4xl font-bold text-blue-400 mb-12 text-center">Lower Bracket</h3>
+        <div class="bracket">
+          <div class="flex">
+            {% for round_matches in data.brackets.lower %}
+            <div class="round">
+              <h3 class="text-xl font-semibold text-blue-500 mb-6 text-center">Round {{ loop.index }}</h3>
+              {% for match in round_matches %}
+              <div class="match-container">
+                <div class="match">
+                  {{ display_player(match.player1, match.winner) }}
+                  {{ display_player(match.player2, match.winner) }}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+             {% if not loop.last %}
+              <div class="round-connectors">
+                {% for match in round_matches | batch(2) %}
+                <div class="connector-container">
+                  <div class="connector"><div class="connector-line"></div></div>
+                  <div class="connector vertical"></div>
+                  <div class="connector"><div class="connector-line"></div></div>
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="py-8 text-center text-sm text-gray-500 bg-black border-t border-gray-800">
+    &copy; 2025 Sand World Evil Financing. Tournament sponsored by darkness and precision.
+  </footer>
+
+</body>
+</html>
