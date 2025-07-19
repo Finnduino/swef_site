@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ user.username }} - Sand World Profile</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@600&display=swap');
+    body {
+      font-family: 'Fira Code', monospace;
+      background: radial-gradient(ellipse at center, #0f0f0f 0%, #000000 100%);
+    }
+    h1, h2 {
+      font-family: 'Orbitron', sans-serif;
+    }
+  </style>
+</head>
+<body class="text-gray-100">
+
+  <!-- Navigation -->
+  <nav class="bg-black border-b border-gray-800 px-6 py-4 flex justify-between items-center">
+    <div class="text-yellow-400 font-bold text-2xl tracking-wider">SAND WORLD</div>
+    <ul class="flex space-x-6 text-sm font-mono">
+      <li><a href="{{ url_for('public.index') }}" class="text-gray-300 hover:text-yellow-400">Home</a></li>
+      <li><a href="{{ url_for('public.tournament') }}" class="text-gray-300 hover:text-yellow-400">Tournament</a></li>
+    </ul>
+  </nav>
+
+  <!-- User Profile Section -->
+  <section class="py-24 px-6">
+    <div class="max-w-4xl mx-auto bg-gray-900 rounded-2xl shadow-2xl p-8 md:p-12 border border-gray-800">
+      <div class="flex flex-col md:flex-row items-center gap-8">
+        <div class="flex-shrink-0">
+          <img src="{{ user.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" alt="{{ user.username }}'s avatar" class="w-40 h-40 rounded-full border-4 border-yellow-400">
+        </div>
+        <div class="text-center md:text-left">
+          <h1 class="text-4xl md:text-5xl font-bold text-yellow-400">{{ user.username }}</h1>
+          <div class="mt-4 flex flex-col md:flex-row items-center justify-center md:justify-start gap-x-6 gap-y-2 text-lg text-gray-300">
+            <span><span class="font-bold text-pink-400">PP:</span> {{ "%.2f"|format(user.statistics.pp or 0) }}</span>
+            <span><span class="font-bold text-blue-400">Global Rank:</span> #{{ "{:,}".format(user.statistics.global_rank or 0) }}</span>
+            <span><span class="font-bold text-green-400">Country Rank:</span> #{{ "{:,}".format(user.statistics.country_rank or 0) }}</span>
+          </div>
+          <div class="mt-6">
+            <a href="https://osu.ppy.sh/users/{{ user.id }}" target="_blank" rel="noopener noreferrer" class="inline-block bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-6 rounded-lg transition transform hover:scale-105">
+              View on osu!
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="py-8 text-center text-sm text-gray-500 bg-black border-t border-gray-800">
+    &copy; 2025 Sand World Evil Financing. All rights reserved.
+  </footer>

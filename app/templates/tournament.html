@@ -105,7 +105,7 @@
   <nav class="bg-black border-b border-gray-800 px-6 py-4 flex justify-between items-center">
     <div class="text-yellow-400 font-bold text-2xl tracking-wider">SAND WORLD</div>
     <ul class="flex space-x-6 text-sm font-mono">
-      <li><a href="{{ url_for('index') }}" class="text-gray-300 hover:text-yellow-400">Home</a></li>
+      <li><a href="{{ url_for('public.index') }}" class="text-gray-300 hover:text-yellow-400">Home</a></li>
     </ul>
   </nav>
 
@@ -125,7 +125,7 @@
       </div>
 
       <div class="mt-12">
-        <a href="{{ url_for('osu_login') }}" class="inline-block bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-10 rounded-full shadow-lg transition transform hover:scale-105">
+        <a href="{{ url_for('public.osu_login') }}" class="inline-block bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-10 rounded-full shadow-lg transition transform hover:scale-105">
           Sign Up with osu!
         </a>
       </div>
@@ -138,9 +138,14 @@
       <h2 class="text-3xl md:text-4xl font-bold text-yellow-400 mb-12">Registered Competitors</h2>
       <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
         {% for c in data.competitors %}
-        <div class="bg-gray-800 p-4 rounded-xl shadow-lg text-center">
-          <img src="{{ c.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" alt="{{ c.name }}'s avatar" class="w-24 h-24 rounded-full mx-auto border-2 border-yellow-400">
-          <h3 class="text-xl font-semibold text-yellow-300 mt-4">{{ c.name }}</h3>
+        <div class="bg-gray-800 p-4 rounded-xl shadow-lg text-center transition transform hover:-translate-y-1">
+          <a href="{{ url_for('public.user_profile', user_id=c.id) }}">
+            <img src="{{ c.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" alt="{{ c.name }}'s avatar" class="w-24 h-24 rounded-full mx-auto border-2 border-yellow-400">
+          </a>
+          <a href="{{ url_for('public.user_profile', user_id=c.id) }}" class="hover:text-yellow-200">
+            <h3 class="text-xl font-semibold text-yellow-300 mt-4">{{ c.name }}</h3>
+          </a>
+          <p class="text-sm text-gray-400 mt-1">Rank: #{{ "{:,}".format(c.rank or 0) }}</p>
           <p class="text-sm text-gray-400">{{ "%.0f"|format(c.pp or 0) }}pp</p>
         </div>
         {% else %}
@@ -161,16 +166,43 @@
           {% if player.name == 'BYE' %}bye{% endif %} 
           {% if is_winner %}border-2 border-yellow-400 bg-gray-600{% endif %}">
           <div class="player-info">
-            {% if player.name != 'BYE' %}
-            <img src="{{ player.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" alt="{{ player.name }}'s avatar">
-            {% endif %}
+            {% if player.name != 'BYE' and player.id %}
+            <a href="{{ url_for('public.user_profile', user_id=player.id) }}">
+              <img src="{{ player.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" alt="{{ player.name }}'s avatar">
+            </a>
+            <a href="{{ url_for('public.user_profile', user_id=player.id) }}" class="hover:text-yellow-300 {% if is_winner %}text-yellow-300 font-bold{% endif %}">
+              {{ player.name }}
+            </a>
+            {% else %}
             <span class="{% if is_winner %}text-yellow-300 font-bold{% endif %}">{{ player.name }}</span>
+            {% endif %}
           </div>
-          {% if player.name != 'BYE' %}
-          <span class="player-pp">{{ "%.0f"|format(player.pp or 0) }}pp</span>
+          {% if player.name != 'BYE' and player.id %}
+          <div class="text-right">
+            <span class="player-pp">{{ "%.0f"|format(player.pp or 0) }}pp</span>
+            <div class="player-rank text-xs text-gray-400">#{{ "{:,}".format(player.rank or 0) }}</div>
+          </div>
           {% endif %}
         </div>
       {% endmacro %}
+
+      <!-- Grand Finals -->
+      {% if data.brackets.grand_finals %}
+      <div class="mb-16">
+        <h2 class="text-3xl md:text-5xl font-bold text-yellow-400 mb-12 text-center">Grand Finals</h2>
+        <div class="bracket">
+          <div class="round">
+            <div class="match-container">
+              <div class="match border-4 border-yellow-400 shadow-2xl">
+                {% set match = data.brackets.grand_finals %}
+                {{ display_player(match.player1, match.winner) }}
+                {{ display_player(match.player2, match.winner) }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
 
       <div class="bracket">
         <!-- Upper Bracket -->
@@ -234,6 +266,7 @@
           </div>
         </div>
       </div>
+
     </div>
   </section>
 

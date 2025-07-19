@@ -140,18 +140,22 @@ def set_winner():
     
     data = get_tournament_data()
     
-    # Find the match in any round of any bracket
+    # Find the match in any round of any bracket, including grand finals
     match_found = False
-    for bracket_type in ['upper', 'lower']:
-        if bracket_type in data['brackets']:
-            for round_matches in data['brackets'][bracket_type]:
-                for match in round_matches:
-                    if match['id'] == match_id:
-                        if match['player1'].get('id') and str(match['player1']['id']) == winner_id:
+    for bracket_type in ['upper', 'lower', 'grand_finals']:
+        if bracket_type in data['brackets'] and data['brackets'][bracket_type]:
+            # Grand finals is a single match, not a list of rounds
+            rounds = data['brackets'][bracket_type] if bracket_type != 'grand_finals' else [data['brackets'][bracket_type]]
+            for round_matches in rounds:
+                # Handle case where grand_finals might be a single dict not in a list
+                matches_to_check = round_matches if isinstance(round_matches, list) else [round_matches]
+                for match in matches_to_check:
+                    if match.get('id') == match_id:
+                        if match.get('player1', {}).get('id') and str(match['player1']['id']) == winner_id:
                             match['winner'] = match['player1']
                             match_found = True
                             break
-                        if match['player2'].get('id') and str(match['player2']['id']) == winner_id:
+                        if match.get('player2', {}).get('id') and str(match['player2']['id']) == winner_id:
                             match['winner'] = match['player2']
                             match_found = True
                             break
@@ -168,84 +172,117 @@ def set_winner():
 
 def advance_round_if_ready(data):
     """
-    Checks if rounds are complete and generates the next rounds for both brackets.
-    This function is now idempotent and handles bracket states independently.
+    Rewritten, robust function to advance a double-elimination bracket.
+    This function correctly paces the upper and lower brackets and is idempotent.
     """
-    
     # --- Process Upper Bracket ---
-    if data['brackets']['upper']:
+    # This part remains largely the same, as it was mostly correct.
+    # It advances the upper bracket and collects losers into a temporary list.
+    losers_from_this_advancement = []
+    if data['brackets'].get('upper'):
         last_upper_round_index = len(data['brackets']['upper']) - 1
         last_upper_round = data['brackets']['upper'][last_upper_round_index]
         
-        # Check if the last upper round is complete
-        if all(m.get('winner') for m in last_upper_round):
-            # Get winners for the next upper round
+        # Check if the last upper round is finished and hasn't been processed yet
+        if all(m.get('winner') for m in last_upper_round) and len(data['brackets']['upper']) == last_upper_round_index + 1:
             winners = [m['winner'] for m in last_upper_round]
             
-            # Get losers to be moved to the lower bracket
-            losers_from_upper = []
+            # Collect losers from this round
             for match in last_upper_round:
-                if match['player1'].get('id') and match['player2'].get('id'): # Exclude BYEs
+                if match.get('player1') and match['player1'].get('id') and match.get('player2') and match['player2'].get('id'):
                     loser = match['player2'] if match['winner']['id'] == match['player1']['id'] else match['player1']
-                    # Tag losers with the round they dropped from
-                    loser['dropped_from_round'] = last_upper_round_index
-                    losers_from_upper.append(loser)
-
-            # Create next upper round if it's not the final
+                    # Tag loser with the round they dropped from for correct seeding
+                    loser['dropped_from_round'] = last_upper_round_index 
+                    losers_from_this_advancement.append(loser)
+            
+            # If there's more than one winner, create the next upper round
             if len(winners) > 1:
                 next_upper_matches = []
                 for i in range(0, len(winners), 2):
-                    p1, p2 = winners[i], winners[i+1] if i + 1 < len(winners) else {'name': 'BYE', 'id': None}
+                    p1 = winners[i]
+                    p2 = winners[i+1] if i + 1 < len(winners) else {'name': 'BYE', 'id': None}
                     match = {'id': str(uuid.uuid4()), 'player1': p1, 'player2': p2, 'winner': p1 if p2['name'] == 'BYE' else None}
                     next_upper_matches.append(match)
-                
-                # Add the new round only if it doesn't already exist
-                if len(data['brackets']['upper']) == last_upper_round_index + 1:
-                    data['brackets']['upper'].append(next_upper_matches)
-
-            # Add the collected losers to a holding pool in the data structure
-            if 'loser_pool' not in data:
-                data['loser_pool'] = []
-            data['loser_pool'].extend(losers_from_upper)
+                data['brackets']['upper'].append(next_upper_matches)
 
     # --- Process Lower Bracket ---
-    # The lower bracket has a more complex lifecycle
-    # A new lower round is formed from winners of the previous lower round AND players dropping from upper.
+    # This is the completely rewritten logic.
+    # It decides whether to create a new round from lower bracket winners OR
+    # to merge those winners with players who just dropped from the upper bracket.
     
-    # Condition 1: Initial population of the lower bracket
-    if not data['brackets']['lower'] and 'loser_pool' in data and len(data['loser_pool']) >= 2:
-        pool = data.pop('loser_pool')
+    # If there are no lower bracket rounds yet, create the first one from the losers.
+    if not data['brackets'].get('lower') and losers_from_this_advancement:
         next_lower_matches = []
-        for i in range(0, len(pool), 2):
-            p1, p2 = pool[i], pool[i+1] if i + 1 < len(pool) else {'name': 'BYE', 'id': None}
+        # Sort losers for fair initial pairing
+        losers_from_this_advancement.sort(key=lambda p: -p.get('pp', 0))
+        for i in range(0, len(losers_from_this_advancement), 2):
+            p1 = losers_from_this_advancement[i]
+            p2 = losers_from_this_advancement[i+1] if i + 1 < len(losers_from_this_advancement) else {'name': 'BYE', 'id': None}
             match = {'id': str(uuid.uuid4()), 'player1': p1, 'player2': p2, 'winner': p1 if p2['name'] == 'BYE' else None}
             next_lower_matches.append(match)
         if next_lower_matches:
             data['brackets']['lower'].append(next_lower_matches)
-
-    # Condition 2: Advancing an existing lower bracket
-    elif data['brackets']['lower']:
+    
+    # If there are existing lower bracket rounds, check if the last one is finished.
+    elif data['brackets'].get('lower'):
         last_lower_round = data['brackets']['lower'][-1]
-        
-        # If the last lower round is complete, create the next one
         if all(m.get('winner') for m in last_lower_round):
             winners_from_lower = [m['winner'] for m in last_lower_round]
             
-            # Combine with any players waiting in the loser pool
-            next_pool = winners_from_lower
-            if 'loser_pool' in data:
-                next_pool.extend(data.pop('loser_pool'))
+            # Pool for the next round starts with the winners from the last lower round
+            next_pool = list(winners_from_lower)
+            
+            # Add any players who just dropped from the upper bracket
+            next_pool.extend(losers_from_this_advancement)
 
+            # Only create a new round if there are players to play
             if len(next_pool) >= 2:
+                # Sort the combined pool for fair matchups
+                next_pool.sort(key=lambda p: (p.get('dropped_from_round', 999), -p.get('pp', 0)))
+                
                 next_lower_matches = []
                 for i in range(0, len(next_pool), 2):
-                    p1, p2 = next_pool[i], next_pool[i+1] if i + 1 < len(next_pool) else {'name': 'BYE', 'id': None}
+                    p1 = next_pool[i]
+                    p2 = next_pool[i+1] if i + 1 < len(next_pool) else {'name': 'BYE', 'id': None}
                     match = {'id': str(uuid.uuid4()), 'player1': p1, 'player2': p2, 'winner': p1 if p2['name'] == 'BYE' else None}
                     next_lower_matches.append(match)
                 
-                # Add the new round only if it doesn't already exist
-                if len(data['brackets']['lower']) == len(data['brackets']['lower'][:-1]) + 1:
-                     data['brackets']['lower'].append(next_lower_matches)
+                # Idempotency check: only add if it's a new round
+                if data['brackets']['lower'][-1] != next_lower_matches:
+                    data['brackets']['lower'].append(next_lower_matches)
+
+    # --- Process Grand Finals ---
+    # This logic is now more robust.
+    upper_winner = None
+    lower_winner = None
+
+    # Check for definitive upper bracket winner
+    if data['brackets'].get('upper'):
+        final_upper_round = data['brackets']['upper'][-1]
+        if len(final_upper_round) == 1 and final_upper_round[0].get('winner'):
+            upper_winner = final_upper_round[0]['winner']
+
+    # Check for definitive lower bracket winner
+    if data['brackets'].get('lower'):
+        final_lower_round = data['brackets']['lower'][-1]
+        if len(final_lower_round) == 1 and final_lower_round[0].get('winner'):
+            # Ensure no more players are waiting to drop from upper bracket
+            if not losers_from_this_advancement:
+                lower_winner = final_lower_round[0]['winner']
+
+    if upper_winner and lower_winner and not data['brackets'].get('grand_finals'):
+        grand_finals_match = {
+            'id': str(uuid.uuid4()),
+            'player1': upper_winner,
+            'player2': lower_winner,
+            'winner': None,
+            'is_grand_finals': True
+        }
+        data['brackets']['grand_finals'] = grand_finals_match
+
+    # Clear the now-unused loser_pool if it exists from old data
+    if 'loser_pool' in data:
+        del data['loser_pool']
 
     save_tournament_data(data)
 
