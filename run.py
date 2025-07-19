@@ -9,4 +9,4 @@ if __name__ == '__main__':
         port = int(OSU_CALLBACK_URL.split(':')[-1].split('/')[0])
     except (ValueError, IndexError):
         port = 5000 # Default port if parsing fails
-    app.run(debug=True, port=port)
+    app.run(debug=False, port=port)
