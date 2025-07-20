@@ -42,7 +42,11 @@ def generate_bracket():
             'round_index': 0,
             'player1': p1,
             'player2': p2,
-            'winner': p1 if p2.get('name')=='BYE' else None
+            'winner': p1 if p2.get('name')=='BYE' else None,
+            'score_p1': 4 if p2.get('name')=='BYE' else 0,  # Auto-win BYE matches
+            'score_p2': 0,
+            'mp_room_url': None,
+            'status': 'completed' if p2.get('name')=='BYE' else 'next_up'  # BYEs are auto-completed
         }
         matches.append(match)
 
@@ -108,7 +112,11 @@ def advance_round_if_ready(data):
                         'round_index': ui+1,
                         'player1': p1,
                         'player2': p2,
-                        'winner': p1 if p2.get('name')=='BYE' else None
+                        'winner': p1 if p2.get('name')=='BYE' else None,
+                        'score_p1': 4 if p2.get('name')=='BYE' else 0,
+                        'score_p2': 0,
+                        'mp_room_url': None,
+                        'status': 'next_up'  # New matches are next up
                     }
                     nxt.append(match)
                 data['brackets']['upper'].append(nxt)
@@ -179,7 +187,11 @@ def advance_round_if_ready(data):
                     'round_index': len(data['brackets'].get('lower', [])),
                     'player1': p1,
                     'player2': p2,
-                    'winner': p1 if p2.get('name')=='BYE' else None
+                    'winner': p1 if p2.get('name')=='BYE' else None,
+                    'score_p1': 4 if p2.get('name')=='BYE' else 0,
+                    'score_p2': 0,
+                    'mp_room_url': None,
+                    'status': 'next_up'  # New matches are next up
                 }
                 nxt.append(match)
 
@@ -217,7 +229,10 @@ def advance_round_if_ready(data):
             'player2': lower_w,
             'winner': None,
             'is_grand_finals': True,
-            'is_bracket_reset': False
+            'is_bracket_reset': False,
+            'score_p1': 0,
+            'score_p2': 0,
+            'mp_room_url': None
         }
     
     # Handle bracket reset scenario
@@ -236,7 +251,10 @@ def advance_round_if_ready(data):
                     'winner': None,
                     'is_grand_finals': True,
                     'is_bracket_reset': True,
-                    'previous_gf': gf  # Store the first match for reference
+                    'previous_gf': gf,  # Store the first match for reference
+                    'score_p1': 0,
+                    'score_p2': 0,
+                    'mp_room_url': None
                 }
 
     # --- Persist eliminated list ---

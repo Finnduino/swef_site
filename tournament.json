@@ -1,6 +1,13 @@
 {
   "competitors": [
     {
+      "id": 9692824,
+      "name": "African Stride",
+      "pp": 6091.17,
+      "avatar_url": "https://a.ppy.sh/9692824?1683747935.jpeg",
+      "rank": 52334
+    },
+    {
       "id": 11365195,
       "name": "finnduino",
       "pp": 5980.92,
@@ -22,11 +29,18 @@
       "rank": 115365
     },
     {
+      "id": 11578864,
+      "name": "Pottoust",
+      "pp": 3573.57,
+      "avatar_url": "https://a.ppy.sh/11578864?1630585097.png",
+      "rank": 200990
+    },
+    {
       "id": 11578935,
       "name": "XBisch_LasagnaX",
       "pp": 2339.37,
       "avatar_url": "https://a.ppy.sh/11578935?1753011398.gif",
-      "rank": 389677
+      "rank": 389748
     },
     {
       "id": 28606103,
@@ -40,7 +54,32 @@
     "upper": [
       [
         {
-          "id": "8d8496b1-03c1-4953-b0dc-247859c76812",
+          "id": "3bbdb86d-d05f-499c-8163-7cccf3b6084a",
+          "bracket": "upper",
+          "round_index": 0,
+          "player1": {
+            "id": 9692824,
+            "name": "African Stride",
+            "pp": 6091.17,
+            "avatar_url": "https://a.ppy.sh/9692824?1683747935.jpeg"
+          },
+          "player2": {
+            "name": "BYE",
+            "id": null
+          },
+          "winner": {
+            "id": 9692824,
+            "name": "African Stride",
+            "pp": 6091.17,
+            "avatar_url": "https://a.ppy.sh/9692824?1683747935.jpeg"
+          },
+          "score_p1": 4,
+          "score_p2": 0,
+          "mp_room_url": null,
+          "status": "completed"
+        },
+        {
+          "id": "26a88794-5b82-4947-abc9-1c719f54cad6",
           "bracket": "upper",
           "round_index": 0,
           "player1": {
@@ -49,75 +88,6 @@
             "pp": 5980.92,
             "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
             "rank": 55584
-          },
-          "player2": {
-            "name": "BYE",
-            "id": null
-          },
-          "winner": {
-            "id": 11365195,
-            "name": "finnduino",
-            "pp": 5980.92,
-            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
-            "rank": 55584
-          }
-        },
-        {
-          "id": "fbdf52db-6543-469d-8e61-63a85c610c09",
-          "bracket": "upper",
-          "round_index": 0,
-          "player1": {
-            "id": 11954594,
-            "name": "fungus664",
-            "pp": 5117.25,
-            "avatar_url": "https://a.ppy.sh/11954594?1749037330.jpeg",
-            "rank": 89783
-          },
-          "player2": {
-            "name": "BYE",
-            "id": null
-          },
-          "winner": {
-            "id": 11954594,
-            "name": "fungus664",
-            "pp": 5117.25,
-            "avatar_url": "https://a.ppy.sh/11954594?1749037330.jpeg",
-            "rank": 89783
-          }
-        },
-        {
-          "id": "38bb9929-2fc7-4b92-9c86-b88bdc7e63e0",
-          "bracket": "upper",
-          "round_index": 0,
-          "player1": {
-            "id": 10702498,
-            "name": "Santa Claus",
-            "pp": 4649.93,
-            "avatar_url": "https://a.ppy.sh/10702498?1544803173.jpeg",
-            "rank": 115365
-          },
-          "player2": {
-            "name": "BYE",
-            "id": null
-          },
-          "winner": {
-            "id": 10702498,
-            "name": "Santa Claus",
-            "pp": 4649.93,
-            "avatar_url": "https://a.ppy.sh/10702498?1544803173.jpeg",
-            "rank": 115365
-          }
-        },
-        {
-          "id": "208d4730-2a3a-46f8-97f8-8dcd0091ad3d",
-          "bracket": "upper",
-          "round_index": 0,
-          "player1": {
-            "id": 11578935,
-            "name": "XBisch_LasagnaX",
-            "pp": 2339.37,
-            "avatar_url": "https://a.ppy.sh/11578935?1753011398.gif",
-            "rank": 389677
           },
           "player2": {
             "id": 28606103,
@@ -127,323 +97,74 @@
             "rank": 1218831
           },
           "winner": {
-            "id": 11578935,
-            "name": "XBisch_LasagnaX",
-            "pp": 2339.37,
-            "avatar_url": "https://a.ppy.sh/11578935?1753011398.gif",
-            "rank": 389677
-          }
-        }
-      ],
-      [
-        {
-          "id": "3a99779e-dc2e-4ef0-b5b2-66f14a1976e6",
-          "bracket": "upper",
-          "round_index": 1,
-          "player1": {
             "id": 11365195,
             "name": "finnduino",
             "pp": 5980.92,
             "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
             "rank": 55584
           },
-          "player2": {
-            "id": 11578935,
-            "name": "XBisch_LasagnaX",
-            "pp": 2339.37,
-            "avatar_url": "https://a.ppy.sh/11578935?1753011398.gif",
-            "rank": 389677
-          },
-          "winner": {
-            "id": 11365195,
-            "name": "finnduino",
-            "pp": 5980.92,
-            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
-            "rank": 55584
-          }
+          "score_p1": 4,
+          "score_p2": 0,
+          "mp_room_url": null,
+          "status": "completed"
         },
         {
-          "id": "e0c4dad0-ed33-46c0-97b9-6fca9975fc77",
+          "id": "88aa7cfb-b9c2-4843-87a5-d6338df9cb64",
           "bracket": "upper",
-          "round_index": 1,
-          "player1": {
-            "id": 11954594,
-            "name": "fungus664",
-            "pp": 5117.25,
-            "avatar_url": "https://a.ppy.sh/11954594?1749037330.jpeg",
-            "rank": 89783
-          },
-          "player2": {
-            "id": 10702498,
-            "name": "Santa Claus",
-            "pp": 4649.93,
-            "avatar_url": "https://a.ppy.sh/10702498?1544803173.jpeg",
-            "rank": 115365
-          },
-          "winner": {
-            "id": 10702498,
-            "name": "Santa Claus",
-            "pp": 4649.93,
-            "avatar_url": "https://a.ppy.sh/10702498?1544803173.jpeg",
-            "rank": 115365
-          }
-        }
-      ],
-      [
-        {
-          "id": "146c3ed4-0200-44db-b81e-15b8329baf30",
-          "bracket": "upper",
-          "round_index": 2,
-          "player1": {
-            "id": 11365195,
-            "name": "finnduino",
-            "pp": 5980.92,
-            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
-            "rank": 55584
-          },
-          "player2": {
-            "id": 10702498,
-            "name": "Santa Claus",
-            "pp": 4649.93,
-            "avatar_url": "https://a.ppy.sh/10702498?1544803173.jpeg",
-            "rank": 115365
-          },
-          "winner": {
-            "id": 11365195,
-            "name": "finnduino",
-            "pp": 5980.92,
-            "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
-            "rank": 55584
-          }
-        }
-      ]
-    ],
-    "lower": [
-      [
-        {
-          "id": "c4dfe476-5894-49f4-9cc2-63f637d560c1",
-          "bracket": "lower",
-          "round_index": 0,
-          "player1": {
-            "id": 28606103,
-            "name": "incomplet",
-            "pp": 514.067,
-            "avatar_url": "https://osu.ppy.sh/images/layout/avatar-guest@2x.png",
-            "rank": 1218831,
-            "dropped_from_round": 0,
-            "bracket": "upper"
-          },
-          "player2": {
-            "name": "BYE",
-            "id": null
-          },
-          "winner": {
-            "id": 28606103,
-            "name": "incomplet",
-            "pp": 514.067,
-            "avatar_url": "https://osu.ppy.sh/images/layout/avatar-guest@2x.png",
-            "rank": 1218831,
-            "dropped_from_round": 0,
-            "bracket": "upper"
-          }
-        },
-        {
-          "id": "2f1ad713-d23d-4111-bca2-85ec22b599d7",
-          "bracket": "lower",
           "round_index": 0,
           "player1": {
             "id": 11954594,
             "name": "fungus664",
             "pp": 5117.25,
             "avatar_url": "https://a.ppy.sh/11954594?1749037330.jpeg",
-            "rank": 89783,
-            "dropped_from_round": 1,
-            "bracket": "upper"
+            "rank": 89783
           },
           "player2": {
             "id": 11578935,
             "name": "XBisch_LasagnaX",
             "pp": 2339.37,
             "avatar_url": "https://a.ppy.sh/11578935?1753011398.gif",
-            "rank": 389677,
-            "dropped_from_round": 1,
-            "bracket": "upper"
+            "rank": 389748
           },
           "winner": {
             "id": 11954594,
             "name": "fungus664",
             "pp": 5117.25,
             "avatar_url": "https://a.ppy.sh/11954594?1749037330.jpeg",
-            "rank": 89783,
-            "dropped_from_round": 1,
-            "bracket": "upper"
-          }
-        }
-      ],
-      [
-        {
-          "id": "3cc84b27-1d27-4663-a9e9-dcf965ec4891",
-          "bracket": "lower",
-          "round_index": 1,
-          "player1": {
-            "id": 10702498,
-            "name": "Santa Claus",
-            "pp": 4649.93,
-            "avatar_url": "https://a.ppy.sh/10702498?1544803173.jpeg",
-            "rank": 115365,
-            "dropped_from_round": 2,
-            "bracket": "upper"
+            "rank": 89783
           },
-          "player2": {
-            "name": "BYE",
-            "id": null
-          },
-          "winner": {
-            "id": 10702498,
-            "name": "Santa Claus",
-            "pp": 4649.93,
-            "avatar_url": "https://a.ppy.sh/10702498?1544803173.jpeg",
-            "rank": 115365,
-            "dropped_from_round": 2,
-            "bracket": "upper"
-          }
+          "score_p1": 4,
+          "score_p2": 3,
+          "mp_room_url": "https://osu.ppy.sh/multiplayer/rooms/1493042",
+          "status": "completed"
         },
         {
-          "id": "25dcf040-26c6-4a34-a92a-094afda11835",
-          "bracket": "lower",
-          "round_index": 1,
+          "id": "d9ba9150-285a-4aae-a6ef-be373abbf3ef",
+          "bracket": "upper",
+          "round_index": 0,
           "player1": {
-            "id": 11954594,
-            "name": "fungus664",
-            "pp": 5117.25,
-            "avatar_url": "https://a.ppy.sh/11954594?1749037330.jpeg",
-            "rank": 89783
-          },
-          "player2": {
-            "id": 28606103,
-            "name": "incomplet",
-            "pp": 514.067,
-            "avatar_url": "https://osu.ppy.sh/images/layout/avatar-guest@2x.png",
-            "rank": 1218831
-          },
-          "winner": {
-            "id": 11954594,
-            "name": "fungus664",
-            "pp": 5117.25,
-            "avatar_url": "https://a.ppy.sh/11954594?1749037330.jpeg",
-            "rank": 89783
-          }
-        }
-      ],
-      [
-        {
-          "id": "54e56b87-55a0-49f0-be98-adf40ed9e72a",
-          "bracket": "lower",
-          "round_index": 2,
-          "player1": {
-            "id": 11954594,
-            "name": "fungus664",
-            "pp": 5117.25,
-            "avatar_url": "https://a.ppy.sh/11954594?1749037330.jpeg",
-            "rank": 89783
-          },
-          "player2": {
             "id": 10702498,
             "name": "Santa Claus",
             "pp": 4649.93,
             "avatar_url": "https://a.ppy.sh/10702498?1544803173.jpeg",
             "rank": 115365
           },
-          "winner": {
-            "id": 11954594,
-            "name": "fungus664",
-            "pp": 5117.25,
-            "avatar_url": "https://a.ppy.sh/11954594?1749037330.jpeg",
-            "rank": 89783
-          }
+          "player2": {
+            "id": 11578864,
+            "name": "Pottoust",
+            "pp": 3573.57,
+            "avatar_url": "https://a.ppy.sh/11578864?1630585097.png"
+          },
+          "winner": null,
+          "score_p1": 0,
+          "score_p2": 0,
+          "mp_room_url": null,
+          "status": "next_up"
         }
       ]
     ],
-    "grand_finals": {
-      "id": "ca16e6b4-1dc2-437d-bb6c-b31987825e12",
-      "bracket": "grand_finals",
-      "round_index": 0,
-      "player1": {
-        "id": 11365195,
-        "name": "finnduino",
-        "pp": 5980.92,
-        "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
-        "rank": 55584
-      },
-      "player2": {
-        "id": 11954594,
-        "name": "fungus664",
-        "pp": 5117.25,
-        "avatar_url": "https://a.ppy.sh/11954594?1749037330.jpeg",
-        "rank": 89783
-      },
-      "winner": {
-        "id": 11365195,
-        "name": "finnduino",
-        "pp": 5980.92,
-        "avatar_url": "https://a.ppy.sh/11365195?1748996100.png",
-        "rank": 55584
-      },
-      "is_grand_finals": true,
-      "is_bracket_reset": false
-    }
+    "lower": []
   },
-  "last_updated": "2025-07-20T13:53:53.533246",
-  "pending_upper_losers": [
-    {
-      "id": 10702498,
-      "name": "Santa Claus",
-      "pp": 4649.93,
-      "avatar_url": "https://a.ppy.sh/10702498?1544803173.jpeg",
-      "rank": 115365,
-      "dropped_from_round": 2,
-      "bracket": "upper"
-    },
-    {
-      "id": 10702498,
-      "name": "Santa Claus",
-      "pp": 4649.93,
-      "avatar_url": "https://a.ppy.sh/10702498?1544803173.jpeg",
-      "rank": 115365,
-      "dropped_from_round": 2,
-      "bracket": "upper"
-    }
-  ],
-  "eliminated": [
-    {
-      "id": 11578935,
-      "name": "XBisch_LasagnaX",
-      "pp": 2339.37,
-      "avatar_url": "https://a.ppy.sh/11578935?1753011398.gif",
-      "rank": 389677,
-      "status": "eliminated",
-      "eliminated_in_round": 0,
-      "bracket": "lower"
-    },
-    {
-      "id": 28606103,
-      "name": "incomplet",
-      "pp": 514.067,
-      "avatar_url": "https://osu.ppy.sh/images/layout/avatar-guest@2x.png",
-      "rank": 1218831,
-      "status": "eliminated",
-      "eliminated_in_round": 1,
-      "bracket": "lower"
-    },
-    {
-      "id": 10702498,
-      "name": "Santa Claus",
-      "pp": 4649.93,
-      "avatar_url": "https://a.ppy.sh/10702498?1544803173.jpeg",
-      "rank": 115365,
-      "status": "eliminated",
-      "eliminated_in_round": 2,
-      "bracket": "lower"
-    }
-  ]
+  "last_updated": "2025-07-20T15:05:39.545376",
+  "pending_upper_losers": []
 }

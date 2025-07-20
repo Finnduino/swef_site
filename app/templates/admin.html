@@ -9,6 +9,38 @@
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@600&display=swap');
         body { font-family: 'Fira Code', monospace; background-color: #111827; color: #d1d5db; }
         h1, h2, h3 { font-family: 'Orbitron', sans-serif; }
+        .match-card { transition: all 0.3s ease; }
+        .match-card:hover { transform: translateY(-2px); }
+        .score-input { width: 3rem; }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        .animate-pulse {
+          animation: pulse 2s infinite;
+        }
+
+        /* BYE match styling */
+        .player.bye {
+          color: #6b7280; /* gray-500 */
+          font-style: italic;
+        }
+
+        .match .bye-indicator {
+          background-color: #3b82f6; /* blue-600 */
+          color: white;
+          padding: 0.25rem 0.5rem;
+          border-radius: 9999px;
+          font-size: 0.75rem;
+          font-weight: 500;
+        }
+
+        /* Make BYE matches slightly transparent */
+        .match.bye-match {
+          opacity: 0.6;
+          border: 1px solid #6b7280;
+        }
     </style>
 </head>
 <body class="p-8">
@@ -87,59 +119,217 @@
                 <button type="submit" class="bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-2 px-4 rounded">Reset Full Bracket</button>
             </form>
 
+            <!-- Match Management Macro -->
+            {% macro render_match(match, bracket_type) %}
+            {% set is_bye_match = match.player1.name == 'BYE' or match.player2.name == 'BYE' %}
+            <div class="match-card bg-gray-700 p-4 rounded-lg mb-4 border-l-4 
+                        {% if bracket_type == 'upper' %}border-pink-500
+                        {% elif bracket_type == 'lower' %}border-blue-500
+                        {% else %}border-yellow-500{% endif %}
+                        {% if match.get('status') == 'in_progress' %}ring-2 ring-green-400 ring-opacity-50{% endif %}
+                        {% if is_bye_match %}opacity-60{% endif %}">
+                
+                <!-- Match Status Badge -->
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        {% if is_bye_match %}
+                        <span class="inline-block bg-blue-600 text-white px-2 py-1 rounded-full text-xs">
+                            ↗️ BYE - Auto Advance
+                        </span>
+                        {% elif match.get('status') == 'completed' %}
+                        <span class="inline-block bg-green-600 text-white px-2 py-1 rounded-full text-xs">
+                            ✓ Completed
+                        </span>
+                        {% elif match.get('status') == 'in_progress' %}
+                        <span class="inline-block bg-yellow-500 text-black px-2 py-1 rounded-full text-xs animate-pulse">
+                            🔴 LIVE
+                        </span>
+                        {% else %}
+                        <span class="inline-block bg-gray-600 text-white px-2 py-1 rounded-full text-xs">
+                            ⏳ Next Up
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="text-xs text-gray-400">
+                        {{ bracket_type|title }} Bracket - R{{ match.get('round_index', 0) + 1 }}
+                    </div>
+                </div>
+                
+                <!-- Player Names and Current Score -->
+                <div class="flex items-center justify-between mb-3">
+                    <div class="text-lg {% if match.winner and match.winner.id == match.player1.id %}text-yellow-400 font-bold{% endif %}
+                                {% if match.player1.name == 'BYE' %}text-gray-500 italic{% endif %}">
+                        {{ match.player1.name }}
+                    </div>
+                    
+                    {% if not is_bye_match %}
+                    <div class="flex items-center gap-4">
+                        <div class="text-2xl font-mono">
+                            <span class="{% if match.winner and match.winner.id == match.player1.id %}text-yellow-400{% endif %}">
+                                {{ match.get('score_p1', 0) }}
+                            </span>
+                            <span class="text-gray-500 mx-2">:</span>
+                            <span class="{% if match.winner and match.winner.id == match.player2.id %}text-yellow-400{% endif %}">
+                                {{ match.get('score_p2', 0) }}
+                            </span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="flex items-center gap-4">
+                        <span class="text-lg text-gray-400 italic">vs</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="text-lg text-right {% if match.winner and match.winner.id == match.player2.id %}text-yellow-400 font-bold{% endif %}
+                                {% if match.player2.name == 'BYE' %}text-gray-500 italic{% endif %}">
+                        {{ match.player2.name }}
+                    </div>
+                </div>
+
+                <!-- Multiplayer Room Link (only for real matches) -->
+                {% if not is_bye_match and match.get('mp_room_url') %}
+                <div class="mb-3">
+                    <a href="{{ match.mp_room_url }}" target="_blank" 
+                       class="inline-flex items-center text-blue-400 hover:text-blue-300 text-sm">
+                        🎮 Multiplayer Room
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                    </a>
+                </div>
+                {% endif %}
+
+                <!-- Match Control Buttons (only for real matches) -->
+                {% if not is_bye_match %}
+                <div class="flex items-center justify-between mb-3 gap-2">
+                    {% if match.get('status') == 'next_up' %}
+                    <form action="{{ url_for('admin.start_match') }}" method="POST" class="inline">
+                        <input type="hidden" name="match_id" value="{{ match.id }}">
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm">
+                            ▶️ Start Match
+                        </button>
+                    </form>
+                    {% elif match.get('status') == 'in_progress' %}
+                    <span class="bg-yellow-500 text-black py-1 px-3 rounded text-sm font-bold">
+                        🔴 Match In Progress
+                    </span>
+                    {% else %}
+                    <span class="bg-green-600 text-white py-1 px-3 rounded text-sm">
+                        ✅ Match Complete
+                    </span>
+                    {% endif %}
+                    
+                    <!-- Reset Match Button -->
+                    {% if match.get('status') != 'next_up' %}
+                    <form action="{{ url_for('admin.reset_match') }}" method="POST" class="inline" 
+                          onsubmit="return confirm('Reset this match to Next Up status?');">
+                        <input type="hidden" name="match_id" value="{{ match.id }}">
+                        <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded text-sm">
+                            🔄 Reset
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+
+                <!-- Quick Win Buttons (only show if not completed and not BYE) -->
+                {% if match.get('status') != 'completed' %}
+                <div class="flex items-center justify-between mb-3">
+                    <form action="{{ url_for('admin.set_winner') }}" method="POST" class="inline">
+                        <input type="hidden" name="match_id" value="{{ match.id }}">
+                        <input type="hidden" name="winner_id" value="{{ match.player1.id }}">
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm">
+                            4-0 Win
+                        </button>
+                    </form>
+                    <span class="text-gray-500 text-sm">Quick Actions</span>
+                    <form action="{{ url_for('admin.set_winner') }}" method="POST" class="inline">
+                        <input type="hidden" name="match_id" value="{{ match.id }}">
+                        <input type="hidden" name="winner_id" value="{{ match.player2.id }}">
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm">
+                            4-0 Win
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <!-- Detailed Score Management (only show if not completed and not BYE) -->
+                {% if match.get('status') != 'completed' %}
+                <form action="{{ url_for('admin.set_score') }}" method="POST" class="border-t border-gray-600 pt-3">
+                    <input type="hidden" name="match_id" value="{{ match.id }}">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Score Inputs -->
+                        <div class="flex items-center justify-center gap-4">
+                            <div class="text-center">
+                                <label class="block text-xs text-gray-400 mb-1">{{ match.player1.name[:10] }}</label>
+                                <input type="number" name="score_p1" min="0" max="4" 
+                                       value="{{ match.get('score_p1', 0) }}"
+                                       class="score-input bg-gray-900 border border-gray-600 rounded px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-pink-500">
+                            </div>
+                            <span class="text-gray-500 mt-4">:</span>
+                            <div class="text-center">
+                                <label class="block text-xs text-gray-400 mb-1">{{ match.player2.name[:10] }}</label>
+                                <input type="number" name="score_p2" min="0" max="4" 
+                                       value="{{ match.get('score_p2', 0) }}"
+                                       class="score-input bg-gray-900 border border-gray-600 rounded px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-pink-500">
+                            </div>
+                        </div>
+
+                        <!-- MP Room URL -->
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Multiplayer Room URL</label>
+                            <input type="url" name="mp_room_url" 
+                                   value="{{ match.get('mp_room_url', '') }}"
+                                   placeholder="https://osu.ppy.sh/multiplayer/rooms/..."
+                                   class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="flex items-end">
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded">
+                                Update Score
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                {% endif %}
+                {% else %}
+                <!-- BYE match explanation -->
+                <div class="text-center py-2">
+                    <span class="text-sm text-gray-400 italic">
+                        {% if match.player1.name == 'BYE' %}
+                            {{ match.player2.name }} advances automatically
+                        {% else %}
+                            {{ match.player1.name }} advances automatically
+                        {% endif %}
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+            {% endmacro %}
+
             <!-- Upper Bracket Rounds -->
             <div class="mb-8">
                 <h3 class="text-xl text-pink-400 mb-4">Upper Bracket</h3>
                 {% for round_matches in data.brackets.upper %}
-                <div class="mb-6 border-l-2 border-pink-500 pl-4">
-                    <h4 class="text-lg mb-2">Round {{ loop.index }}</h4>
+                <div class="mb-6">
+                    <h4 class="text-lg mb-4 border-b border-pink-500 pb-2">Round {{ loop.index }}</h4>
                     {% for match in round_matches %}
-                    <div class="bg-gray-700 p-4 rounded-lg flex items-center justify-between mb-2">
-                        <div class="text-lg {% if match.winner and match.winner.id == match.player1.id %}text-yellow-400 font-bold{% endif %}">{{ match.player1.name }}</div>
-                        <div class="flex items-center gap-2">
-                            <form action="{{ url_for('admin.set_winner') }}" method="POST">
-                                <input type="hidden" name="match_id" value="{{ match.id }}">
-                                <input type="hidden" name="winner_id" value="{{ match.player1.id }}">
-                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded" {% if match.player1.name == 'BYE' or match.winner %}}disabled{% endif %}>Win</button>
-                            </form>
-                            <span class="font-bold text-gray-500">VS</span>
-                            <form action="{{ url_for('admin.set_winner') }}" method="POST">
-                                <input type="hidden" name="match_id" value="{{ match.id }}">
-                                <input type="hidden" name="winner_id" value="{{ match.player2.id }}">
-                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded" {% if match.player2.name == 'BYE' or match.winner %}}disabled{% endif %}>Win</button>
-                            </form>
-                        </div>
-                        <div class="text-lg text-right {% if match.winner and match.winner.id == match.player2.id %}text-yellow-400 font-bold{% endif %}">{{ match.player2.name }}</div>
-                    </div>
+                        {{ render_match(match, 'upper') }}
                     {% endfor %}
                 </div>
                 {% endfor %}
             </div>
 
             <!-- Lower Bracket Rounds -->
-            <div>
+            <div class="mb-8">
                 <h3 class="text-xl text-blue-400 mb-4">Lower Bracket</h3>
                 {% for round_matches in data.brackets.lower %}
-                <div class="mb-6 border-l-2 border-blue-500 pl-4">
-                    <h4 class="text-lg mb-2">Round {{ loop.index }}</h4>
+                <div class="mb-6">
+                    <h4 class="text-lg mb-4 border-b border-blue-500 pb-2">Round {{ loop.index }}</h4>
                     {% for match in round_matches %}
-                     <div class="bg-gray-700 p-4 rounded-lg flex items-center justify-between mb-2">
-                        <div class="text-lg {% if match.winner and match.winner.id == match.player1.id %}text-yellow-400 font-bold{% endif %}">{{ match.player1.name }}</div>
-                        <div class="flex items-center gap-2">
-                            <form action="{{ url_for('admin.set_winner') }}" method="POST">
-                                <input type="hidden" name="match_id" value="{{ match.id }}">
-                                <input type="hidden" name="winner_id" value="{{ match.player1.id }}">
-                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded" {% if match.player1.name == 'BYE' or match.winner %}}disabled{% endif %}>Win</button>
-                            </form>
-                            <span class="font-bold text-gray-500">VS</span>
-                            <form action="{{ url_for('admin.set_winner') }}" method="POST">
-                                <input type="hidden" name="match_id" value="{{ match.id }}">
-                                <input type="hidden" name="winner_id" value="{{ match.player2.id }}">
-                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded" {% if match.player2.name == 'BYE' or match.winner %}}disabled{% endif %}>Win</button>
-                            </form>
-                        </div>
-                        <div class="text-lg text-right {% if match.winner and match.winner.id == match.player2.id %}text-yellow-400 font-bold{% endif %}">{{ match.player2.name }}</div>
-                    </div>
+                        {{ render_match(match, 'lower') }}
                     {% endfor %}
                 </div>
                 {% endfor %}
@@ -152,44 +342,20 @@
                 
                 <!-- Show previous match if bracket was reset -->
                 {% if data.brackets.grand_finals.get('is_bracket_reset') and data.brackets.grand_finals.get('previous_gf') %}
-                <div class="mb-4">
-                    <h4 class="text-lg text-gray-400 mb-2">Match 1 (Completed - Bracket Reset)</h4>
-                    <div class="border-l-2 border-gray-500 pl-4">
-                        {% set prev_match = data.brackets.grand_finals.previous_gf %}
-                        <div class="bg-gray-700 p-4 rounded-lg flex items-center justify-between mb-2 opacity-75">
-                            <div class="text-lg {% if prev_match.winner and prev_match.winner.id == prev_match.player1.id %}text-yellow-400 font-bold{% endif %}">{{ prev_match.player1.name }}</div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-sm text-gray-400">COMPLETED</span>
-                            </div>
-                            <div class="text-lg text-right {% if prev_match.winner and prev_match.winner.id == prev_match.player2.id %}text-yellow-400 font-bold{% endif %}">{{ prev_match.player2.name }}</div>
-                        </div>
+                <div class="mb-6">
+                    <h4 class="text-lg mb-4 border-b border-gray-500 pb-2">Match 1 (Completed - Bracket Reset)</h4>
+                    <div class="opacity-75">
+                        {{ render_match(data.brackets.grand_finals.previous_gf, 'grand_finals') }}
                     </div>
                 </div>
                 {% endif %}
                 
                 <!-- Current grand finals match -->
-                <div class="mb-6 border-l-2 border-yellow-400 pl-4">
+                <div class="mb-6">
                     {% if data.brackets.grand_finals.get('is_bracket_reset') %}
-                    <h4 class="text-lg mb-2">Match 2 (Championship)</h4>
+                    <h4 class="text-lg mb-4 border-b border-yellow-500 pb-2">Match 2 (Championship)</h4>
                     {% endif %}
-                    {% set match = data.brackets.grand_finals %}
-                    <div class="bg-gray-700 p-4 rounded-lg flex items-center justify-between mb-2">
-                        <div class="text-lg {% if match.winner and match.winner.id == match.player1.id %}text-yellow-400 font-bold{% endif %}">{{ match.player1.name }}</div>
-                        <div class="flex items-center gap-2">
-                            <form action="{{ url_for('admin.set_winner') }}" method="POST">
-                                <input type="hidden" name="match_id" value="{{ match.id }}">
-                                <input type="hidden" name="winner_id" value="{{ match.player1.id }}">
-                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded" {% if match.winner %}}disabled{% endif %}>Win</button>
-                            </form>
-                            <span class="font-bold text-gray-500">VS</span>
-                            <form action="{{ url_for('admin.set_winner') }}" method="POST">
-                                <input type="hidden" name="match_id" value="{{ match.id }}">
-                                <input type="hidden" name="winner_id" value="{{ match.player2.id }}">
-                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded" {% if match.winner %}}disabled{% endif %}>Win</button>
-                            </form>
-                        </div>
-                        <div class="text-lg text-right {% if match.winner and match.winner.id == match.player2.id %}text-yellow-400 font-bold{% endif %}">{{ match.player2.name }}</div>
-                    </div>
+                    {{ render_match(data.brackets.grand_finals, 'grand_finals') }}
                 </div>
             </div>
             {% endif %}

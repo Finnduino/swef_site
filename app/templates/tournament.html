@@ -53,6 +53,7 @@
     }
     .player.bye {
       color: #6b7280; /* gray-500 */
+      font-style: italic;
     }
     .player-info {
       display: flex;
@@ -67,6 +68,14 @@
     .player-pp {
       font-size: 0.875rem;
       color: #9ca3af; /* gray-400 */
+    }
+    .match .bye-indicator {
+      background-color: #3b82f6; /* blue-600 */
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
     }
     /* --- Connector Lines --- */
     .connector {
@@ -96,6 +105,12 @@
       justify-content: center;
       flex-grow: 1;
       position: relative;
+    }
+
+    /* Make BYE matches slightly transparent */
+    .match.bye-match {
+      opacity: 0.6;
+      border: 1px solid #6b7280;
     }
   </style>
 </head>
@@ -178,9 +193,10 @@
     <div class="max-w-full mx-auto px-4">
       <h2 class="text-3xl md:text-4xl font-bold text-yellow-400 mb-12 text-center">Double Elimination Bracket</h2>
       
-      {% macro display_player(player, winner) %}
+      {% macro display_player(player, winner, match) %}
         {% set is_winner = winner and player.id and winner.id == player.id %}
         {% set is_eliminated = player.id and (player.id in eliminated_ids) %}
+        {% set is_bye_match = match and (match.player1.name == 'BYE' or match.player2.name == 'BYE') %}
         <div class="player 
              {% if player.name == 'BYE' %}bye{% endif %} 
              {% if is_winner %}border-2 border-yellow-400 bg-gray-600{% endif %}
@@ -197,18 +213,31 @@
               {{ player.name }}
             </a>
             {% else %}
-            <span class="{% if is_winner %}text-yellow-300 font-bold{% endif %}">{{ player.name }}</span>
+            <span class="{% if is_winner %}text-yellow-300 font-bold{% endif %} text-gray-500 italic">{{ player.name }}</span>
             {% endif %}
           </div>
-          {% set pplace = none %}
-          {% for e in data.eliminated|default([]) %}
-            {% if e.id == player.id %}
-              {% set pplace = total - loop.index0 %}
+          <div class="flex items-center gap-2">
+            <!-- Show score only for real matches (not BYE matches) -->
+            {% if match and not is_bye_match and (match.get('score_p1', 0) > 0 or match.get('score_p2', 0) > 0 or match.get('winner')) %}
+            <div class="text-sm font-mono">
+              {% if player.id == match.player1.id %}
+                <span class="{% if is_winner %}text-yellow-300 font-bold{% endif %}">{{ match.get('score_p1', 0) }}</span>
+              {% elif player.id == match.player2.id %}
+                <span class="{% if is_winner %}text-yellow-300 font-bold{% endif %}">{{ match.get('score_p2', 0) }}</span>
+              {% endif %}
+            </div>
             {% endif %}
-          {% endfor %}
-          {% if pplace %}
-            <div class="text-xs text-yellow-300 mt-1">P{{ pplace }}</div>
-          {% endif %}
+            <!-- Placement for eliminated players -->
+            {% set pplace = none %}
+            {% for e in data.eliminated|default([]) %}
+              {% if e.id == player.id %}
+                {% set pplace = total - loop.index0 %}
+              {% endif %}
+            {% endfor %}
+            {% if pplace %}
+              <div class="text-xs text-yellow-300">P{{ pplace }}</div>
+            {% endif %}
+          </div>
         </div>
       {% endmacro %}
 
@@ -226,8 +255,8 @@
               <div class="match-container">
                 <div class="match border-2 border-gray-500 shadow-xl opacity-75">
                   {% set prev_match = data.brackets.grand_finals.previous_gf %}
-                  {{ display_player(prev_match.player1, prev_match.winner) }}
-                  {{ display_player(prev_match.player2, prev_match.winner) }}
+                  {{ display_player(prev_match.player1, prev_match.winner, prev_match) }}
+                  {{ display_player(prev_match.player2, prev_match.winner, prev_match) }}
                 </div>
               </div>
             </div>
@@ -245,8 +274,8 @@
               <div class="match-container">
                 <div class="match border-4 border-yellow-400 shadow-2xl">
                   {% set match = data.brackets.grand_finals %}
-                  {{ display_player(match.player1, match.winner) }}
-                  {{ display_player(match.player2, match.winner) }}
+                  {{ display_player(match.player1, match.winner, match) }}
+                  {{ display_player(match.player2, match.winner, match) }}
                 </div>
               </div>
             </div>
@@ -263,9 +292,76 @@
             <h3 class="text-xl font-semibold text-pink-500 mb-6 text-center">Round {{ loop.index }}</h3>
             {% for match in round_matches %}
             <div class="match-container">
-              <div class="match">
-                {{ display_player(match.player1, match.winner) }}
-                {{ display_player(match.player2, match.winner) }}
+              <div class="match 
+                   {% if match.get('status') == 'in_progress' %}border-2 border-green-400 shadow-green-400/50{% endif %}
+                   {% if match.get('status') == 'completed' %}opacity-75{% endif %}
+                   {% if match.player1.name == 'BYE' or match.player2.name == 'BYE' %}opacity-60 border border-gray-600{% endif %}">
+                
+                <!-- Status indicator for public view -->
+                {% if match.player1.name == 'BYE' or match.player2.name == 'BYE' %}
+                <div class="text-center mb-2">
+                  <span class="inline-block bg-blue-600 text-white px-2 py-1 rounded-full text-xs">
+                    ↗️ BYE - Auto Advance
+                  </span>
+                </div>
+                {% elif match.get('status') == 'in_progress' %}
+                <div class="text-center mb-2">
+                  <span class="inline-block bg-red-500 text-white px-2 py-1 rounded-full text-xs animate-pulse">
+                    🔴 LIVE NOW
+                  </span>
+                </div>
+                {% elif match.get('status') == 'next_up' %}
+                <div class="text-center mb-2">
+                  <span class="inline-block bg-gray-600 text-white px-2 py-1 rounded-full text-xs">
+                    ⏳ Coming Up
+                  </span>
+                </div>
+                {% endif %}
+                
+                {{ display_player(match.player1, match.winner, match) }}
+                {{ display_player(match.player2, match.winner, match) }}
+                
+                <!-- Show multiplayer room link only for real matches -->
+                {% if not (match.player1.name == 'BYE' or match.player2.name == 'BYE') %}
+                  {% if match.get('mp_room_url') and match.get('status') == 'in_progress' %}
+                  <div class="mt-2 text-center">
+                    <a href="{{ match.mp_room_url }}" target="_blank" 
+                       class="inline-flex items-center text-red-400 hover:text-red-300 text-sm font-bold animate-pulse">
+                      🔴 WATCH LIVE
+                      <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                      </svg>
+                    </a>
+                  </div>
+                  {% elif match.get('mp_room_url') and match.get('status') == 'completed' %}
+                  <div class="mt-2 text-center">
+                    <a href="{{ match.mp_room_url }}" target="_blank" 
+                       class="inline-flex items-center text-blue-400 hover:text-blue-300 text-xs">
+                      📺 View Match
+                    </a>
+                  </div>
+                  {% endif %}
+                  
+                  <!-- Show match score if completed and not a BYE -->
+                  {% if match.get('winner') and (match.get('score_p1', 0) > 0 or match.get('score_p2', 0) > 0) %}
+                  <div class="mt-2 text-center">
+                    <span class="text-xs text-gray-400 font-mono">
+                      Final: {{ match.get('score_p1', 0) }} - {{ match.get('score_p2', 0) }}
+                    </span>
+                  </div>
+                  {% endif %}
+                {% else %}
+                <!-- BYE match explanation -->
+                <div class="mt-2 text-center">
+                  <span class="text-xs text-gray-400 italic">
+                    {% if match.player1.name == 'BYE' %}
+                      {{ match.player2.name }} advances automatically
+                    {% else %}
+                      {{ match.player1.name }} advances automatically
+                    {% endif %}
+                  </span>
+                </div>
+                {% endif %}
               </div>
             </div>
             {% endfor %}
@@ -295,9 +391,56 @@
               <h3 class="text-xl font-semibold text-blue-500 mb-6 text-center">Round {{ loop.index }}</h3>
               {% for match in round_matches %}
               <div class="match-container">
-                <div class="match">
-                  {{ display_player(match.player1, match.winner) }}
-                  {{ display_player(match.player2, match.winner) }}
+                <div class="match 
+                     {% if match.get('status') == 'in_progress' %}border-2 border-green-400 shadow-green-400/50{% endif %}
+                     {% if match.get('status') == 'completed' %}opacity-75{% endif %}">
+                  
+                  <!-- Status indicator for public view -->
+                  {% if match.get('status') == 'in_progress' %}
+                  <div class="text-center mb-2">
+                    <span class="inline-block bg-red-500 text-white px-2 py-1 rounded-full text-xs animate-pulse">
+                      🔴 LIVE NOW
+                    </span>
+                  </div>
+                  {% elif match.get('status') == 'next_up' %}
+                  <div class="text-center mb-2">
+                    <span class="inline-block bg-gray-600 text-white px-2 py-1 rounded-full text-xs">
+                      ⏳ Coming Up
+                    </span>
+                  </div>
+                  {% endif %}
+                  
+                  {{ display_player(match.player1, match.winner, match) }}
+                  {{ display_player(match.player2, match.winner, match) }}
+                  
+                  <!-- Show multiplayer room link if available and match is in progress -->
+                  {% if match.get('mp_room_url') and match.get('status') == 'in_progress' %}
+                  <div class="mt-2 text-center">
+                    <a href="{{ match.mp_room_url }}" target="_blank" 
+                       class="inline-flex items-center text-red-400 hover:text-red-300 text-sm font-bold animate-pulse">
+                      🔴 WATCH LIVE
+                      <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                      </svg>
+                    </a>
+                  </div>
+                  {% elif match.get('mp_room_url') and match.get('status') == 'completed' %}
+                  <div class="mt-2 text-center">
+                    <a href="{{ match.mp_room_url }}" target="_blank" 
+                       class="inline-flex items-center text-blue-400 hover:text-blue-300 text-xs">
+                      📺 View Match
+                    </a>
+                  </div>
+                  {% endif %}
+                  
+                  <!-- Show match score if completed -->
+                  {% if match.get('winner') and (match.get('score_p1', 0) > 0 or match.get('score_p2', 0) > 0) %}
+                  <div class="mt-2 text-center">
+                    <span class="text-xs text-gray-400 font-mono">
+                      Final: {{ match.get('score_p1', 0) }} - {{ match.get('score_p2', 0) }}
+                    </span>
+                  </div>
+                  {% endif %}
                 </div>
               </div>
               {% endfor %}

@@ -198,6 +198,144 @@ def reset_bracket():
     generate_bracket()
     return redirect(url_for('admin.admin_panel'))
 
+@admin_bp.route('/start_match', methods=['POST'])
+@admin_required
+def start_match():
+    match_id = request.form.get('match_id')
+    data = get_tournament_data()
+    
+    match_found = False
+    for bracket_type in ['upper', 'lower', 'grand_finals']:
+        if bracket_type in data['brackets'] and data['brackets'][bracket_type]:
+            rounds = data['brackets'][bracket_type] if bracket_type != 'grand_finals' else [data['brackets'][bracket_type]]
+            for round_matches in rounds:
+                matches_to_check = round_matches if isinstance(round_matches, list) else [round_matches]
+                for match in matches_to_check:
+                    if match.get('id') == match_id:
+                        match['status'] = 'in_progress'
+                        match_found = True
+                        break
+                if match_found: break
+            if match_found: break
+    
+    if match_found:
+        save_tournament_data(data)
+        flash('Match started!', 'success')
+    else:
+        flash('Match not found.', 'error')
+    
+    return redirect(url_for('admin.admin_panel'))
+
+@admin_bp.route('/reset_match', methods=['POST'])
+@admin_required
+def reset_match():
+    match_id = request.form.get('match_id')
+    data = get_tournament_data()
+    
+    match_found = False
+    for bracket_type in ['upper', 'lower', 'grand_finals']:
+        if bracket_type in data['brackets'] and data['brackets'][bracket_type]:
+            rounds = data['brackets'][bracket_type] if bracket_type != 'grand_finals' else [data['brackets'][bracket_type]]
+            for round_matches in rounds:
+                matches_to_check = round_matches if isinstance(round_matches, list) else [round_matches]
+                for match in matches_to_check:
+                    if match.get('id') == match_id:
+                        match['status'] = 'next_up'
+                        match['winner'] = None
+                        match['score_p1'] = 0
+                        match['score_p2'] = 0
+                        match['mp_room_url'] = None
+                        match_found = True
+                        break
+                if match_found: break
+            if match_found: break
+    
+    if match_found:
+        save_tournament_data(data)
+        flash('Match reset to "Next Up" status.', 'success')
+    else:
+        flash('Match not found.', 'error')
+    
+    return redirect(url_for('admin.admin_panel'))
+
+# Update existing set_score function to set status to completed when winner is determined
+@admin_bp.route('/set_score', methods=['POST'])
+@admin_required
+def set_score():
+    match_id = request.form.get('match_id')
+    score_p1 = request.form.get('score_p1', 0)
+    score_p2 = request.form.get('score_p2', 0)
+    mp_room_url = request.form.get('mp_room_url', '').strip()
+    
+    try:
+        score_p1 = int(score_p1)
+        score_p2 = int(score_p2)
+    except ValueError:
+        flash('Invalid score values.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    # Validate Best of 7 format (first to 4)
+    if score_p1 < 0 or score_p2 < 0 or (score_p1 > 4) or (score_p2 > 4):
+        flash('Scores must be between 0-4 (Best of 7 format).', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    if score_p1 == 4 and score_p2 == 4:
+        flash('Both players cannot have 4 points.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    data = get_tournament_data()
+    match_found = False
+    
+    # Find and update the match
+    for bracket_type in ['upper', 'lower', 'grand_finals']:
+        if bracket_type in data['brackets'] and data['brackets'][bracket_type]:
+            rounds = data['brackets'][bracket_type] if bracket_type != 'grand_finals' else [data['brackets'][bracket_type]]
+            for round_matches in rounds:
+                matches_to_check = round_matches if isinstance(round_matches, list) else [round_matches]
+                for match in matches_to_check:
+                    if match.get('id') == match_id:
+                        match['score_p1'] = score_p1
+                        match['score_p2'] = score_p2
+                        
+                        # Validate and set multiplayer room URL
+                        if mp_room_url:
+                            if 'osu.ppy.sh/multiplayer/rooms/' in mp_room_url:
+                                match['mp_room_url'] = mp_room_url
+                            else:
+                                flash('Invalid multiplayer room URL format.', 'error')
+                                return redirect(url_for('admin.admin_panel'))
+                        else:
+                            match['mp_room_url'] = None
+                        
+                        # Determine winner and status based on Best of 7 (first to 4)
+                        if score_p1 == 4:
+                            match['winner'] = match['player1']
+                            match['status'] = 'completed'
+                        elif score_p2 == 4:
+                            match['winner'] = match['player2']
+                            match['status'] = 'completed'
+                        else:
+                            match['winner'] = None
+                            # Set to in_progress if score has been updated but no winner yet
+                            if score_p1 > 0 or score_p2 > 0:
+                                match['status'] = 'in_progress'
+                            else:
+                                match['status'] = match.get('status', 'next_up')
+                        
+                        match_found = True
+                        break
+                if match_found: break
+            if match_found: break
+    
+    if match_found:
+        advance_round_if_ready(data)
+        flash('Match score updated successfully.', 'success')
+    else:
+        flash('Match not found.', 'error')
+    
+    return redirect(url_for('admin.admin_panel'))
+
+# Update set_winner to also set status to completed
 @admin_bp.route('/set_winner', methods=['POST'])
 @admin_required
 def set_winner():
@@ -215,8 +353,13 @@ def set_winner():
                     if match.get('id') == match_id:
                         if match.get('player1', {}).get('id') and str(match['player1']['id']) == winner_id:
                             match['winner'] = match['player1']
+                            match['score_p1'] = 4
+                            match['score_p2'] = 0
                         elif match.get('player2', {}).get('id') and str(match['player2']['id']) == winner_id:
                             match['winner'] = match['player2']
+                            match['score_p1'] = 0
+                            match['score_p2'] = 4
+                        match['status'] = 'completed'
                         match_found = True
                         break
                 if match_found: break
