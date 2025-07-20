@@ -1,0 +1,44 @@
+---
+deployment:
+  tasks:
+    # Set the deployment path to your domain's public_html directory
+    - export DEPLOYPATH=/home/sandeklg/public_html/
+    - export VENVPATH=/home/sandeklg/virtualenv/swef_site/3.13
+    
+    # Create necessary directories
+    - /bin/mkdir -p $DEPLOYPATH/app
+    - /bin/mkdir -p $DEPLOYPATH/app/templates
+    - /bin/mkdir -p $DEPLOYPATH/static
+    
+    # Copy all application files
+    - /bin/cp -R app/ $DEPLOYPATH/
+    - /bin/cp app.py $DEPLOYPATH/
+    - /bin/cp run.py $DEPLOYPATH/
+    - /bin/cp config.py $DEPLOYPATH/
+    - /bin/cp requirements.txt $DEPLOYPATH/
+    
+    # Copy data files if they exist
+    - if [ -f tournament.json ]; then /bin/cp tournament.json $DEPLOYPATH/; fi
+    - if [ -f competitors.json ]; then /bin/cp competitors.json $DEPLOYPATH/; fi
+    
+    # Copy production environment file if it exists
+    - if [ -f .env.production ]; then /bin/cp .env.production $DEPLOYPATH/.env; fi
+    
+    # Set proper file permissions
+    - /bin/chmod 644 $DEPLOYPATH/*.py
+    - /bin/chmod 644 $DEPLOYPATH/app/*.py
+    - /bin/chmod 644 $DEPLOYPATH/app/templates/*.html
+    - /bin/chmod 666 $DEPLOYPATH/*.json
+    
+    # Activate virtual environment and install/update dependencies
+    - source $VENVPATH/bin/activate && cd $DEPLOYPATH && pip install -r requirements.txt
+    
+    # Create passenger_wsgi.py for cPanel Python app deployment
+    - echo "import sys" > $DEPLOYPATH/passenger_wsgi.py
+    - echo "import os" >> $DEPLOYPATH/passenger_wsgi.py
+    - echo "sys.path.insert(0, os.path.dirname(__file__))" >> $DEPLOYPATH/passenger_wsgi.py
+    - echo "from app import create_app" >> $DEPLOYPATH/passenger_wsgi.py
+    - echo "application = create_app()" >> $DEPLOYPATH/passenger_wsgi.py
+    
+    # Restart the Python application (if it's already set up in cPanel)
+    - touch $DEPLOYPATH/tmp/restart.txt

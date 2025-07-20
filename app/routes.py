@@ -6,6 +6,8 @@ from config import *
 from .data_manager import get_tournament_data, save_tournament_data
 from .bracket_logic import generate_bracket, advance_round_if_ready
 from . import api # Import the api instance from __init__.py
+import re
+from urllib.parse import urlparse
 
 
 # --- Blueprints ---
@@ -397,4 +399,401 @@ def reset_seeding():
     save_tournament_data(data)
     generate_bracket()
     flash('All seed placements have been reset.', 'success')
+    return redirect(url_for('admin.admin_panel'))
+
+# Helper function to extract room ID from multiplayer URL
+def extract_room_id(url):
+    """Extract room ID from osu multiplayer room URL"""
+    if not url:
+        return None
+    
+    # Handle different URL formats
+    patterns = [
+        r'osu\.ppy\.sh/multiplayer/rooms/(\d+)',
+        r'osu\.ppy\.sh/mp/(\d+)', 
+        r'multiplayer/rooms/(\d+)',
+        r'/rooms/(\d+)',
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return int(match.group(1))
+    
+    return None
+
+def get_match_results(room_id, player1_id, player2_id):
+    """
+    Fetch match results from osu! API using ossapi and determine winner based on Best of 7
+    Returns: (winner_id, score_p1, score_p2, status) or (None, 0, 0, 'error') if error
+    """
+    try:
+        print(f"Fetching match results for room {room_id}, players {player1_id} vs {player2_id}")
+        
+        # Get room details
+        room = api.room(room_id)
+        
+        if not room.playlist:
+            print("No playlist found in room")
+            return None, 0, 0, 'no_playlist'
+        
+        player1_wins = 0
+        player2_wins = 0
+        total_maps = len(room.playlist)
+        
+        print(f"Found {total_maps} maps in playlist")
+        
+        # Check each playlist item (map) for scores
+        for i, playlist_item in enumerate(room.playlist):
+            try:
+                print(f"Checking playlist item {i+1}/{total_maps}: {playlist_item.id}")
+                
+                # Get scores for this playlist item
+                scores_data = api.multiplayer_scores(room_id, playlist_item.id)
+                
+                # Find scores for our two players
+                p1_score = None
+                p2_score = None
+                
+                for score in scores_data.scores:
+                    if score.user_id == player1_id:
+                        p1_score = score
+                        print(f"Found player 1 score: {score.total_score}")
+                    elif score.user_id == player2_id:
+                        p2_score = score
+                        print(f"Found player 2 score: {score.total_score}")
+                
+                # Determine map winner (higher score wins the map)
+                if p1_score and p2_score:
+                    if p1_score.total_score > p2_score.total_score:
+                        player1_wins += 1
+                        print(f"Player 1 wins map {i+1}")
+                    elif p2_score.total_score > p1_score.total_score:
+                        player2_wins += 1
+                        print(f"Player 2 wins map {i+1}")
+                    else:
+                        print(f"Tie on map {i+1}")
+                elif p1_score and not p2_score:
+                    player1_wins += 1
+                    print(f"Player 1 wins map {i+1} (no opponent score)")
+                elif p2_score and not p1_score:
+                    player2_wins += 1
+                    print(f"Player 2 wins map {i+1} (no opponent score)")
+                else:
+                    print(f"No scores found for either player on map {i+1}")
+                
+            except Exception as e:
+                print(f"Error fetching scores for playlist item {playlist_item.id}: {e}")
+                continue
+        
+        print(f"Final map score: Player 1: {player1_wins}, Player 2: {player2_wins}")
+        
+        # Determine overall winner (first to 4 wins in Best of 7)
+        if player1_wins >= 4:
+            return player1_id, player1_wins, player2_wins, 'completed'
+        elif player2_wins >= 4:
+            return player2_id, player1_wins, player2_wins, 'completed'
+        elif player1_wins > 0 or player2_wins > 0:
+            # Match in progress
+            return None, player1_wins, player2_wins, 'in_progress'
+        else:
+            # No scores yet
+            return None, 0, 0, 'no_scores'
+    
+    except Exception as e:
+        print(f"Error fetching match results for room {room_id}: {e}")
+        return None, 0, 0, 'error'
+
+def get_seeding_scores(room_id, competitor_ids):
+    """
+    Fetch cumulative seeding scores for all competitors from a multiplayer room
+    Returns: dict of {user_id: total_score}
+    """
+    try:
+        print(f"Fetching seeding scores for room {room_id}")
+        
+        # Get room details
+        room = api.room(room_id)
+        
+        if not room.playlist:
+            print("No playlist found in seeding room")
+            return {}
+        
+        player_scores = {}
+        
+        # Initialize scores for all competitors
+        for comp_id in competitor_ids:
+            player_scores[comp_id] = 0
+        
+        print(f"Checking {len(room.playlist)} maps for seeding scores")
+        
+        # Check each playlist item (map) for scores
+        for i, playlist_item in enumerate(room.playlist):
+            try:
+                print(f"Processing seeding map {i+1}/{len(room.playlist)}: {playlist_item.id}")
+                
+                # Get scores for this playlist item
+                scores_data = api.multiplayer_scores(room_id, playlist_item.id)
+                
+                for score in scores_data.scores:
+                    if score.user_id in competitor_ids:
+                        player_scores[score.user_id] += score.total_score
+                        print(f"Added {score.total_score} to player {score.user_id} (total: {player_scores[score.user_id]})")
+                
+            except Exception as e:
+                print(f"Error fetching seeding scores for playlist item {playlist_item.id}: {e}")
+                continue
+        
+        # Filter out players with 0 scores
+        return {uid: score for uid, score in player_scores.items() if score > 0}
+    
+    except Exception as e:
+        print(f"Error fetching seeding scores for room {room_id}: {e}")
+        return {}
+
+@admin_bp.route('/refresh_match_scores', methods=['POST'])
+@admin_required
+def refresh_match_scores():
+    """Automatically refresh match scores from multiplayer room"""
+    match_id = request.form.get('match_id')
+    data = get_tournament_data()
+    
+    match_found = False
+    target_match = None
+    
+    # Find the match
+    for bracket_type in ['upper', 'lower', 'grand_finals']:
+        if bracket_type in data['brackets'] and data['brackets'][bracket_type]:
+            rounds = data['brackets'][bracket_type] if bracket_type != 'grand_finals' else [data['brackets'][bracket_type]]
+            for round_matches in rounds:
+                matches_to_check = round_matches if isinstance(round_matches, list) else [round_matches]
+                for match in matches_to_check:
+                    if match.get('id') == match_id:
+                        target_match = match
+                        match_found = True
+                        break
+                if match_found: break
+            if match_found: break
+    
+    if not match_found or not target_match:
+        flash('Match not found.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    # Extract room ID from URL
+    room_id = extract_room_id(target_match.get('mp_room_url'))
+    if not room_id:
+        flash('Invalid or missing multiplayer room URL.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    # Get player IDs
+    player1_id = target_match.get('player1', {}).get('id')
+    player2_id = target_match.get('player2', {}).get('id')
+    
+    if not player1_id or not player2_id:
+        flash('Player IDs not found in match data.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    # Fetch results
+    winner_id, score_p1, score_p2, status = get_match_results(room_id, player1_id, player2_id)
+    
+    # Update match
+    target_match['score_p1'] = score_p1
+    target_match['score_p2'] = score_p2
+    
+    if status == 'completed' and winner_id:
+        if winner_id == player1_id:
+            target_match['winner'] = target_match['player1']
+        else:
+            target_match['winner'] = target_match['player2']
+        target_match['status'] = 'completed'
+        flash(f'Match completed! Final score: {score_p1}-{score_p2}', 'success')
+    elif status == 'in_progress':
+        target_match['winner'] = None
+        target_match['status'] = 'in_progress'
+        flash(f'Match in progress. Current score: {score_p1}-{score_p2}', 'info')
+    elif status == 'no_scores':
+        flash('No scores found yet in the multiplayer room.', 'info')
+    elif status == 'error':
+        flash('Error fetching scores from the multiplayer room.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    # Save and advance if match is complete
+    if target_match.get('winner'):
+        advance_round_if_ready(data)
+    else:
+        save_tournament_data(data)
+    
+    return redirect(url_for('admin.admin_panel'))
+
+@admin_bp.route('/start_seeding', methods=['POST'])
+@admin_required
+def start_seeding():
+    """Start seeding with a multiplayer room"""
+    seeding_room_url = request.form.get('seeding_room_url', '').strip()
+    
+    if not seeding_room_url:
+        flash('Seeding room URL is required.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    room_id = extract_room_id(seeding_room_url)
+    if not room_id:
+        flash('Invalid multiplayer room URL format.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    # Test if we can access the room
+    try:
+        room = api.room(room_id)
+        if not room:
+            flash('Could not access the specified multiplayer room.', 'error')
+            return redirect(url_for('admin.admin_panel'))
+    except Exception as e:
+        flash(f'Error accessing multiplayer room: {e}', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    data = get_tournament_data()
+    data['seeding_room_url'] = seeding_room_url
+    data['seeding_room_id'] = room_id
+    data['seeding_in_progress'] = True
+    
+    save_tournament_data(data)
+    flash('Seeding room set! Players can now play seeding maps.', 'success')
+    return redirect(url_for('admin.admin_panel'))
+
+@admin_bp.route('/update_seeding_scores', methods=['POST'])
+@admin_required
+def update_seeding_scores():
+    """Update seeding scores from the multiplayer room"""
+    data = get_tournament_data()
+    room_id = data.get('seeding_room_id')
+    
+    if not room_id:
+        flash('No seeding room configured.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    # Get competitor IDs
+    competitor_ids = [c['id'] for c in data.get('competitors', []) if c.get('id')]
+    
+    if not competitor_ids:
+        flash('No competitors found.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    # Fetch seeding scores
+    player_scores = get_seeding_scores(room_id, competitor_ids)
+    
+    if not player_scores:
+        flash('No seeding scores found in the multiplayer room.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    # Update competitor scores and provisional seeding
+    competitors = data.get('competitors', [])
+    seeded_players = []
+    
+    for competitor in competitors:
+        if competitor['id'] in player_scores:
+            competitor['seeding_score'] = player_scores[competitor['id']]
+            seeded_players.append(competitor)
+        else:
+            # Remove seeding score if player didn't participate
+            competitor.pop('seeding_score', None)
+            competitor.pop('provisional_placement', None)
+    
+    # Sort by seeding score (descending) and assign provisional placements
+    seeded_players.sort(key=lambda x: x.get('seeding_score', 0), reverse=True)
+    
+    for i, player in enumerate(seeded_players):
+        player['provisional_placement'] = i + 1
+    
+    save_tournament_data(data)
+    flash(f'Updated seeding scores for {len(seeded_players)} players.', 'success')
+    
+    return redirect(url_for('admin.admin_panel'))
+
+@admin_bp.route('/finalize_seeding', methods=['POST'])
+@admin_required
+def finalize_seeding():
+    """Finalize seeding and lock in placements"""
+    data = get_tournament_data()
+    
+    competitors = data.get('competitors', [])
+    finalized_count = 0
+    
+    for competitor in competitors:
+        if 'provisional_placement' in competitor:
+            competitor['placement'] = competitor['provisional_placement']
+            competitor.pop('provisional_placement', None)
+            competitor.pop('seeding_score', None)
+            finalized_count += 1
+    
+    # Clean up seeding data
+    data.pop('seeding_room_url', None)
+    data.pop('seeding_room_id', None)
+    data.pop('seeding_in_progress', None)
+    
+    save_tournament_data(data)
+    generate_bracket()
+    
+    flash(f'Seeding finalized for {finalized_count} players and bracket regenerated.', 'success')
+    return redirect(url_for('admin.admin_panel'))
+
+@admin_bp.route('/set_stream', methods=['POST'])
+@admin_required
+def set_stream():
+    """Set Twitch channel for streaming"""
+    twitch_channel = request.form.get('twitch_channel', '').strip()
+    
+    if not twitch_channel:
+        flash('Twitch channel name is required.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    # Clean channel name (remove twitch.tv/ if included)
+    if 'twitch.tv/' in twitch_channel:
+        twitch_channel = twitch_channel.split('twitch.tv/')[-1]
+    
+    # Remove any extra characters
+    twitch_channel = re.sub(r'[^a-zA-Z0-9_]', '', twitch_channel)
+    
+    if not twitch_channel:
+        flash('Invalid Twitch channel name.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    data = get_tournament_data()
+    data['twitch_channel'] = twitch_channel
+    
+    save_tournament_data(data)
+    flash(f'Twitch channel set to: {twitch_channel}', 'success')
+    return redirect(url_for('admin.admin_panel'))
+
+@admin_bp.route('/toggle_stream', methods=['POST'])
+@admin_required
+def toggle_stream():
+    """Toggle stream live status"""
+    data = get_tournament_data()
+    
+    if not data.get('twitch_channel'):
+        flash('No Twitch channel configured.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    current_status = data.get('stream_live', False)
+    data['stream_live'] = not current_status
+    
+    save_tournament_data(data)
+    
+    if data['stream_live']:
+        flash('🔴 Stream is now LIVE on the tournament page!', 'success')
+    else:
+        flash('⚫ Stream has been stopped and hidden from the tournament page.', 'info')
+    
+    return redirect(url_for('admin.admin_panel'))
+
+@admin_bp.route('/clear_stream', methods=['POST'])
+@admin_required
+def clear_stream():
+    """Clear stream settings"""
+    data = get_tournament_data()
+    
+    data.pop('twitch_channel', None)
+    data.pop('stream_live', None)
+    
+    save_tournament_data(data)
+    flash('Stream settings cleared.', 'success')
     return redirect(url_for('admin.admin_panel'))

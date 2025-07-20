@@ -14,6 +14,36 @@
     h1, h2 {
       font-family: 'Orbitron', sans-serif;
     }
+    
+    /* Stream section animations */
+    .stream-live-indicator {
+      animation: pulse-red 2s infinite;
+    }
+    
+    @keyframes pulse-red {
+      0%, 100% { 
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+      }
+      50% { 
+        box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+      }
+    }
+    
+    /* Twitch embed responsive */
+    .twitch-embed {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+    }
+    
+    .twitch-embed iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
     /* --- Bracket Styles --- */
     .bracket {
       display: flex;
@@ -149,6 +179,51 @@
       </div>
     </div>
   </section>
+
+  <!-- Live Stream Section -->
+  {% if data.get('stream_live') and data.get('twitch_channel') %}
+  <section class="py-12 bg-black border-t border-red-600">
+    <div class="max-w-6xl mx-auto text-center">
+      <h2 class="text-3xl font-bold text-red-400 mb-8 animate-pulse">🔴 LIVE STREAM</h2>
+      
+      <div class="bg-gray-900 p-4 rounded-lg shadow-2xl">
+        <!-- Twitch Embed -->
+        <div class="twitch-embed">
+          <iframe 
+            src="https://player.twitch.tv/?channel={{ data.twitch_channel }}&parent={{ request.host.split(':')[0] }}&autoplay=false&muted=false"
+            frameborder="0"
+            allowfullscreen="true"
+            scrolling="no"
+            class="rounded">
+          </iframe>
+        </div>
+        
+        <div class="mt-4 flex items-center justify-between">
+          <div class="text-left">
+            <p class="text-sm text-gray-300">
+              Watching: 
+              <a href="https://twitch.tv/{{ data.twitch_channel }}" target="_blank" 
+                 class="text-purple-400 hover:text-purple-300 font-bold">
+                twitch.tv/{{ data.twitch_channel }}
+              </a>
+            </p>
+          </div>
+          
+          <div class="flex gap-4">
+            <a href="https://twitch.tv/{{ data.twitch_channel }}" target="_blank" 
+               class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-bold">
+              📺 Open in Twitch
+            </a>
+            <a href="https://twitch.tv/popout/{{ data.twitch_channel }}/chat" target="_blank" 
+               class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm">
+              💬 Pop-out Chat
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endif %}
 
   <!-- Competitor Showcase -->
   <section class="py-24 px-6 bg-gradient-to-br from-black via-gray-900 to-black">

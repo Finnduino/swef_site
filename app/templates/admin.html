@@ -63,6 +63,118 @@
           {% endif %}
         {% endwith %}
 
+        <!-- Twitch Stream Management -->
+        <div class="bg-gray-800 p-6 rounded-lg mb-8">
+            <h2 class="text-2xl text-pink-500 mb-4">Twitch Stream</h2>
+            
+            <div class="flex flex-wrap gap-4 items-start mb-6">
+                <form action="{{ url_for('admin.set_stream') }}" method="POST" class="flex gap-2">
+                    <input type="text" name="twitch_channel" 
+                           placeholder="Twitch channel name (e.g., shroud)" 
+                           value="{{ data.get('twitch_channel', '') }}"
+                           class="bg-gray-900 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500 w-64">
+                    <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
+                        Set Channel
+                    </button>
+                </form>
+                
+                {% if data.get('twitch_channel') %}
+                <form action="{{ url_for('admin.toggle_stream') }}" method="POST" class="inline">
+                    <button type="submit" 
+                            class="{% if data.get('stream_live') %}bg-red-600 hover:bg-red-700{% else %}bg-green-600 hover:bg-green-700{% endif %} text-white font-bold py-2 px-4 rounded">
+                        {% if data.get('stream_live') %}
+                            🔴 Stop Stream
+                        {% else %}
+                            ▶️ Start Stream
+                        {% endif %}
+                    </button>
+                </form>
+                
+                <form action="{{ url_for('admin.clear_stream') }}" method="POST" class="inline"
+                      onsubmit="return confirm('Clear stream settings?');">
+                    <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                        Clear Stream
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            
+            {% if data.get('twitch_channel') %}
+            <div class="bg-gray-700 p-4 rounded mb-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-300 mb-2">
+                            Channel: 
+                            <a href="https://twitch.tv/{{ data.twitch_channel }}" target="_blank" 
+                               class="text-purple-400 hover:text-purple-300">
+                                twitch.tv/{{ data.twitch_channel }}
+                            </a>
+                        </p>
+                        <p class="text-xs text-gray-400">
+                            Status: 
+                            {% if data.get('stream_live') %}
+                                <span class="text-red-400 font-bold">🔴 LIVE - Stream visible on tournament page</span>
+                            {% else %}
+                                <span class="text-gray-500">⚫ OFF - Stream hidden from tournament page</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    {% if data.get('stream_live') %}
+                    <div class="text-right">
+                        <a href="{{ url_for('public.tournament') }}" target="_blank" 
+                           class="text-blue-400 hover:text-blue-300 text-sm">
+                            📺 View on Tournament Page
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Seeding Management -->
+        <div class="bg-gray-800 p-6 rounded-lg mb-8">
+            <h2 class="text-2xl text-pink-500 mb-4">Seeding Matches</h2>
+            
+            <!-- Seeding Room Management -->
+            <div class="flex flex-wrap gap-4 items-start mb-6">
+                <form action="{{ url_for('admin.start_seeding') }}" method="POST" class="flex gap-2">
+                    <input type="url" name="seeding_room_url" placeholder="https://osu.ppy.sh/multiplayer/rooms/..." 
+                           class="bg-gray-900 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500 w-80">
+                    <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
+                        Start Seeding
+                    </button>
+                </form>
+                
+                {% if data.get('seeding_room_url') %}
+                <form action="{{ url_for('admin.update_seeding_scores') }}" method="POST" class="inline">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        🔄 Update Seeding Scores
+                    </button>
+                </form>
+                
+                <form action="{{ url_for('admin.finalize_seeding') }}" method="POST" class="inline"
+                      onsubmit="return confirm('Finalize seeding and lock placements?');">
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                        ✅ Finalize Seeding
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            
+            {% if data.get('seeding_room_url') %}
+            <div class="bg-gray-700 p-4 rounded mb-4">
+                <p class="text-sm text-gray-300 mb-2">Seeding Room: 
+                    <a href="{{ data.seeding_room_url }}" target="_blank" class="text-blue-400 hover:text-blue-300">
+                        {{ data.seeding_room_url }}
+                    </a>
+                </p>
+                <p class="text-xs text-gray-400">Players will be automatically seeded based on their cumulative scores across all maps in the room.</p>
+            </div>
+            {% endif %}
+        </div>
+
         <!-- Competitors Management -->
         <div class="bg-gray-800 p-6 rounded-lg mb-8">
             <h2 class="text-2xl text-pink-500 mb-4">Competitors ({{ data.competitors|length }})</h2>
@@ -92,7 +204,23 @@
               {% for c in data.competitors %}
               <div class="bg-gray-700 p-3 rounded flex flex-col items-start gap-2">
                 <span class="font-bold">{{ c.name }}</span>
-                <!-- Seed Placement Form -->
+                
+                <!-- Show seeding progress if in progress -->
+                {% if data.get('seeding_in_progress') %}
+                <div class="text-xs text-purple-300">
+                  {% if c.get('seeding_score') %}
+                    Seeding Score: {{ "{:,}".format(c.seeding_score) }}
+                  {% else %}
+                    No seeding score yet
+                  {% endif %}
+                  {% if c.get('provisional_placement') %}
+                    <br>Provisional Seed: #{{ c.provisional_placement }}
+                  {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Seed Placement Form (only show if seeding not in progress) -->
+                {% if not data.get('seeding_in_progress') %}
                 <form action="{{ url_for('admin.set_seed', user_id=c.id) }}" method="POST" class="flex items-center gap-2">
                   <input
                     type="number"
@@ -104,6 +232,8 @@
                   />
                   <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1 px-3 rounded">Set Seed</button>
                 </form>
+                {% endif %}
+                
                 <form action="{{ url_for('admin.remove_competitor', user_id=c.id) }}" method="POST" onsubmit="return confirm('Remove {{ c.name }}?');">
                   <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1 px-2 rounded">Remove</button>
                 </form>
@@ -211,9 +341,20 @@
                         </button>
                     </form>
                     {% elif match.get('status') == 'in_progress' %}
-                    <span class="bg-yellow-500 text-black py-1 px-3 rounded text-sm font-bold">
-                        🔴 Match In Progress
-                    </span>
+                    <div class="flex gap-2 items-center">
+                        <span class="bg-yellow-500 text-black py-1 px-3 rounded text-sm font-bold">
+                            🔴 Match In Progress
+                        </span>
+                        <!-- Auto-refresh match results button -->
+                        {% if match.get('mp_room_url') %}
+                        <form action="{{ url_for('admin.refresh_match_scores') }}" method="POST" class="inline">
+                            <input type="hidden" name="match_id" value="{{ match.id }}">
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded text-sm">
+                                🔄 Refresh Scores
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
                     {% else %}
                     <span class="bg-green-600 text-white py-1 px-3 rounded text-sm">
                         ✅ Match Complete
