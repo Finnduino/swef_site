@@ -4,20 +4,42 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sand World Evil Financing LLC LTD OY</title>
-  <meta name="description" content="Sand World Evil Financing – Specializing in villainy since 1298. Join us in esports, shadow loans, and ancient alcohol alchemy." />
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@600&display=swap');
-    body {
-      font-family: 'Fira Code', monospace;
-      background: radial-gradient(ellipse at center, #0f0f0f 0%, #000000 100%);
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
+    body { font-family: 'Fira Code', monospace; background: #000; }
+    .hero-height { min-height: 70vh; position: relative; overflow: hidden; }
+
+    /* container for all your text‐rows */
+    #hero-text-wall {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 15;
+      gap: 0.25em;           /* reduce vertical spacing between rows */
     }
-    h1, h2, h3 {
-      font-family: 'Orbitron', sans-serif;
-      letter-spacing: 1px;
+
+    /* each row holds two spans */
+    .hero-text-row {
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      line-height: 1;        /* ensure tight line spacing */
     }
-    .hero-height {
-      min-height: 70vh;
+
+    .hero-text-row span {
+      display: inline-block;
+      font-size: 3vw;
+      letter-spacing: 0.15em;
+      opacity: 0.05;
+      margin: 0;
+      padding: 0;
+      transform: skewX(-10deg);   /* slant the text */
     }
   </style>
 </head>
@@ -33,17 +55,23 @@
   </nav>
 
   <!-- Hero -->
-  <section class="hero-height flex flex-col justify-center items-center text-center px-6 bg-black relative overflow-hidden">
-    <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/asfalt-light.png')] mix-blend-overlay"></div>
+  <section class="hero-height flex flex-col items-center justify-center bg-black px-6">
+    <!-- JS‐powered text wall -->
+    <div id="hero-text-wall" aria-hidden="true"></div>
+
+    <div class="absolute inset-0 z-5 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/asfalt-light.png')] mix-blend-overlay"></div>
     <h1 class="text-5xl md:text-7xl font-extrabold text-yellow-400 drop-shadow-lg">Sand World Evil Financing</h1>
     <p class="mt-6 text-xl text-gray-400 max-w-xl">You evil?</p>
-    <a href="https://discord.gg/bsdmezX8yD" class="mt-10 inline-block bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-8 rounded-full shadow-xl transition transform hover:scale-105">I'm Finna Bridge</a>
+    <a href="https://discord.gg/bsdmezX8yD"
+       class="mt-10 inline-block bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-8 rounded-full shadow-xl transition transform hover:scale-105">
+      I'm Finna Bridge
+    </a>
   </section>
 
   <!-- Tournament Preview -->
   <section class="py-12 bg-black border-t border-gray-800">
     <div class="max-w-4xl mx-auto text-center">
-      <h2 class="text-3xl font-bold text-yellow-400 mb-4">🔥 OSU Cup 2025 In Progress</h2>
+      <h2 class="text-3xl font-bold text-yellow-400 mb-4">🔥 OSU Cup 2025</h2>
       <p class="text-gray-400">Witness peak evil gameplay. Check standings, matchups, and stream schedules.</p>
       <a href="{{ url_for('public.tournament') }}" class="mt-6 inline-block bg-yellow-500 text-black font-bold py-2 px-6 rounded-full shadow-md hover:bg-yellow-600 transition">View Tournament</a>
     </div>
@@ -106,5 +134,42 @@
     <a href="{{ url_for('admin.admin_login') }}" class="block w-full h-full bg-transparent"></a>
   </div>
 
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('hero-text-wall');
+      const text = 'SAND WORLD EVIL FINANCING ';
+      const longText = " "+ text.repeat(20);
+      const rows = 12;
+      const speed = 0.2;         // constant speed for all rows
+      const rowStates = [];
+
+      // Build rows with an initial offset instead of varying speed
+      for (let i = 0; i < rows; i++) {
+        const row = document.createElement('div');
+        row.className = 'hero-text-row';
+        const span1 = document.createElement('span');
+        span1.textContent = longText;
+        const span2 = span1.cloneNode(true);
+        row.append(span1, span2);
+        container.append(row);
+
+        const width = span1.offsetWidth;
+        // distribute start positions evenly
+        const initialOffset = (width / rows) * i;
+        rowStates.push({ el: row, pos: initialOffset, width: width, speed: speed });
+      }
+
+      // Animate each row’s scrollLeft
+      function step() {
+        rowStates.forEach(state => {
+          state.pos += state.speed;
+          if (state.pos >= state.width) state.pos -= state.width;
+          state.el.scrollLeft = state.pos;
+        });
+        requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  </script>
 </body>
 </html>
