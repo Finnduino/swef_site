@@ -10,7 +10,7 @@ SECRET_KEY = os.getenv('FLASK_SECRET_KEY')
 OSU_CLIENT_ID = int(os.getenv('OSU_CLIENT_ID'))
 OSU_CLIENT_SECRET = os.getenv('OSU_CLIENT_SECRET')
 OSU_CALLBACK_URL = os.getenv('OSU_CALLBACK_URL')
-ADMIN_REDIRECT_URI = OSU_CALLBACK_URL.replace('/callback/osu', '/callback/admin')
+ADMIN_REDIRECT_URI = OSU_CALLBACK_URL.replace('/callback/osu', '/admin/callback')
 ADMIN_OSU_ID = ['11365195', '11579864'] # Your osu! user ID
 
 # --- API URLs ---
