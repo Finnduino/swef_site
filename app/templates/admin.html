@@ -35,7 +35,7 @@
         <div class="bg-gray-800 p-6 rounded-lg mb-8">
             <h2 class="text-2xl text-pink-500 mb-4">Competitors ({{ data.competitors|length }})</h2>
             
-            <!-- Add/Reset Competitors -->
+            <!-- Add/Reset Competitors & Seeding -->
             <div class="flex flex-wrap gap-4 items-start mb-6">
                 <!-- Manual Add Form -->
                 <form action="{{ url_for('admin.add_competitor') }}" method="POST" class="flex gap-2">
@@ -46,17 +46,37 @@
                 <form action="{{ url_for('admin.reset_competitors') }}" method="POST" onsubmit="return confirm('DANGER! This will remove ALL competitors and reset the entire tournament. Are you absolutely sure?');">
                     <button type="submit" class="bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-4 rounded">Reset All Competitors</button>
                 </form>
+
+                <!-- Reset All Seed Placements -->
+                <form action="{{ url_for('admin.reset_seeding') }}" method="POST" onsubmit="return confirm('This will clear all seed placements. Continue?');">
+                    <button type="submit"
+                            class="bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-2 px-4 rounded">
+                      Reset Seeding
+                    </button>
+                </form>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {% for c in data.competitors %}
-                <div class="bg-gray-700 p-3 rounded flex justify-between items-center">
-                    <span>{{ c.name }}</span>
-                    <form action="{{ url_for('admin.remove_competitor', user_id=c.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to remove {{ c.name }}?');">
-                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1 px-2 rounded">Remove</button>
-                    </form>
-                </div>
-                {% endfor %}
+              {% for c in data.competitors %}
+              <div class="bg-gray-700 p-3 rounded flex flex-col items-start gap-2">
+                <span class="font-bold">{{ c.name }}</span>
+                <!-- Seed Placement Form -->
+                <form action="{{ url_for('admin.set_seed', user_id=c.id) }}" method="POST" class="flex items-center gap-2">
+                  <input
+                    type="number"
+                    name="placement"
+                    min="1"
+                    placeholder="Seed"
+                    value="{{ c.get('placement','') }}"
+                    class="bg-gray-900 border border-gray-600 rounded px-2 py-1 w-16 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                  />
+                  <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1 px-3 rounded">Set Seed</button>
+                </form>
+                <form action="{{ url_for('admin.remove_competitor', user_id=c.id) }}" method="POST" onsubmit="return confirm('Remove {{ c.name }}?');">
+                  <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1 px-2 rounded">Remove</button>
+                </form>
+              </div>
+              {% endfor %}
             </div>
         </div>
 
@@ -129,7 +149,29 @@
             {% if data.brackets.grand_finals %}
             <div class="mt-8">
                 <h3 class="text-xl text-yellow-300 mb-4">Grand Finals</h3>
+                
+                <!-- Show previous match if bracket was reset -->
+                {% if data.brackets.grand_finals.get('is_bracket_reset') and data.brackets.grand_finals.get('previous_gf') %}
+                <div class="mb-4">
+                    <h4 class="text-lg text-gray-400 mb-2">Match 1 (Completed - Bracket Reset)</h4>
+                    <div class="border-l-2 border-gray-500 pl-4">
+                        {% set prev_match = data.brackets.grand_finals.previous_gf %}
+                        <div class="bg-gray-700 p-4 rounded-lg flex items-center justify-between mb-2 opacity-75">
+                            <div class="text-lg {% if prev_match.winner and prev_match.winner.id == prev_match.player1.id %}text-yellow-400 font-bold{% endif %}">{{ prev_match.player1.name }}</div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-gray-400">COMPLETED</span>
+                            </div>
+                            <div class="text-lg text-right {% if prev_match.winner and prev_match.winner.id == prev_match.player2.id %}text-yellow-400 font-bold{% endif %}">{{ prev_match.player2.name }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Current grand finals match -->
                 <div class="mb-6 border-l-2 border-yellow-400 pl-4">
+                    {% if data.brackets.grand_finals.get('is_bracket_reset') %}
+                    <h4 class="text-lg mb-2">Match 2 (Championship)</h4>
+                    {% endif %}
                     {% set match = data.brackets.grand_finals %}
                     <div class="bg-gray-700 p-4 rounded-lg flex items-center justify-between mb-2">
                         <div class="text-lg {% if match.winner and match.winner.id == match.player1.id %}text-yellow-400 font-bold{% endif %}">{{ match.player1.name }}</div>

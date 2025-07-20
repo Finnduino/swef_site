@@ -125,7 +125,7 @@ def admin_callback():
     me_response = requests.get(f'{OSU_API_BASE_URL}/me', headers=headers)
     user_id = str(me_response.json().get('id'))
 
-    if user_id == ADMIN_OSU_ID:
+    if user_id in ADMIN_OSU_ID:
         session['is_admin'] = True
         return redirect(url_for('admin.admin_panel'))
     return "Access Denied.", 403
@@ -225,4 +225,33 @@ def set_winner():
     if match_found:
         advance_round_if_ready(data)
     
+    return redirect(url_for('admin.admin_panel'))
+
+@admin_bp.route('/set_seed/<int:user_id>', methods=['POST'])
+@admin_required
+def set_seed(user_id):
+    placement = request.form.get('placement')
+    data = get_tournament_data()
+    for c in data.get('competitors', []):
+        if c.get('id') == user_id:
+            try:
+                c['placement'] = int(placement)
+            except (TypeError, ValueError):
+                c.pop('placement', None)
+            break
+    save_tournament_data(data)
+    generate_bracket()
+    flash('Seed updated.', 'success')
+    return redirect(url_for('admin.admin_panel'))
+
+@admin_bp.route('/reset_seeding', methods=['POST'])
+@admin_required
+def reset_seeding():
+    """Clears all qualifier placements (seeds) for competitors."""
+    data = get_tournament_data()
+    for c in data.get('competitors', []):
+        c.pop('placement', None)
+    save_tournament_data(data)
+    generate_bracket()
+    flash('All seed placements have been reset.', 'success')
     return redirect(url_for('admin.admin_panel'))
