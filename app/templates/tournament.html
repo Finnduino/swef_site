@@ -269,6 +269,26 @@
     <div class="max-w-full mx-auto px-4">
       <h2 class="text-3xl md:text-4xl font-bold text-yellow-400 mb-12 text-center">Double Elimination Bracket</h2>
       
+      {% set seeded_competitors = data.competitors | selectattr('placement', 'defined') | list %}
+      {% set total_competitors = data.competitors | length %}
+      
+      <!-- Seeding Status Disclaimer -->
+      {% if total_competitors > 0 and seeded_competitors | length < total_competitors %}
+      <div class="mb-8 mx-auto max-w-4xl">
+        <div class="bg-yellow-900 border border-yellow-600 rounded-lg p-4 text-center">
+          <div class="flex items-center justify-center mb-2">
+            <svg class="w-6 h-6 text-yellow-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.962-.833-2.732 0L3.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+            </svg>
+            <h3 class="text-lg font-bold text-yellow-400">Seeding Pending</h3>
+          </div>
+          <p class="text-yellow-200 text-sm">
+            Seeding will be decided based on competitor performance in the seeding matches. Current initial placements are based on Performance Points (PP), and will not be final until the seeding matches are completed.
+          </p>
+        </div>
+      </div>
+      {% endif %}
+      
       {% macro display_player(player, winner, match) %}
         {% set is_winner = winner and player.id and winner.id == player.id %}
         {% set is_eliminated = player.id and (player.id in eliminated_ids) %}
