@@ -16,6 +16,9 @@
       font-family: 'Orbitron', sans-serif;
       letter-spacing: 1px;
     }
+    .hero-height {
+      min-height: 70vh;
+    }
   </style>
 </head>
 <body class="text-gray-100">
@@ -25,12 +28,12 @@
     <div class="text-yellow-400 font-bold text-2xl tracking-wider">SAND WORLD</div>
     <ul class="flex space-x-6 text-sm font-mono">
       <li><a href="{{ url_for('public.index') }}" class="text-gray-300 hover:text-yellow-400">Home</a></li>
-      <li><a href="{{ url_for('public.tournament') }}" class="text-gray-300 hover:text-yellow-400">OSU Tournament</a></li>
+      <li><a href="{{ url_for('public.tournament') }}" class="text-gray-300 hover:text-yellow-400">OSU Cup</a></li>
     </ul>
   </nav>
 
   <!-- Hero -->
-  <section class="min-h-screen flex flex-col justify-center items-center text-center px-6 bg-black relative overflow-hidden">
+  <section class="hero-height flex flex-col justify-center items-center text-center px-6 bg-black relative overflow-hidden">
     <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/asfalt-light.png')] mix-blend-overlay"></div>
     <h1 class="text-5xl md:text-7xl font-extrabold text-yellow-400 drop-shadow-lg">Sand World Evil Financing</h1>
     <p class="mt-6 text-xl text-gray-400 max-w-xl">You evil?</p>
@@ -40,7 +43,7 @@
   <!-- Tournament Preview -->
   <section class="py-12 bg-black border-t border-gray-800">
     <div class="max-w-4xl mx-auto text-center">
-      <h2 class="text-3xl font-bold text-yellow-400 mb-4">🔥 OSU Tournament In Progress</h2>
+      <h2 class="text-3xl font-bold text-yellow-400 mb-4">🔥 OSU Cup 2025 In Progress</h2>
       <p class="text-gray-400">Witness peak evil gameplay. Check standings, matchups, and stream schedules.</p>
       <a href="{{ url_for('public.tournament') }}" class="mt-6 inline-block bg-yellow-500 text-black font-bold py-2 px-6 rounded-full shadow-md hover:bg-yellow-600 transition">View Tournament</a>
     </div>
@@ -64,7 +67,7 @@
 
         <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl hover:scale-105 transform transition duration-300">
           <h3 class="text-2xl font-semibold text-yellow-300">Alcohol Manufacturing</h3>
-          <p class="mt-4 text-gray-400">Our oldest plant dates back 727 years. We’ve spent centuries perfecting the most malevolent spirits known to man.</p>
+          <p class="mt-4 text-gray-400">Our oldest plant dates back 27 years. We've spent decades perfecting the most malevolent spirits known to man.</p>
         </div>
 
       </div>
@@ -83,12 +86,12 @@
         <div class="text-gray-400 mt-2">Esports Teams</div>
       </div>
       <div>
-        <div class="text-4xl font-bold text-yellow-400">727y</div>
+        <div class="text-4xl font-bold text-yellow-400">27y</div>
         <div class="text-gray-400 mt-2">Oldest Distillery</div>
       </div>
       <div>
         <div class="text-4xl font-bold text-yellow-400">43</div>
-        <div class="text-gray-400 mt-2">Civilian Targets Strcuk</div>
+        <div class="text-gray-400 mt-2">Civilian Targets Struck</div>
       </div>
     </div>
   </section>

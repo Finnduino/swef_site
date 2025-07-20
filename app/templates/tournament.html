@@ -160,7 +160,8 @@
   <!-- Tournament Info -->
   <section class="py-24 px-6 bg-gray-900">
     <div class="max-w-4xl mx-auto text-center">
-      <h1 class="text-4xl md:text-5xl font-bold text-yellow-400">Sand World OSU Tournament</h1>
+      <h1 class="text-4xl md:text-5xl font-bold text-yellow-400">Sand World Esports<br>
+         OSU Cup 2025</h1>
       <p class="mt-6 text-lg text-gray-300">
         Straight up clicking these circles evil mode.
         <br />
@@ -408,11 +409,16 @@
                       </svg>
                     </a>
                   </div>
-                  {% elif match.get('mp_room_url') and match.get('status') == 'completed' %}
+                  
+                  
+                  {% endif %}
+                  
+                  <!-- Add clickable match details link -->
+                  {% if match.get('status') in ['in_progress', 'completed'] %}
                   <div class="mt-2 text-center">
-                    <a href="{{ match.mp_room_url }}" target="_blank" 
-                       class="inline-flex items-center text-blue-400 hover:text-blue-300 text-xs">
-                      📺 View Match
+                    <a href="{{ url_for('public.match_details', match_id=match.id) }}" 
+                       class="inline-flex items-center text-yellow-400 hover:text-yellow-300 text-xs font-bold">
+                      📊 Match Details
                     </a>
                   </div>
                   {% endif %}
@@ -499,6 +505,7 @@
                       </svg>
                     </a>
                   </div>
+                  
                   {% elif match.get('mp_room_url') and match.get('status') == 'completed' %}
                   <div class="mt-2 text-center">
                     <a href="{{ match.mp_room_url }}" target="_blank" 

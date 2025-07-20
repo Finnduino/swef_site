@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Details - {{ match.player1.name }} vs {{ match.player2.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@600;700&display=swap');
+        body {
+            font-family: 'Fira Code', monospace;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+        }
+        h1, h2, h3 {
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        .winner-glow {
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.4), 0 0 60px rgba(255, 215, 0, 0.2);
+            border: 2px solid #ffd700;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+        }
+        
+        .map-winner {
+            background: linear-gradient(135deg, #10b981, #047857);
+            border: 2px solid #34d399;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+        }
+        
+        .map-loser {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            border: 2px solid #9ca3af;
+        }
+        
+        .osu-card {
+            background: linear-gradient(135deg, #2d3748, #1a202c);
+            border: 2px solid #4a5568;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .score-panel {
+            background: linear-gradient(135deg, #1a202c, #2d3748);
+            border-radius: 16px;
+            border: 2px solid #4a5568;
+        }
+        
+        .player-card {
+            background: linear-gradient(135deg, #2d3748, #1a202c);
+            border: 2px solid #4a5568;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .player-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+        
+        .map-card {
+            background: linear-gradient(135deg, #2d3748, #1a202c);
+            border: 2px solid #4a5568;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .map-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+        
+        .stat-item {
+            background: rgba(45, 55, 72, 0.6);
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+        
+        .hit-stats {
+            background: rgba(26, 32, 44, 0.8);
+            border-radius: 12px;
+            border: 1px solid #4a5568;
+        }
+    </style>
+</head>
+<body class="text-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gradient-to-r from-gray-900 to-black border-b-2 border-yellow-400 px-6 py-4 flex justify-between items-center">
+        <div class="text-yellow-400 font-bold text-2xl tracking-wider">SAND WORLD</div>
+        <ul class="flex space-x-6 text-sm font-mono">
+            <li><a href="{{ url_for('public.index') }}" class="text-gray-300 hover:text-yellow-400 transition-colors">Home</a></li>
+            <li><a href="{{ url_for('public.tournament') }}" class="text-gray-300 hover:text-yellow-400 transition-colors">Tournament</a></li>
+        </ul>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Match Header -->
+        <div class="osu-card p-8 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h1 class="text-4xl font-bold text-yellow-400">Match Details</h1>
+                <div class="flex items-center gap-4">
+                    {% if match.get('status') == 'in_progress' %}
+                    <span class="bg-red-500 text-white px-4 py-2 rounded-full text-sm animate-pulse font-bold shadow-lg">🔴 LIVE</span>
+                    {% elif match.get('status') == 'completed' %}
+                    <span class="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">✓ Completed</span>
+                    {% else %}
+                    <span class="bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">⏳ Scheduled</span>
+                    {% endif %}
+                    
+                    {% if match.get('mp_room_url') %}
+                    <a href="{{ match.mp_room_url }}" target="_blank" 
+                       class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full text-sm font-bold transition-all transform hover:scale-105 shadow-lg">
+                        🎮 View Multiplayer Room
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Players & Score -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+                <!-- Player 1 -->
+                <div class="player-card text-center p-6 {% if match.winner and match.winner.id == match.player1.id %}winner-glow{% endif %}">
+                    <img src="{{ match.player1.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" 
+                         alt="{{ match.player1.name }}" 
+                         class="w-24 h-24 rounded-full mx-auto mb-4 border-4 {% if match.winner and match.winner.id == match.player1.id %}border-yellow-400{% else %}border-gray-500{% endif %} shadow-lg">
+                    <h3 class="text-2xl font-bold {% if match.winner and match.winner.id == match.player1.id %}text-yellow-400{% else %}text-white{% endif %} mb-2">
+                        {{ match.player1.name }}
+                    </h3>
+                    <div class="text-sm text-gray-400 space-y-1">
+                        <p class="bg-gray-700 px-3 py-1 rounded-full inline-block">Seed #{{ match.player1.get('placement', '?') }}</p>
+                        {% if detailed_results and detailed_results.player1.statistics %}
+                        <p class="bg-purple-600 px-3 py-1 rounded-full inline-block">{{ "{:,}".format(detailed_results.player1.statistics.pp) }}pp</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Score -->
+                <div class="score-panel text-center p-6">
+                    <div class="text-7xl font-bold text-white mb-4 font-mono">
+                        <span class="{% if match.winner and match.winner.id == match.player1.id %}text-yellow-400{% endif %}">
+                            {{ match.get('score_p1', 0) }}
+                        </span>
+                        <span class="text-gray-500 mx-6">:</span>
+                        <span class="{% if match.winner and match.winner.id == match.player2.id %}text-yellow-400{% endif %}">
+                            {{ match.get('score_p2', 0) }}
+                        </span>
+                    </div>
+                    <p class="text-lg text-gray-300 font-semibold mb-2">Best of 7 (First to 4)</p>
+                    {% if match.bracket %}
+                    <p class="text-sm text-gray-400 bg-gray-700 px-4 py-2 rounded-full inline-block">
+                        {{ match.bracket|title }} Bracket
+                        {% if match.get('round_index') is not none %}
+                        - Round {{ match.round_index + 1 }}
+                        {% endif %}
+                    </p>
+                    {% endif %}
+                </div>
+                
+                <!-- Player 2 -->
+                <div class="player-card text-center p-6 {% if match.winner and match.winner.id == match.player2.id %}winner-glow{% endif %}">
+                    <img src="{{ match.player2.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" 
+                         alt="{{ match.player2.name }}" 
+                         class="w-24 h-24 rounded-full mx-auto mb-4 border-4 {% if match.winner and match.winner.id == match.player2.id %}border-yellow-400{% else %}border-gray-500{% endif %} shadow-lg">
+                    <h3 class="text-2xl font-bold {% if match.winner and match.winner.id == match.player2.id %}text-yellow-400{% else %}text-white{% endif %} mb-2">
+                        {{ match.player2.name }}
+                    </h3>
+                    <div class="text-sm text-gray-400 space-y-1">
+                        <p class="bg-gray-700 px-3 py-1 rounded-full inline-block">Seed #{{ match.player2.get('placement', '?') }}</p>
+                        {% if detailed_results and detailed_results.player2.statistics %}
+                        <p class="bg-purple-600 px-3 py-1 rounded-full inline-block">{{ "{:,}".format(detailed_results.player2.statistics.pp) }}pp</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Results -->
+        {% if detailed_results %}
+        <div class="osu-card p-8">
+            <h2 class="text-3xl font-bold text-yellow-400 mb-8">Map Results</h2>
+            
+            <div class="space-y-6">
+                {% for map_result in detailed_results.map_results %}
+                <div class="map-card p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-4">
+                            <span class="text-2xl font-bold text-yellow-400 bg-gray-700 px-4 py-2 rounded-full">Map {{ map_result.map_number }}</span>
+                            {% if map_result.beatmap %}
+                            <div>
+                                <h4 class="text-xl font-semibold text-white">{{ map_result.beatmap.beatmapset.title }}</h4>
+                                <p class="text-gray-400">[{{ map_result.beatmap.version }}] by {{ map_result.beatmap.beatmapset.creator }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if map_result.completed %}
+                        <div class="flex items-center gap-2">
+                            {% if map_result.winner == 'player1' %}
+                            <span class="bg-green-500 text-white px-6 py-3 rounded-full font-bold shadow-lg">
+                                {{ detailed_results.player1.username }} Wins
+                            </span>
+                            {% elif map_result.winner == 'player2' %}
+                            <span class="bg-green-500 text-white px-6 py-3 rounded-full font-bold shadow-lg">
+                                {{ detailed_results.player2.username }} Wins
+                            </span>
+                            {% else %}
+                            <span class="bg-gray-600 text-white px-6 py-3 rounded-full font-bold shadow-lg">Tie</span>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <span class="bg-gray-600 text-white px-6 py-3 rounded-full font-bold shadow-lg">Not Played</span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if map_result.completed %}
+                    <!-- Player Scores -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Player 1 Score -->
+                        {% if map_result.player1_score %}
+                        <div class="p-6 rounded-2xl {% if map_result.winner == 'player1' %}map-winner{% else %}map-loser{% endif %}">
+                            <div class="flex items-center gap-4 mb-4">
+                                <img src="{{ detailed_results.player1.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" 
+                                     class="w-12 h-12 rounded-full border-2 border-white">
+                                <span class="font-bold text-white text-lg">{{ detailed_results.player1.username }}</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="stat-item">
+                                    <div class="text-xs text-gray-300 uppercase font-semibold">Score</div>
+                                    <div class="text-white font-mono text-lg">{{ "{:,}".format(map_result.player1_score.total_score) }}</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="text-xs text-gray-300 uppercase font-semibold">Accuracy</div>
+                                    <div class="text-white font-mono text-lg">{{ "%.2f"|format(map_result.player1_score.accuracy * 100) }}%</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="text-xs text-gray-300 uppercase font-semibold">Max Combo</div>
+                                    <div class="text-white font-mono text-lg">{{ map_result.player1_score.max_combo }}x</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="text-xs text-gray-300 uppercase font-semibold">Mods</div>
+                                    <div class="text-white font-mono text-lg">
+                                        {% if map_result.player1_score.mods %}
+                                            {{ map_result.player1_score.mods|join(', ') }}
+                                        {% else %}
+                                            None
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% if map_result.player1_score.statistics %}
+                            <div class="hit-stats mt-4 p-3">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-blue-300 font-mono">{{ map_result.player1_score.statistics.count_300 or 0 }} GREAT</span>
+                                    <span class="text-green-300 font-mono">{{ map_result.player1_score.statistics.count_100 or 0 }} OK</span>
+                                    <span class="text-yellow-300 font-mono">{{ map_result.player1_score.statistics.count_50 or 0 }} MEH</span>
+                                    <span class="text-red-300 font-mono">{{ map_result.player1_score.statistics.count_miss or 0 }} MISS</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="p-6 bg-gray-700 rounded-2xl">
+                            <div class="flex items-center gap-4 mb-4">
+                                <img src="{{ detailed_results.player1.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" 
+                                     class="w-12 h-12 rounded-full opacity-50">
+                                <span class="font-bold text-gray-400 text-lg">{{ detailed_results.player1.username }}</span>
+                            </div>
+                            <p class="text-gray-400">No score recorded</p>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Player 2 Score -->
+                        {% if map_result.player2_score %}
+                        <div class="p-6 rounded-2xl {% if map_result.winner == 'player2' %}map-winner{% else %}map-loser{% endif %}">
+                            <div class="flex items-center gap-4 mb-4">
+                                <img src="{{ detailed_results.player2.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" 
+                                     class="w-12 h-12 rounded-full border-2 border-white">
+                                <span class="font-bold text-white text-lg">{{ detailed_results.player2.username }}</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="stat-item">
+                                    <div class="text-xs text-gray-300 uppercase font-semibold">Score</div>
+                                    <div class="text-white font-mono text-lg">{{ "{:,}".format(map_result.player2_score.total_score) }}</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="text-xs text-gray-300 uppercase font-semibold">Accuracy</div>
+                                    <div class="text-white font-mono text-lg">{{ "%.2f"|format(map_result.player2_score.accuracy * 100) }}%</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="text-xs text-gray-300 uppercase font-semibold">Max Combo</div>
+                                    <div class="text-white font-mono text-lg">{{ map_result.player2_score.max_combo }}x</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="text-xs text-gray-300 uppercase font-semibold">Mods</div>
+                                    <div class="text-white font-mono text-lg">
+                                        {% if map_result.player2_score.mods %}
+                                            {{ map_result.player2_score.mods|join(', ') }}
+                                        {% else %}
+                                            None
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% if map_result.player2_score.statistics %}
+                            <div class="hit-stats mt-4 p-3">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-blue-300 font-mono">{{ map_result.player2_score.statistics.count_300 or 0 }} ×300</span>
+                                    <span class="text-green-300 font-mono">{{ map_result.player2_score.statistics.count_100 or 0 }} ×100</span>
+                                    <span class="text-yellow-300 font-mono">{{ map_result.player2_score.statistics.count_50 or 0 }} MEH</span>
+                                    <span class="text-red-300 font-mono">{{ map_result.player2_score.statistics.count_miss or 0 }} MISS</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="p-6 bg-gray-700 rounded-2xl">
+                            <div class="flex items-center gap-4 mb-4">
+                                <img src="{{ detailed_results.player2.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" 
+                                     class="w-12 h-12 rounded-full opacity-50">
+                                <span class="font-bold text-gray-400 text-lg">{{ detailed_results.player2.username }}</span>
+                            </div>
+                            <p class="text-gray-400">No score recorded</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if map_result.get('error') %}
+                    <div class="mt-4 p-4 bg-red-900 border-2 border-red-600 rounded-xl">
+                        <p class="text-red-200">Error loading map data: {{ map_result.error }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        {% elif match.get('mp_room_url') and match.get('status') != 'next_up' %}
+        <div class="osu-card p-8 text-center">
+            <h2 class="text-3xl font-bold text-yellow-400 mb-6">Map Results</h2>
+            <p class="text-gray-300 text-lg mb-6">Unable to load detailed match results. The match may still be in progress or the multiplayer room data may not be available yet.</p>
+            <a href="{{ match.mp_room_url }}" target="_blank" 
+               class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full font-bold transition-all transform hover:scale-105 shadow-lg">
+                View Multiplayer Room
+            </a>
+        </div>
+        
+        {% else %}
+        <div class="osu-card p-8 text-center">
+            <h2 class="text-3xl font-bold text-yellow-400 mb-6">Map Results</h2>
+            <p class="text-gray-300 text-lg">
+                {% if match.get('status') == 'next_up' %}
+                Match has not started yet. Detailed results will be available once the match begins.
+                {% else %}
+                No multiplayer room link available for this match.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+        
+        <!-- Back Button -->
+        <div class="mt-8 text-center">
+            <a href="{{ url_for('public.tournament') }}" 
+               class="inline-block bg-gray-700 hover:bg-gray-600 text-white px-8 py-4 rounded-full font-bold transition-all transform hover:scale-105 shadow-lg">
+                ← Back to Tournament
+            </a>
+        </div>
+    </div>
+
+    <footer class="py-8 text-center text-sm text-gray-500 bg-gradient-to-r from-black to-gray-900 border-t-2 border-gray-700 mt-12">
+        &copy; 2025 Sand World Evil Financing. Paid for by Lebanese Taxpayers.
+    </footer>
+</body>
+</html>
