@@ -9,8 +9,12 @@ from app import create_app
 # Create the Flask application instance
 app, socketio = create_app()
 
-# Passenger WSGI expects an 'application' object
-application = socketio
+# For Namecheap hosting, we need to use the app directly
+# SocketIO will automatically handle HTTP polling fallback
+application = app
+
+# Make socketio accessible for manual integration if needed
+app.socketio = socketio
 
 if __name__ == "__main__":
     socketio.run(app)

@@ -141,3 +141,17 @@ def match_details(match_id):
 def tournament_overlay():
     """Serve the tournament overlay for streaming"""
     return render_template('streaming/tourney_overlay.html')
+
+
+# Add SocketIO route for Namecheap hosting compatibility
+@public_bp.route('/socket.io/<path:remaining>')
+def socketio_route(remaining):
+    """Handle SocketIO requests manually for shared hosting compatibility"""
+    from flask import current_app
+    try:
+        socketio = current_app.socketio
+        return socketio.handle_request(request.environ)
+    except AttributeError:
+        # Fallback if socketio not accessible
+        from flask import jsonify
+        return jsonify({'error': 'SocketIO not available'}), 503

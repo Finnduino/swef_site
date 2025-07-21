@@ -402,8 +402,16 @@
 
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <script>
-        // WebSocket connection to your Flask backend
-        const socket = io();
+        // WebSocket connection to your Flask backend with polling fallback for shared hosting
+        const socket = io({
+            transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
+            timeout: 20000,
+            forceNew: true,
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionAttempts: 5,
+            maxReconnectionAttempts: 5
+        });
         
         socket.on('connect', function() {
             console.log('Connected to server');
