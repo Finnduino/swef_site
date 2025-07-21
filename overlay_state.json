@@ -1,0 +1,61 @@
+{
+  "afk_mode": false,
+  "victory_screen_hidden": false,
+  "last_updated": "2025-07-21T14:06:29.077380",
+  "events": [
+    {
+      "type": "toggle_afk",
+      "data": {},
+      "timestamp": "2025-07-21T14:01:19.599882"
+    },
+    {
+      "type": "toggle_afk",
+      "data": {},
+      "timestamp": "2025-07-21T14:03:29.349382"
+    },
+    {
+      "type": "toggle_afk",
+      "data": {},
+      "timestamp": "2025-07-21T14:03:35.629880"
+    },
+    {
+      "type": "toggle_afk",
+      "data": {},
+      "timestamp": "2025-07-21T14:03:43.573885"
+    },
+    {
+      "type": "flip_players",
+      "data": {},
+      "timestamp": "2025-07-21T14:06:06.433881"
+    },
+    {
+      "type": "flip_players",
+      "data": {},
+      "timestamp": "2025-07-21T14:06:11.830883"
+    },
+    {
+      "type": "toggle_afk",
+      "data": {},
+      "timestamp": "2025-07-21T14:06:15.479882"
+    },
+    {
+      "type": "toggle_afk",
+      "data": {},
+      "timestamp": "2025-07-21T14:06:22.659381"
+    },
+    {
+      "type": "match_victory",
+      "data": {
+        "winner": "PreviousSync",
+        "final_score": "1-0",
+        "advancement": "Advances in Upper Bracket"
+      },
+      "timestamp": "2025-07-21T14:06:25.784882"
+    },
+    {
+      "type": "hide_victory_screens",
+      "data": {},
+      "timestamp": "2025-07-21T14:06:29.077380"
+    }
+  ]
+}

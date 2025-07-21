@@ -6,15 +6,11 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from app import create_app
 
-# Create the Flask application instance
-app, socketio = create_app()
+# Create the Flask application instance without SocketIO for Namecheap compatibility
+app = create_app()
 
-# For Namecheap hosting, we need to use the app directly
-# SocketIO will automatically handle HTTP polling fallback
+# Namecheap hosting - no SocketIO support
 application = app
 
-# Make socketio accessible for manual integration if needed
-app.socketio = socketio
-
 if __name__ == "__main__":
-    socketio.run(app)
+    app.run(debug=True)

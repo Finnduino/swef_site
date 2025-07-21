@@ -400,89 +400,152 @@
         </div>
     </div>
 
-    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <script>
-        // Force polling mode for Namecheap shared hosting compatibility
-        const socket = io({
-            transports: ['polling'], // Force polling only - no WebSocket on shared hosting
-            timeout: 20000,
-            forceNew: true,
-            reconnection: true,
-            reconnectionDelay: 2000,
-            reconnectionAttempts: 10,
-            maxReconnectionAttempts: 10,
-            upgrade: false, // Disable protocol upgrades
-            rememberUpgrade: false
-        });
+        // HTTP Polling for Namecheap compatibility (no SocketIO)
+        let isConnected = false;
+        let pollingInterval = null;
+        let lastUpdateTime = '';
         
-        socket.on('connect', function() {
-            console.log('Connected to server via polling');
-            console.log('Transport:', socket.io.engine.transport.name);
-            socket.emit('join_overlay');
-        });
+        // Start polling for match data
+        function startPolling() {
+            console.log('Starting HTTP polling for match data...');
+            isConnected = true;
+            
+            // Poll immediately
+            pollMatchData();
+            
+            // Then poll every 3 seconds
+            pollingInterval = setInterval(pollMatchData, 3000);
+        }
         
-        socket.on('disconnect', function() {
-            console.log('Disconnected from server');
-        });
-
-        socket.on('connect_error', function(error) {
-            console.error('Connection error:', error);
-        });
-
-        socket.on('reconnect', function(attemptNumber) {
-            console.log('Reconnected after', attemptNumber, 'attempts');
-        });
-
-        socket.on('reconnect_error', function(error) {
-            console.error('Reconnection error:', error);
-        });
-        
-        socket.on('match_update', function(data) {
-            console.log('Match update received:', data);
-            if (data.match_found) {
-                updateOverlay(data);
-            } else {
-                console.log('No active match:', data.message);
-                showNoMatchMessage();
+        function stopPolling() {
+            console.log('Stopping HTTP polling');
+            isConnected = false;
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
             }
-        });
+        }
         
-        socket.on('map_victory', function(data) {
-            showMapVictory(data.winner, data.map_info);
-        });
+        async function pollMatchData() {
+            try {
+                // Poll match data
+                const matchResponse = await fetch('/api/match-data');
+                if (!matchResponse.ok) {
+                    throw new Error(`HTTP error! status: ${matchResponse.status}`);
+                }
+                
+                const matchData = await matchResponse.json();
+                
+                // Only update if data has changed
+                if (matchData.last_updated !== lastUpdateTime) {
+                    lastUpdateTime = matchData.last_updated;
+                    
+                    if (matchData.match_found) {
+                        updateOverlay(matchData);
+                    } else {
+                        console.log('No active match:', matchData.message);
+                        showNoMatchMessage();
+                    }
+                }
+                
+                // Poll overlay events
+                const eventsResponse = await fetch('/api/overlay-events');
+                if (eventsResponse.ok) {
+                    const eventsData = await eventsResponse.json();
+                    handleOverlayEvents(eventsData.events);
+                }
+                
+                // Ensure we're connected
+                if (!isConnected) {
+                    console.log('Reconnected to server via polling');
+                    isConnected = true;
+                }
+                
+            } catch (error) {
+                console.error('Polling error:', error);
+                if (isConnected) {
+                    console.log('Disconnected from server - polling failed');
+                    isConnected = false;
+                }
+                // Continue polling even on error
+            }
+        }
         
-        socket.on('match_victory', function(data) {
-            console.log('Received match_victory event:', data);
-            showMatchVictory(data.winner, data.final_score, data.advancement);
-        });
+        let processedEvents = new Set();
         
-        socket.on('toggle_afk', function() {
-            toggleAFK();
-        });
-        
-        socket.on('exit_afk', function() {
-            console.log('Received exit_afk - showing match overlay');
-            exitAFK();
-        });
-        
-        socket.on('hide_victory_screens', function() {
-            console.log('Hiding victory screens');
-            const mapVictory = document.getElementById('mapVictory');
-            const matchVictory = document.getElementById('matchVictory');
+        function handleOverlayEvents(events) {
+            events.forEach(event => {
+                const eventId = `${event.type}-${event.timestamp}`;
+                
+                // Skip if already processed
+                if (processedEvents.has(eventId)) {
+                    return;
+                }
+                
+                processedEvents.add(eventId);
+                
+                // Handle different event types
+                switch(event.type) {
+                    case 'toggle_afk':
+                        toggleAFK();
+                        break;
+                    case 'exit_afk':
+                        exitAFK();
+                        break;
+                    case 'hide_victory_screens':
+                        hideVictoryScreens();
+                        break;
+                    case 'flip_players':
+                        flipPlayers();
+                        break;
+                    case 'map_victory':
+                        if (event.data) {
+                            showMapVictory(event.data.winner, event.data.map_info);
+                        }
+                        break;
+                    case 'match_victory':
+                        if (event.data) {
+                            showMatchVictory(event.data.winner, event.data.final_score, event.data.advancement);
+                        }
+                        break;
+                }
+            });
             
-            mapVictory.style.display = 'none';
-            mapVictory.classList.add('hidden');
-            
-            matchVictory.style.display = 'none';
-            matchVictory.classList.add('hidden');
+            // Clean up old processed events (keep last 50)
+            if (processedEvents.size > 50) {
+                const eventsArray = Array.from(processedEvents);
+                processedEvents = new Set(eventsArray.slice(-50));
+            }
+        }
+        
+        // Simulate SocketIO events for compatibility
+        const socket = {
+            connected: () => isConnected,
+            emit: (event, data) => {
+                console.log('Simulated emit:', event, data);
+                // Handle specific events that were previously sent via SocketIO
+                if (event === 'join_overlay') {
+                    // Just start polling
+                    return;
+                }
+            }
+        };
+        
+        // Start polling when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Tournament overlay loaded - starting HTTP polling');
+            startPolling();
+            // Create initial empty score tracker
+            updateScoreTracker(0, 0);
+        });
+        
+        // Stop polling when page unloads
+        window.addEventListener('beforeunload', function() {
+            stopPolling();
         });
 
-        // Listen for flip_players event from admin panel
-        socket.on('flip_players', function() {
-            flipPlayers();
-        });
-
-        // Function to swap player UI elements
+        // Function to swap player UI elements (for admin controls)
         function flipPlayers() {
             const p1NameEl = document.getElementById('p1Name');
             const p2NameEl = document.getElementById('p2Name');
@@ -505,8 +568,8 @@
                 player1El.classList.toggle('winning');
                 player2El.classList.toggle('winning');
             }
-            // --- NEW: swap the score display and tracker ---
-            const scoreEl  = document.getElementById('currentScore');
+            // Swap the score display and tracker
+            const scoreEl = document.getElementById('currentScore');
             // parse "X - Y"
             const [s1, s2] = scoreEl.textContent.split(' - ').map(n => parseInt(n, 10) || 0);
             // rewrite text flipped
@@ -702,13 +765,6 @@
             document.getElementById('matchVictory').classList.add('hidden');
         }
 
-
-        // Initialize overlay on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Tournament overlay loaded');
-            // Create initial empty score tracker
-            updateScoreTracker(0, 0);
-        });
     </script>
 </body>
 </html>

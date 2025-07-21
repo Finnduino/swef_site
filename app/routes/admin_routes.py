@@ -7,9 +7,10 @@ from ..bracket_logic import generate_bracket
 from ..services.match_service import MatchService
 from ..services.seeding_service import SeedingService
 from ..services.streaming_service import StreamingService
-from ..websocket_events import broadcast_match_update, broadcast_match_victory, broadcast_map_victory, broadcast_exit_afk, broadcast_flip_players
 from .. import api
 
+# Import broadcast functions that use overlay state instead of SocketIO
+from ..http_events import broadcast_match_update, broadcast_match_victory, broadcast_map_victory, broadcast_exit_afk, broadcast_flip_players
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -431,8 +432,8 @@ def clear_stream():
 @admin_required
 def overlay_toggle_afk():
     """Toggle AFK screen on overlay"""
-    from ..websocket_events import socketio
-    socketio.emit('toggle_afk', room='overlay')
+    from ..overlay_state import add_overlay_event
+    add_overlay_event('toggle_afk')
     flash('AFK screen toggled on overlay', 'success')
     return redirect(url_for('admin.admin_panel'))
 
@@ -532,8 +533,8 @@ def overlay_show_map_victory():
 @admin_required
 def overlay_hide_victory():
     """Hide victory screens on overlay"""
-    from ..websocket_events import socketio
-    socketio.emit('hide_victory_screens', room='overlay')
+    from ..overlay_state import add_overlay_event
+    add_overlay_event('hide_victory_screens')
     flash('Victory screens hidden on overlay', 'success')
     return redirect(url_for('admin.admin_panel'))
 

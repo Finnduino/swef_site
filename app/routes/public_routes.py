@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, request, url_for, flash
+from flask import Blueprint, render_template, redirect, request, url_for, flash, jsonify
 import requests
 from datetime import datetime, timedelta
 from config import OSU_CLIENT_ID, OSU_CLIENT_SECRET, OSU_CALLBACK_URL, AUTHORIZATION_URL, TOKEN_URL, OSU_API_BASE_URL
@@ -142,16 +142,41 @@ def tournament_overlay():
     """Serve the tournament overlay for streaming"""
     return render_template('streaming/tourney_overlay.html')
 
-
-# Add SocketIO route for Namecheap hosting compatibility
-@public_bp.route('/socket.io/<path:remaining>')
-def socketio_route(remaining):
-    """Handle SocketIO requests manually for shared hosting compatibility"""
-    from flask import current_app
+# API Routes for HTTP polling (Namecheap compatible)
+@public_bp.route('/api/match-data')
+def get_match_data():
+    """Get current match data for overlay polling"""
     try:
-        socketio = current_app.socketio
-        return socketio.handle_request(request.environ)
-    except AttributeError:
-        # Fallback if socketio not accessible
-        from flask import jsonify
-        return jsonify({'error': 'SocketIO not available'}), 503
+        from ..http_events import get_current_match_data
+        match_data = get_current_match_data()
+        
+        # Add timestamp for cache busting
+        data = get_tournament_data()
+        match_data['last_updated'] = data.get('last_updated', '')
+        
+        return jsonify(match_data)
+            
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'match_found': False
+        }), 500
+
+@public_bp.route('/api/overlay-events')
+def get_overlay_events():
+    """Get overlay events (victory screens, AFK status, etc.)"""
+    try:
+        from ..overlay_state import get_overlay_state
+        state = get_overlay_state()
+        
+        return jsonify({
+            'events': state.get('events', []),
+            'afk_mode': state.get('afk_mode', False),
+            'victory_screen_hidden': state.get('victory_screen_hidden', False),
+            'timestamp': state.get('last_updated', '')
+        })
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'events': []
+        }), 500

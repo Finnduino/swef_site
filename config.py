@@ -6,11 +6,6 @@ load_dotenv()
 # --- Flask Config ---
 SECRET_KEY = os.getenv('FLASK_SECRET_KEY')
 
-# --- SocketIO Config ---
-SOCKETIO_ASYNC_MODE = 'threading'  # Use threading for shared hosting compatibility
-SOCKETIO_PING_TIMEOUT = 120  # Increased for shared hosting stability
-SOCKETIO_PING_INTERVAL = 60  # Longer intervals for shared hosting
-
 # --- osu! API Config ---
 OSU_CLIENT_ID = int(os.getenv('OSU_CLIENT_ID'))
 OSU_CLIENT_SECRET = os.getenv('OSU_CLIENT_SECRET')
