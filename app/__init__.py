@@ -16,16 +16,18 @@ def create_app():
     app = Flask(__name__, template_folder='templates', static_folder='static')
     app.config.from_object('config')
     
-    # Initialize SocketIO with polling fallback for shared hosting
+    # Initialize SocketIO with polling only for shared hosting compatibility
     socketio = SocketIO(
         app, 
         cors_allowed_origins="*", 
         async_mode=SOCKETIO_ASYNC_MODE,
-        transports=['websocket', 'polling'],  # Allow both WebSocket and polling
+        transports=['polling'],  # Force polling only for Namecheap
         ping_timeout=SOCKETIO_PING_TIMEOUT,
         ping_interval=SOCKETIO_PING_INTERVAL,
-        logger=True,  # Enable logging for debugging
-        engineio_logger=True
+        logger=False,  # Disable logging for production
+        engineio_logger=False,
+        allow_upgrades=False,  # Prevent WebSocket upgrades
+        http_compression=True  # Enable compression for better performance
     )
 
     with app.app_context():
