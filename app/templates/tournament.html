@@ -245,8 +245,10 @@
     </div>
   </section>
   {% endif %}
-
+  {% set seeded_competitors = data.competitors | selectattr('placement', 'defined') | list %}
+  {% set total_competitors = data.competitors | length %}
   <!-- Match Queue Section -->
+  {% if not (total_competitors > 0 and seeded_competitors | length < total_competitors) %}
   <section class="py-12 bg-section-darker border-t border-yellow-600">
     <div class="max-w-6xl mx-auto px-6">
       <h2 class="text-3xl font-bold text-yellow-400 mb-8 text-center">📋 Upcoming Matches</h2>
@@ -507,6 +509,7 @@
       </div>
     </div>
   </section>
+  {% endif %}
 
   <!-- Competitor Showcase -->
   <section class="py-24 px-6 bg-section-dark">
