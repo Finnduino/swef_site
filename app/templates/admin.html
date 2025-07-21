@@ -201,7 +201,8 @@
         <div class="bg-gray-800 p-6 rounded-lg mb-8">
             <h2 class="text-2xl text-green-500 mb-4">🎥 Stream Overlay Controls</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+            <!-- Main Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                 <!-- AFK Toggle -->
                 <form action="{{ url_for('admin.overlay_toggle_afk') }}" method="POST" class="inline">
                     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors">
@@ -235,6 +236,65 @@
                         🔄 Flip Players
                     </button>
                 </form>
+            </div>
+
+            <!-- Welcome/Outro Screen Controls -->
+            <div class="border-t border-gray-600 pt-4">
+                <h3 class="text-lg text-blue-400 mb-3">✨ Special Screens</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Welcome Screen -->
+                    <form action="{{ url_for('admin.overlay_show_welcome') }}" method="POST" class="inline">
+                        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                            🌟 Show Welcome Screen
+                        </button>
+                    </form>
+                    
+                    <form action="{{ url_for('admin.overlay_hide_welcome') }}" method="POST" class="inline">
+                        <button type="submit" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                            ❌ Hide Welcome
+                        </button>
+                    </form>
+                    
+                    <!-- Outro Screen -->
+                    <button onclick="showOutroForm()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                        🎉 Show Outro Screen
+                    </button>
+                    
+                    <form action="{{ url_for('admin.overlay_hide_outro') }}" method="POST" class="inline">
+                        <button type="submit" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                            ❌ Hide Outro
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Outro Form (Hidden by default) -->
+                <div id="outroForm" class="mt-4 p-4 bg-gray-700 rounded-lg hidden">
+                    <h4 class="text-lg font-semibold mb-3">🏆 Tournament Outro Details</h4>
+                    <form action="{{ url_for('admin.overlay_show_outro') }}" method="POST">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label for="champion" class="block text-sm font-medium text-gray-300 mb-2">Champion Name:</label>
+                                <input type="text" id="champion" name="champion" 
+                                       class="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                       placeholder="e.g., PlayerName">
+                            </div>
+                            <div>
+                                <label for="message" class="block text-sm font-medium text-gray-300 mb-2">Custom Message:</label>
+                                <input type="text" id="message" name="message" 
+                                       class="w-full px-3 py-2 bg-gray-600 border border-gray-500 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                       placeholder="Thank you for watching the Sand World OSU Cup 2025">
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="submit" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                                🎉 Show Outro
+                            </button>
+                            <button type="button" onclick="hideOutroForm()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
             
         </div>
@@ -923,6 +983,15 @@
                 button.className = 'bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold';
                 localStorage.setItem('devModeEnabled', 'true');
             }
+        }
+
+        // Outro form control functions
+        function showOutroForm() {
+            document.getElementById('outroForm').classList.remove('hidden');
+        }
+
+        function hideOutroForm() {
+            document.getElementById('outroForm').classList.add('hidden');
         }
         
         // Show keyboard shortcuts help

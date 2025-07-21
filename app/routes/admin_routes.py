@@ -575,3 +575,49 @@ def overlay_flip_players():
     broadcast_flip_players()
     flash('Players flipped on overlay', 'success')
     return redirect(url_for('admin.admin_panel'))
+
+
+@admin_bp.route('/overlay/show_welcome', methods=['POST'])
+@admin_required
+def overlay_show_welcome():
+    """Show welcome screen on overlay"""
+    from ..overlay_state import add_overlay_event
+    add_overlay_event('show_welcome')
+    flash('Welcome screen shown on overlay', 'success')
+    return redirect(url_for('admin.admin_panel'))
+
+
+@admin_bp.route('/overlay/show_outro', methods=['POST'])
+@admin_required
+def overlay_show_outro():
+    """Show outro screen on overlay"""
+    champion = request.form.get('champion', '')
+    message = request.form.get('message', 'Thank you for watching the Sand World OSU Cup 2025')
+    
+    from ..overlay_state import add_overlay_event
+    add_overlay_event('show_outro', {
+        'champion': champion,
+        'message': message
+    })
+    flash('Outro screen shown on overlay', 'success')
+    return redirect(url_for('admin.admin_panel'))
+
+
+@admin_bp.route('/overlay/hide_welcome', methods=['POST'])
+@admin_required
+def overlay_hide_welcome():
+    """Hide welcome screen on overlay"""
+    from ..overlay_state import add_overlay_event
+    add_overlay_event('hide_welcome')
+    flash('Welcome screen hidden on overlay', 'success')
+    return redirect(url_for('admin.admin_panel'))
+
+
+@admin_bp.route('/overlay/hide_outro', methods=['POST'])
+@admin_required
+def overlay_hide_outro():
+    """Hide outro screen on overlay"""
+    from ..overlay_state import add_overlay_event
+    add_overlay_event('hide_outro')
+    flash('Outro screen hidden on overlay', 'success')
+    return redirect(url_for('admin.admin_panel'))
