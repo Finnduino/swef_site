@@ -5,3 +5,4 @@
 *.pyc
 __pycache__
 tournament.json
+overlay_state.json

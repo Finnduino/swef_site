@@ -50,6 +50,13 @@ def tournament():
     return render_template('tournament.html', data=data)
 
 
+@public_bp.route('/tournament/details')
+def tournament_details():
+    """Display detailed tournament rules and format information"""
+    data = get_tournament_data()
+    return render_template('tournament_details.html', data=data)
+
+
 @public_bp.route('/login/osu')
 def osu_login():
     params = {'client_id': OSU_CLIENT_ID, 'redirect_uri': OSU_CALLBACK_URL, 'response_type': 'code', 'scope': 'identify'}

@@ -407,6 +407,24 @@ def set_stream():
     return redirect(url_for('admin.admin_panel'))
 
 
+@admin_bp.route('/set_seeding_playlist', methods=['POST'])
+@admin_required
+def set_seeding_playlist():
+    """Set the seeding mappool playlist URL"""
+    playlist_url = request.form.get('playlist_url', '').strip()
+    
+    data = get_tournament_data()
+    if playlist_url:
+        data['seeding_playlist_url'] = playlist_url
+        flash('Seeding playlist URL updated successfully!', 'success')
+    else:
+        data.pop('seeding_playlist_url', None)
+        flash('Seeding playlist URL cleared.', 'info')
+    
+    save_tournament_data(data)
+    return redirect(url_for('admin.admin_panel'))
+
+
 @admin_bp.route('/toggle_stream', methods=['POST'])
 @admin_required
 def toggle_stream():

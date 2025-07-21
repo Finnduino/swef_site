@@ -27,8 +27,8 @@
             left: 50%;
             transform: translateX(-50%);
             z-index: 100;
-            width: 900px;
-            max-width: 90vw;
+            width: 1200px;
+            max-width: 95vw;
         }
 
         .hud-container {
@@ -53,20 +53,21 @@
         .players-container {
             display: flex;
             align-items: center;
-            padding: 16px;
-            gap: 20px;
+            padding: 20px 24px;
+            gap: 32px;
         }
 
         .player {
             flex: 1;
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px;
+            gap: 16px;
+            padding: 16px 20px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
+            min-width: 300px;
         }
 
         .player.winning {
@@ -76,8 +77,8 @@
         }
 
         .player-avatar {
-            width: 48px;
-            height: 48px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             border: 2px solid rgba(255, 255, 255, 0.2);
             object-fit: cover;
@@ -94,9 +95,9 @@
         }
 
         .player-name {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 700;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
         }
 
@@ -112,8 +113,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
-            min-width: 200px;
+            gap: 16px;
+            min-width: 240px;
         }
 
         .current-score {
@@ -181,16 +182,113 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(20, 20, 30, 0.95));
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.98), rgba(20, 20, 30, 0.98));
+            border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
             padding: 40px 60px;
             text-align: center;
             backdrop-filter: blur(15px);
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
             z-index: 1000;
-            min-width: 400px;
+            min-width: 500px;
             animation: victorySlideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Match Victory Screen - Redesigned */
+        .match-victory {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.98), rgba(20, 20, 30, 0.98));
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+            min-width: 700px;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .victory-header {
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+            padding: 20px 40px;
+            text-align: center;
+            position: relative;
+        }
+
+        .victory-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            pointer-events: none;
+        }
+
+        .victory-content {
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .victory-player {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px 24px;
+            min-width: 400px;
+        }
+
+        .victory-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #22c55e;
+            object-fit: cover;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+        }
+
+        .victory-player-info {
+            flex: 1;
+            text-align: left;
+        }
+
+        .victory-player-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 4px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .victory-player-seed {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .victory-score-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 32px;
+            font-weight: 700;
+            color: #22c55e;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .victory-advancement {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
         }
 
         @keyframes victorySlideIn {
@@ -215,6 +313,19 @@
             text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
         }
 
+        .victory-header .victory-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: #ffffff;
+            background: none;
+            -webkit-background-clip: initial;
+            -webkit-text-fill-color: initial;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+        }
+
         .victory-subtitle {
             font-size: 16px;
             color: rgba(255, 255, 255, 0.8);
@@ -228,12 +339,7 @@
             font-family: 'JetBrains Mono', monospace;
         }
 
-        .match-victory .victory-title {
-            font-size: 36px;
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+
 
         /* AFK Screen */
         .afk-screen {
@@ -304,7 +410,7 @@
         }
 
         /* Responsive adjustments */
-        @media (max-width: 1024px) {
+        @media (max-width: 1280px) {
             .match-hud {
                 width: 95vw;
                 top: 20px;
@@ -315,11 +421,112 @@
             }
             
             .player-name {
+                font-size: 16px;
+            }
+            
+            .victory-screen {
+                min-width: 450px;
+                padding: 40px 50px;
+            }
+            
+            .match-victory {
+                min-width: 600px;
+            }
+            
+            .victory-player {
+                min-width: 350px;
+            }
+            
+            .victory-avatar {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .victory-player-name {
+                font-size: 20px;
+            }
+            
+            .victory-score-display {
+                font-size: 28px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .match-hud {
+                width: 98vw;
+                top: 15px;
+            }
+            
+            .players-container {
+                padding: 16px 20px;
+                gap: 24px;
+            }
+            
+            .player {
+                min-width: 200px;
+                padding: 12px 16px;
+            }
+            
+            .score-section {
+                min-width: 180px;
+            }
+            
+            .current-score {
+                font-size: 20px;
+            }
+            
+            .player-name {
                 font-size: 14px;
             }
             
+            .player-avatar {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .victory-screen {
+                min-width: 90vw;
+                padding: 30px 20px;
+            }
+            
+            .match-victory {
+                min-width: 90vw;
+            }
+            
+            .victory-content {
+                padding: 30px 20px;
+            }
+            
+            .victory-player {
+                min-width: auto;
+                flex-direction: column;
+                text-align: center;
+                padding: 20px;
+            }
+            
+            .victory-player-info {
+                text-align: center;
+            }
+            
+            .victory-avatar {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .victory-player-name {
+                font-size: 18px;
+            }
+            
+            .victory-score-display {
+                font-size: 24px;
+            }
+            
+            .victory-header .victory-title {
+                font-size: 24px;
+            }
+            
             .brb-title {
-                font-size: 48px;
+                font-size: 36px;
             }
         }
 
@@ -386,9 +593,20 @@
 
     <!-- Match Victory Screen -->
     <div class="victory-screen match-victory hidden" id="matchVictory">
-        <div class="victory-title" id="matchWinner">Player 1 Wins the Match!</div>
-        <div class="victory-subtitle" id="finalScore">Final Score: 4-2</div>
-        <div class="victory-details" id="advancement">Advances to Round 2</div>
+        <div class="victory-header">
+            <div class="victory-title" id="matchVictoryTitle">Match Complete!</div>
+        </div>
+        <div class="victory-content">
+            <div class="victory-player" id="victoryPlayerInfo">
+                <img class="victory-avatar" id="victoryAvatar" src="" alt="Winner" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjQiIGN5PSIyNCIgcj0iMjQiIGZpbGw9IiMzNzM3MzciLz4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSIxMiIgeT0iMTIiPgo8cGF0aCBkPSJNMTIgMTJDMTQuNzYxNCAxMiAxNyA5Ljc2MTQyIDE3IDdDMTcgNC4yMzg1OCAxNC43NjE0IDIgMTIgMkM5LjIzODU4IDIgNyA0LjIzODU4IDcgN0M3IDkuNzYxNDIgOS4yMzg1OCAxMiAxMiAxMloiIGZpbGw9IndoaXRlIiBmaWxsLW9wYWNpdHk9IjAuNSIvPgo8cGF0aCBkPSJNMTIgMTRDOC4xMzQwMSAxNCA1IDE3LjEzNDEgNSAyMUg5SDE1SDE5QzE5IDE3LjEzNDEgMTUuODY2IDE0IDEyIDE0WiIgZmlsbD0id2hpdGUiIGZpbGwtb3BhY2l0eT0iMC41Ii8+Cjwvc3ZnPgo8L3N2Zz4K'">
+                <div class="victory-player-info">
+                    <div class="victory-player-name" id="matchWinner">Player 1 Wins!</div>
+                    <div class="victory-player-seed" id="winnerSeed">Seed #1</div>
+                </div>
+                <div class="victory-score-display" id="finalScore">4-2</div>
+            </div>
+            <div class="victory-advancement" id="advancement">Advances to Round 2</div>
+        </div>
     </div>
 
     <!-- AFK Screen -->
@@ -437,16 +655,43 @@
                 
                 const matchData = await matchResponse.json();
                 
-                // Only update if data has changed
-                if (matchData.last_updated !== lastUpdateTime) {
+                // Store previous match state for comparison
+                if (!window.lastMatchState) {
+                    window.lastMatchState = {};
+                }
+                
+                // Check if match data has meaningfully changed
+                const hasChanged = (
+                    matchData.last_updated !== lastUpdateTime ||
+                    !window.lastMatchState.score_p1 !== undefined ||
+                    matchData.score_p1 !== window.lastMatchState.score_p1 ||
+                    matchData.score_p2 !== window.lastMatchState.score_p2 ||
+                    matchData.player1?.name !== window.lastMatchState.player1_name ||
+                    matchData.player2?.name !== window.lastMatchState.player2_name ||
+                    matchData.status !== window.lastMatchState.status
+                );
+                
+                if (hasChanged) {
                     lastUpdateTime = matchData.last_updated;
+                    
+                    // Store current state for next comparison
+                    window.lastMatchState = {
+                        score_p1: matchData.score_p1,
+                        score_p2: matchData.score_p2,
+                        player1_name: matchData.player1?.name,
+                        player2_name: matchData.player2?.name,
+                        status: matchData.status
+                    };
                     
                     if (matchData.match_found) {
                         updateOverlay(matchData);
+                        console.log('Overlay updated - scores:', matchData.score_p1, 'vs', matchData.score_p2);
                     } else {
                         console.log('No active match:', matchData.message);
                         showNoMatchMessage();
                     }
+                } else {
+                    console.log('No changes detected in match data');
                 }
                 
                 // Poll overlay events
@@ -609,13 +854,16 @@
             document.getElementById('bracketInfo').textContent = 
                 `${matchData.bracket} Bracket - Round ${matchData.round_index + 1}`;
             
-            // Update score tracker (Best of 7)
-            updateScoreTracker(matchData.score_p1, matchData.score_p2);
-            
-            // Update current score with animation
-            const scoreElement = document.getElementById('currentScore');
+            // Only update score tracker if scores actually changed
+            const currentScore = document.getElementById('currentScore').textContent;
             const newScore = `${matchData.score_p1} - ${matchData.score_p2}`;
-            if (scoreElement.textContent !== newScore) {
+            
+            if (currentScore !== newScore) {
+                // Scores changed - update tracker with animation
+                updateScoreTracker(matchData.score_p1, matchData.score_p2);
+                
+                // Update current score with animation
+                const scoreElement = document.getElementById('currentScore');
                 scoreElement.classList.add('pulse');
                 scoreElement.textContent = newScore;
                 setTimeout(() => scoreElement.classList.remove('pulse'), 1000);
@@ -715,6 +963,28 @@
             const winnerElement = document.getElementById('matchWinner');
             const scoreElement = document.getElementById('finalScore');
             const advancementElement = document.getElementById('advancement');
+            const avatarElement = document.getElementById('victoryAvatar');
+            const seedElement = document.getElementById('winnerSeed');
+            
+            // Get current match data to find winner's info
+            const p1Name = document.getElementById('p1Name').textContent;
+            const p2Name = document.getElementById('p2Name').textContent;
+            const p1Avatar = document.getElementById('p1Avatar').src;
+            const p2Avatar = document.getElementById('p2Avatar').src;
+            const p1Seed = document.getElementById('p1Seed').textContent;
+            const p2Seed = document.getElementById('p2Seed').textContent;
+            
+            // Determine winner's avatar and seed
+            let winnerAvatar = '';
+            let winnerSeedText = '';
+            
+            if (winner === p1Name) {
+                winnerAvatar = p1Avatar;
+                winnerSeedText = p1Seed;
+            } else if (winner === p2Name) {
+                winnerAvatar = p2Avatar;
+                winnerSeedText = p2Seed;
+            }
             
             // Clear any existing classes and force visibility
             screen.className = 'victory-screen match-victory';
@@ -722,9 +992,11 @@
             screen.style.opacity = '1';
             
             // Update content
-            winnerElement.textContent = `${winner} Wins the Match!`;
-            scoreElement.textContent = `Final Score: ${finalScore}`;
+            winnerElement.textContent = `${winner} Wins!`;
+            scoreElement.textContent = finalScore;
             advancementElement.textContent = advancement || '';
+            avatarElement.src = winnerAvatar || '';
+            seedElement.textContent = winnerSeedText || '';
             
             // Force reflow and add animation
             screen.offsetHeight;

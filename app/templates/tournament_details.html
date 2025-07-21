@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tournament Details - Sand World OSU Tournament</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@600&display=swap');
+    body {
+      font-family: 'Fira Code', monospace;
+      background: radial-gradient(ellipse at center, #0f0f0f 0%, #000000 100%);
+    }
+    h1, h2, h3 {
+      font-family: 'Orbitron', sans-serif;
+    }
+    
+    .rule-section {
+      background: rgba(31, 41, 55, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(75, 85, 99, 0.5);
+    }
+    
+    .ability-card {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1));
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    
+    .ability-card:hover {
+      border-color: rgba(59, 130, 246, 0.6);
+      transform: translateY(-2px);
+    }
+    
+    .mappool-section {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(59, 130, 246, 0.1));
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+  </style>
+</head>
+<body class="text-gray-100 min-h-screen">
+
+  <!-- Navigation -->
+  <nav class="bg-black border-b border-gray-800 px-6 py-4 flex justify-between items-center">
+    <div class="text-yellow-400 font-bold text-2xl tracking-wider">SAND WORLD</div>
+    <ul class="flex space-x-6 text-sm font-mono">
+      <li><a href="{{ url_for('public.index') }}" class="text-gray-300 hover:text-yellow-400">Home</a></li>
+      <li><a href="{{ url_for('public.tournament') }}" class="text-gray-300 hover:text-yellow-400">Tournament</a></li>
+    </ul>
+  </nav>
+
+  <!-- Page Header -->
+  <section class="py-16 px-6 bg-gray-900">
+    <div class="max-w-4xl mx-auto text-center">
+      <h1 class="text-4xl md:text-5xl font-bold text-yellow-400">Tournament Details</h1>
+      <p class="mt-4 text-lg text-gray-300">Complete rules and format for the Sand World OSU Cup 2025</p>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <section class="py-12 px-6">
+    <div class="max-w-4xl mx-auto space-y-8">
+
+      <!-- Seeding Section -->
+      <div class="rule-section rounded-lg p-8">
+        <h2 class="text-3xl font-bold text-yellow-400 mb-6">🎯 Seeding</h2>
+        <div class="text-gray-300 space-y-4">
+          <p class="text-lg">
+            Seeding will be determined through a <span class="text-yellow-300 font-semibold">5-map mappool</span> 
+            with rankings based on <span class="text-yellow-300 font-semibold">cumulative score</span> across all maps.
+          </p>
+          
+          <div class="mappool-section rounded-lg p-6 mt-6">
+            <h3 class="text-xl font-bold text-green-400 mb-4">📋 Seeding Mappool</h3>
+            {% if data.get('seeding_playlist_url') %}
+              <div class="bg-green-900 bg-opacity-50 rounded p-4 border border-green-600">
+                <p class="text-green-300 mb-3">🎵 <strong>Pool has been released for practice!</strong></p>
+                <a href="{{ data.seeding_playlist_url }}" 
+                   target="_blank" 
+                   class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition">
+                  View osu! Playlist →
+                </a>
+              </div>
+            {% else %}
+              <div class="bg-orange-900 bg-opacity-50 rounded p-4 border border-orange-600">
+                <p class="text-orange-300">⏳ <strong>TBD</strong> - Seeding mappool will be announced soon!</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Tournament Format -->
+      <div class="rule-section rounded-lg p-8">
+        <h2 class="text-3xl font-bold text-yellow-400 mb-6">🏆 Tournament Format</h2>
+        <div class="text-gray-300 space-y-4">
+          <div class="grid md:grid-cols-2 gap-6">
+            <div class="bg-gray-800 rounded-lg p-6">
+              <h3 class="text-xl font-bold text-blue-400 mb-3">Format Structure</h3>
+              <ul class="space-y-2">
+                <li>• <span class="text-blue-300">Double Elimination</span> bracket</li>
+                <li>• <span class="text-blue-300">Best of Seven (BO7)</span> matches</li>
+                <li>• First to 4 map wins advances</li>
+              </ul>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg p-6">
+              <h3 class="text-xl font-bold text-purple-400 mb-3">Map Selection</h3>
+              <ul class="space-y-2">
+                <li>• Each player brings <span class="text-purple-300">10 maps</span></li>
+                <li>• Total pool: <span class="text-purple-300">20 maps</span> per match</li>
+                <li>• <span class="text-purple-300">6 maps</span> selected for play</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pick & Ban Phase -->
+      <div class="rule-section rounded-lg p-8">
+        <h2 class="text-3xl font-bold text-yellow-400 mb-6">⚔️ Pick & Ban Phase</h2>
+        <div class="text-gray-300 space-y-6">
+          <div class="bg-gray-800 rounded-lg p-6">
+            <h3 class="text-xl font-bold text-red-400 mb-4">Selection Process</h3>
+            <ol class="space-y-3 list-decimal list-inside">
+              <li><span class="text-red-300">Random roll</span> determines first pick order</li>
+              <li>Players <span class="text-red-300">alternate picks and bans</span> for 3 rounds each</li>
+              <li>Total of <span class="text-red-300">6 maps picked</span> for the match</li>
+              <li>Remaining maps are discarded</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <!-- Player Abilities -->
+      <div class="rule-section rounded-lg p-8">
+        <h2 class="text-3xl font-bold text-yellow-400 mb-6">🎮 Player Abilities</h2>
+        <div class="text-gray-300 mb-4">
+          <p>Each player receives <span class="text-yellow-300 font-semibold">3 abilities</span> to use strategically during the match:</p>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-6 mb-6">
+          <div class="ability-card rounded-lg p-6 transition-all duration-300">
+            <h3 class="text-lg font-bold text-blue-400 mb-3">1️⃣ Force NoMod</h3>
+            <p class="text-sm">Forces both players to play a map with <span class="text-blue-300">no modifications</span></p>
+            <div class="mt-3 text-xs text-gray-400">
+              <span class="bg-blue-900 px-2 py-1 rounded">Single Use</span>
+            </div>
+          </div>
+          
+          <div class="ability-card rounded-lg p-6 transition-all duration-300">
+            <h3 class="text-lg font-bold text-purple-400 mb-3">2️⃣ Force Mod</h3>
+            <p class="text-sm">Forces both players to play with a <span class="text-purple-300">specific modification</span></p>
+            <div class="mt-3 text-xs text-gray-400">
+              <span class="bg-purple-900 px-2 py-1 rounded">Single Use</span>
+            </div>
+          </div>
+          
+          <div class="ability-card rounded-lg p-6 transition-all duration-300">
+            <h3 class="text-lg font-bold text-green-400 mb-3">3️⃣ Personal Mod</h3>
+            <p class="text-sm">Pick a mod for <span class="text-green-300">yourself only</span> while opponent plays NoMod</p>
+            <div class="mt-3 text-xs text-gray-400">
+              <span class="bg-green-900 px-2 py-1 rounded">Use Twice</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-red-900 bg-opacity-30 border border-red-600 rounded-lg p-4">
+          <h4 class="text-red-400 font-bold mb-2">⚠️ Important Rule</h4>
+          <p class="text-red-300">The <span class="font-semibold">Force NoMod</span> ability vetoes the <span class="font-semibold">Personal Mod</span> ability when used on the same map.</p>
+        </div>
+
+        <div class="bg-yellow-900 bg-opacity-30 border border-yellow-600 rounded-lg p-4 mt-4">
+          <h4 class="text-yellow-400 font-bold mb-2">📝 Note on Speed Mods</h4>
+          <p class="text-yellow-300">DT (Double Time) and HT (Half Time) are specified at the <span class="font-semibold">mappool level</span> and are not counted as "mods" for ability purposes.</p>
+        </div>
+      </div>
+
+      <!-- Tiebreaker -->
+      <div class="rule-section rounded-lg p-8">
+        <h2 class="text-3xl font-bold text-yellow-400 mb-6">🎲 Tiebreaker</h2>
+        <div class="text-gray-300">
+          <div class="bg-gradient-to-r from-red-900 to-orange-900 bg-opacity-50 rounded-lg p-6 border border-orange-600">
+            <h3 class="text-xl font-bold text-orange-400 mb-4">3-3 Stalemate Resolution</h3>
+            <p class="text-lg mb-3">
+              If a match reaches a <span class="text-orange-300 font-semibold">3-3 tie</span>, a tiebreaker map will be played.
+            </p>
+            <p class="text-orange-200">
+              The tiebreaker map is selected from a separate <span class="text-orange-300 font-semibold">tiebreaker mappool</span> 
+              and follows special rules to ensure a decisive winner.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Back to Tournament -->
+      <div class="text-center py-8">
+        <a href="{{ url_for('public.tournament') }}" 
+           class="inline-block bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-8 rounded-full shadow-lg transition transform hover:scale-105">
+          ← Back to Tournament
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-black border-t border-gray-800 py-8 text-center text-gray-500">
+    <p>&copy; 2025 Sand World Esports. May the most evil clicker win.</p>
+  </footer>
+
+</body>
+</html>

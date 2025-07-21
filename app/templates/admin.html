@@ -155,11 +155,53 @@
             {% endif %}
         </div>
 
+        <!-- Tournament Settings -->
+        <div class="bg-gray-800 p-6 rounded-lg mb-8 dev-mode-content">
+            <h2 class="text-2xl text-blue-500 mb-4">🏆 Tournament Settings</h2>
+            
+            <!-- Seeding Mappool Management -->
+            <div class="bg-gray-700 p-4 rounded-lg mb-4">
+                <h3 class="text-lg text-blue-400 mb-3">🎯 Seeding Mappool</h3>
+                
+                <form action="{{ url_for('admin.set_seeding_playlist') }}" method="POST" class="flex gap-2 mb-3">
+                    <input type="url" name="playlist_url" 
+                           placeholder="osu! playlist URL (e.g., https://osu.ppy.sh/playlists/123456)" 
+                           value="{{ data.get('seeding_playlist_url', '') }}"
+                           class="bg-gray-900 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        Update Playlist
+                    </button>
+                </form>
+                
+                <div class="flex gap-2">
+                    {% if data.get('seeding_playlist_url') %}
+                    <a href="{{ data.seeding_playlist_url }}" target="_blank" 
+                       class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">
+                        🎵 View Current Playlist
+                    </a>
+                    <form action="{{ url_for('admin.set_seeding_playlist') }}" method="POST" class="inline"
+                          onsubmit="return confirm('Clear seeding playlist URL?');">
+                        <input type="hidden" name="playlist_url" value="">
+                        <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded text-sm">
+                            Clear Playlist
+                        </button>
+                    </form>
+                    {% else %}
+                    <p class="text-gray-400 text-sm italic">No seeding playlist set - will show "TBD" on tournament details page</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-3 text-xs text-gray-400">
+                    <p>💡 <strong>Tip:</strong> When a playlist URL is set, the tournament details page will show "Pool has been dropped for practice!" with a link to the playlist.</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Overlay Controls -->
         <div class="bg-gray-800 p-6 rounded-lg mb-8">
             <h2 class="text-2xl text-green-500 mb-4">🎥 Stream Overlay Controls</h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">  <!-- changed lg:grid-cols-4 → lg:grid-cols-5 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
                 <!-- AFK Toggle -->
                 <form action="{{ url_for('admin.overlay_toggle_afk') }}" method="POST" class="inline">
                     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors">
@@ -169,28 +211,27 @@
                 
                 <!-- Hide Victory Screens -->
                 <form action="{{ url_for('admin.overlay_hide_victory') }}" method="POST" class="inline">
-                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded transition-colors">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors">
                         ❌ Hide Victory Screens
                     </button>
                 </form>
                 
                 <!-- Show Match Victory -->
                 <form action="{{ url_for('admin.overlay_show_match_victory') }}" method="POST" class="inline">
-                    <button type="submit" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded transition-colors">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors">
                         🏆 Show Match Victory
                     </button>
                 </form>
                 
                 <!-- Open Overlay -->
                 <a href="{{ url_for('public.tournament_overlay') }}" target="_blank" 
-                   class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition-colors text-center inline-block">
-                    �️ Open Overlay
+                   class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors text-center inline-block">
+                    🖥️ Open Overlay
                 </a>
 
                 <!-- Flip Players -->
                 <form action="{{ url_for('admin.overlay_flip_players') }}" method="POST" class="inline">
-                    <button type="submit"
-                            class="w-full bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 text-white font-bold py-3 px-4 rounded transition-colors">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors">
                         🔄 Flip Players
                     </button>
                 </form>
@@ -431,7 +472,7 @@
         </div>
 
         <!-- Competitors Management -->
-        <div class="bg-gray-800 p-6 rounded-lg mb-8">
+        <div class="bg-gray-800 p-6 rounded-lg mb-8 dev-mode-content">
             <h2 class="text-2xl text-pink-500 mb-4">Competitors ({{ data.competitors|length }})</h2>
             
             <!-- Add/Reset Competitors & Seeding -->
@@ -513,7 +554,7 @@
         </div>
 
         <!-- Bracket Management -->
-        <div class="bg-gray-800 p-6 rounded-lg">
+        <div class="bg-gray-800 p-6 rounded-lg dev-mode-content">
             <h2 class="text-2xl text-pink-500 mb-4">Bracket Management</h2>
 
             <!-- Match Management Macro -->
