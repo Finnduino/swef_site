@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournament Overlay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: transparent;
+            color: white;
+            overflow: hidden;
+            font-size: 14px;
+        }
+
+        /* Main Match HUD */
+        .match-hud {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            width: 900px;
+            max-width: 90vw;
+        }
+
+        .hud-container {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(20, 20, 30, 0.9));
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+        }
+
+        .bracket-info {
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            padding: 8px 20px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .players-container {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            gap: 20px;
+        }
+
+        .player {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .player.winning {
+            background: rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.3);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+        }
+
+        .player-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            object-fit: cover;
+            transition: all 0.3s ease;
+        }
+
+        .player.winning .player-avatar {
+            border-color: #22c55e;
+            box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
+        }
+
+        .player-info {
+            flex: 1;
+        }
+
+        .player-name {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 2px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .player-seed {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .score-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            min-width: 200px;
+        }
+
+        .current-score {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            letter-spacing: 2px;
+        }
+
+        .score-tracker {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .score-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .score-dot.p1-win {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border-color: #ef4444;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+        }
+
+        .score-dot.p2-win {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border-color: #3b82f6;
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+        }
+
+        .score-dot.p1-win::after,
+        .score-dot.p2-win::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.9;
+        }
+
+        .score-label {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        /* Victory Screens */
+        .victory-screen {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(20, 20, 30, 0.95));
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px 60px;
+            text-align: center;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            min-width: 400px;
+            animation: victorySlideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes victorySlideIn {
+            from { 
+                opacity: 0; 
+                transform: translate(-50%, -50%) scale(0.8) rotateX(20deg);
+            }
+            to { 
+                opacity: 1; 
+                transform: translate(-50%, -50%) scale(1) rotateX(0deg);
+            }
+        }
+
+        .victory-title {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .victory-subtitle {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .victory-details {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .match-victory .victory-title {
+            font-size: 36px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* AFK Screen */
+        .afk-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #1e1b4b, #312e81, #1e40af);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .brb-content {
+            text-align: center;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .brb-title {
+            font-size: 64px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffffff, #e5e7eb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .tournament-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .next-match {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+        }
+
+        /* Animations and Effects */
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .slide-up {
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1024px) {
+            .match-hud {
+                width: 95vw;
+                top: 20px;
+            }
+            
+            .current-score {
+                font-size: 24px;
+            }
+            
+            .player-name {
+                font-size: 14px;
+            }
+            
+            .brb-title {
+                font-size: 48px;
+            }
+        }
+
+        /* Utility classes */
+        .hidden {
+            display: none !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Match HUD -->
+    <div class="match-hud" id="matchHud">
+        <div class="hud-container">
+            <div class="bracket-info" id="bracketInfo">
+                Upper Bracket - Round 1
+            </div>
+            
+            <div class="players-container">
+                <!-- Player 1 -->
+                <div class="player" id="player1">
+                    <img class="player-avatar" id="p1Avatar" src="" alt="Player 1" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjQiIGN5PSIyNCIgcj0iMjQiIGZpbGw9IiMzNzM3MzciLz4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSIxMiIgeT0iMTIiPgo8cGF0aCBkPSJNMTIgMTJDMTQuNzYxNCAxMiAxNyA5Ljc2MTQyIDE3IDdDMTcgNC4yMzg1OCAxNC43NjE0IDIgMTIgMkM5LjIzODU4IDIgNyA0LjIzODU4IDcgN0M3IDkuNzYxNDIgOS4yMzg1OCAxMiAxMiAxMloiIGZpbGw9IndoaXRlIiBmaWxsLW9wYWNpdHk9IjAuNSIvPgo8cGF0aCBkPSJNMTIgMTRDOC4xMzQwMSAxNCA1IDE3LjEzNDEgNSAyMUg5SDE1SDE5QzE5IDE3LjEzNDEgMTUuODY2IDE0IDEyIDE0WiIgZmlsbD0id2hpdGUiIGZpbGwtb3BhY2l0eT0iMC41Ii8+Cjwvc3ZnPgo8L3N2Zz4K'">
+                    <div class="player-info">
+                        <div class="player-name" id="p1Name">Player 1</div>
+                        <div class="player-seed" id="p1Seed">Seed #1</div>
+                    </div>
+                </div>
+
+                <!-- Score Section -->
+                <div class="score-section">
+                    <div class="score-label">Best of 7</div>
+                    <div class="current-score" id="currentScore">0 - 0</div>
+                    <div class="score-tracker" id="scoreTracker">
+                        <!-- Dots will be generated by JS -->
+                    </div>
+                </div>
+
+                <!-- Player 2 -->
+                <div class="player" id="player2">
+                    <div class="player-info" style="text-align: right;">
+                        <div class="player-name" id="p2Name">Player 2</div>
+                        <div class="player-seed" id="p2Seed">Seed #2</div>
+                    </div>
+                    <img class="player-avatar" id="p2Avatar" src="" alt="Player 2" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjQiIGN5PSIyNCIgcj0iMjQiIGZpbGw9IiMzNzM3MzciLz4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSIxMiIgeT0iMTIiPgo8cGF0aCBkPSJNMTIgMTJDMTQuNzYxNCAxMiAxNyA5Ljc2MTQyIDE3IDdDMTcgNC4yMzg1OCAxNC43NjE0IDIgMTIgMkM5LjIzODU4IDIgNyA0LjIzODU4IDcgN0M3IDkuNzYxNDIgOS4yMzg1OCAxMiAxMiAxMloiIGZpbGw9IndoaXRlIiBmaWxsLW9wYWNpdHk9IjAuNSIvPgo8cGF0aCBkPSJNMTIgMTRDOC4xMzQwMSAxNCA1IDE3LjEzNDEgNSAyMUg5SDE1SDE5QzE5IDE3LjEzNDEgMTUuODY2IDE0IDEyIDE0WiIgZmlsbD0id2hpdGUiIGZpbGwtb3BhY2l0eT0iMC41Ii8+Cjwvc3ZnPgo8L3N2Zz4K'">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Victory Screen -->
+    <div class="victory-screen hidden" id="mapVictory">
+        <div class="victory-title" id="mapWinner">Player 1 Wins!</div>
+        <div class="victory-subtitle" id="mapDetails">Map Title - [Difficulty]</div>
+        <div class="victory-details" id="mapStats">Score: 1,234,567 | Accuracy: 98.5%</div>
+    </div>
+
+    <!-- Match Victory Screen -->
+    <div class="victory-screen match-victory hidden" id="matchVictory">
+        <div class="victory-title" id="matchWinner">Player 1 Wins the Match!</div>
+        <div class="victory-subtitle" id="finalScore">Final Score: 4-2</div>
+        <div class="victory-details" id="advancement">Advances to Round 2</div>
+    </div>
+
+    <!-- AFK Screen -->
+    <div class="afk-screen hidden" id="afkScreen">
+        <div class="brb-content">
+            <div class="brb-title">Be Right Back</div>
+            <div class="tournament-title">Sand World OSU Cup 2025</div>
+            <div class="next-match" id="nextMatch">Loading tournament data...</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        // WebSocket connection to your Flask backend
+        const socket = io();
+        
+        socket.on('connect', function() {
+            console.log('Connected to server');
+            socket.emit('join_overlay');
+        });
+        
+        socket.on('disconnect', function() {
+            console.log('Disconnected from server');
+        });
+        
+        socket.on('match_update', function(data) {
+            console.log('Match update received:', data);
+            if (data.match_found) {
+                updateOverlay(data);
+            } else {
+                console.log('No active match:', data.message);
+                showNoMatchMessage();
+            }
+        });
+        
+        socket.on('map_victory', function(data) {
+            showMapVictory(data.winner, data.map_info);
+        });
+        
+        socket.on('match_victory', function(data) {
+            console.log('Received match_victory event:', data);
+            showMatchVictory(data.winner, data.final_score, data.advancement);
+        });
+        
+        socket.on('toggle_afk', function() {
+            toggleAFK();
+        });
+        
+        socket.on('exit_afk', function() {
+            console.log('Received exit_afk - showing match overlay');
+            exitAFK();
+        });
+        
+        socket.on('hide_victory_screens', function() {
+            console.log('Hiding victory screens');
+            const mapVictory = document.getElementById('mapVictory');
+            const matchVictory = document.getElementById('matchVictory');
+            
+            mapVictory.style.display = 'none';
+            mapVictory.classList.add('hidden');
+            
+            matchVictory.style.display = 'none';
+            matchVictory.classList.add('hidden');
+        });
+
+        // Listen for flip_players event from admin panel
+        socket.on('flip_players', function() {
+            flipPlayers();
+        });
+
+        // Function to swap player UI elements
+        function flipPlayers() {
+            const p1NameEl = document.getElementById('p1Name');
+            const p2NameEl = document.getElementById('p2Name');
+            const p1Avatar = document.getElementById('p1Avatar');
+            const p2Avatar = document.getElementById('p2Avatar');
+            const p1SeedEl = document.getElementById('p1Seed');
+            const p2SeedEl = document.getElementById('p2Seed');
+            const player1El = document.getElementById('player1');
+            const player2El = document.getElementById('player2');
+            // Swap player names
+            [p1NameEl.textContent, p2NameEl.textContent] = [p2NameEl.textContent, p1NameEl.textContent];
+            // Swap avatars
+            [p1Avatar.src, p2Avatar.src] = [p2Avatar.src, p1Avatar.src];
+            // Swap seeds
+            [p1SeedEl.textContent, p2SeedEl.textContent] = [p2SeedEl.textContent, p1SeedEl.textContent];
+            // Swap winning highlight if present
+            const p1Win = player1El.classList.contains('winning');
+            const p2Win = player2El.classList.contains('winning');
+            if (p1Win !== p2Win) {
+                player1El.classList.toggle('winning');
+                player2El.classList.toggle('winning');
+            }
+            // --- NEW: swap the score display and tracker ---
+            const scoreEl  = document.getElementById('currentScore');
+            // parse "X - Y"
+            const [s1, s2] = scoreEl.textContent.split(' - ').map(n => parseInt(n, 10) || 0);
+            // rewrite text flipped
+            scoreEl.textContent = `${s2} - ${s1}`;
+            // rebuild dots flipped
+            updateScoreTracker(s2, s1);
+        }
+        
+        function updateOverlay(matchData) {
+            // Update player info with animations
+            const p1Name = document.getElementById('p1Name');
+            const p2Name = document.getElementById('p2Name');
+            const p1Avatar = document.getElementById('p1Avatar');
+            const p2Avatar = document.getElementById('p2Avatar');
+            const p1Seed = document.getElementById('p1Seed');
+            const p2Seed = document.getElementById('p2Seed');
+            
+            // Animate changes if different
+            if (p1Name.textContent !== matchData.player1.name) {
+                p1Name.classList.add('slide-up');
+                p1Name.textContent = matchData.player1.name;
+                setTimeout(() => p1Name.classList.remove('slide-up'), 500);
+            }
+            
+            if (p2Name.textContent !== matchData.player2.name) {
+                p2Name.classList.add('slide-up');
+                p2Name.textContent = matchData.player2.name;
+                setTimeout(() => p2Name.classList.remove('slide-up'), 500);
+            }
+            
+            p1Avatar.src = matchData.player1.avatar_url || '';
+            p2Avatar.src = matchData.player2.avatar_url || '';
+            p1Seed.textContent = `Seed #${matchData.player1.seed}`;
+            p2Seed.textContent = `Seed #${matchData.player2.seed}`;
+            
+            // Update bracket info
+            document.getElementById('bracketInfo').textContent = 
+                `${matchData.bracket} Bracket - Round ${matchData.round_index + 1}`;
+            
+            // Update score tracker (Best of 7)
+            updateScoreTracker(matchData.score_p1, matchData.score_p2);
+            
+            // Update current score with animation
+            const scoreElement = document.getElementById('currentScore');
+            const newScore = `${matchData.score_p1} - ${matchData.score_p2}`;
+            if (scoreElement.textContent !== newScore) {
+                scoreElement.classList.add('pulse');
+                scoreElement.textContent = newScore;
+                setTimeout(() => scoreElement.classList.remove('pulse'), 1000);
+            }
+            
+            // Update player states (winning/losing)
+            const player1El = document.getElementById('player1');
+            const player2El = document.getElementById('player2');
+            
+            player1El.classList.remove('winning');
+            player2El.classList.remove('winning');
+            
+            if (matchData.score_p1 > matchData.score_p2) {
+                player1El.classList.add('winning');
+            } else if (matchData.score_p2 > matchData.score_p1) {
+                player2El.classList.add('winning');
+            }
+            
+            // Update AFK screen next match info
+            updateNextMatchInfo(matchData);
+                
+            // Show the HUD if it was hidden
+            document.getElementById('matchHud').classList.remove('hidden');
+        }
+        
+        function updateNextMatchInfo(currentMatchData) {
+            const nextMatchElement = document.getElementById('nextMatch');
+            
+            // If current match is in progress, show it
+            if (currentMatchData.status === 'in_progress') {
+                nextMatchElement.textContent = `Now: ${currentMatchData.player1.name} vs ${currentMatchData.player2.name}`;
+            } else if (currentMatchData.status === 'next_up') {
+                nextMatchElement.textContent = `Next: ${currentMatchData.player1.name} vs ${currentMatchData.player2.name}`;
+            } else {
+                nextMatchElement.textContent = 'Tournament in progress...';
+            }
+        }
+        
+        function showNoMatchMessage() {
+            // Hide HUD when no match is active
+            document.getElementById('matchHud').classList.add('hidden');
+            
+            // Update AFK screen to show no active match
+            const nextMatchElement = document.getElementById('nextMatch');
+            nextMatchElement.textContent = 'No active matches - Stay tuned!';
+        }
+        
+        function updateScoreTracker(score1, score2) {
+            const tracker = document.getElementById('scoreTracker');
+            tracker.innerHTML = '';
+            
+            // Create 7 dots for Best of 7
+            for (let i = 0; i < 7; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'score-dot';
+                
+                // Player 1 wins come from the left (positions 0, 1, 2, 3...)
+                // Player 2 wins come from the right (positions 6, 5, 4, 3...)
+                if (i < score1) {
+                    // Player 1 win - fill from left
+                    setTimeout(() => {
+                        dot.classList.add('p1-win');
+                    }, i * 50);
+                } else if (i >= (7 - score2)) {
+                    // Player 2 win - fill from right
+                    setTimeout(() => {
+                        dot.classList.add('p2-win');
+                    }, (6 - i) * 50);
+                }
+                
+                tracker.appendChild(dot);
+            }
+        }
+        
+        function showMapVictory(winner, mapInfo) {
+            const screen = document.getElementById('mapVictory');
+            const winnerElement = document.getElementById('mapWinner');
+            const detailsElement = document.getElementById('mapDetails');
+            
+            winnerElement.textContent = `${winner} Wins!`;
+            detailsElement.textContent = mapInfo.title || 'Map Complete';
+            
+            screen.classList.remove('hidden');
+            screen.classList.add('fade-in');
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                screen.classList.add('hidden');
+                screen.classList.remove('fade-in');
+            }, 5000);
+        }
+        
+        function showMatchVictory(winner, finalScore, advancement = "") {
+            console.log('Showing match victory:', { winner, finalScore, advancement });
+            
+            const screen = document.getElementById('matchVictory');
+            const winnerElement = document.getElementById('matchWinner');
+            const scoreElement = document.getElementById('finalScore');
+            const advancementElement = document.getElementById('advancement');
+            
+            // Clear any existing classes and force visibility
+            screen.className = 'victory-screen match-victory';
+            screen.style.display = 'block';
+            screen.style.opacity = '1';
+            
+            // Update content
+            winnerElement.textContent = `${winner} Wins the Match!`;
+            scoreElement.textContent = `Final Score: ${finalScore}`;
+            advancementElement.textContent = advancement || '';
+            
+            // Force reflow and add animation
+            screen.offsetHeight;
+            screen.classList.add('fade-in');
+            
+            console.log('Match victory screen should now be visible');
+        }
+        
+        function toggleAFK() {
+            const afkScreen = document.getElementById('afkScreen');
+            const matchHud = document.getElementById('matchHud');
+            
+            if (afkScreen.classList.contains('hidden')) {
+                afkScreen.classList.remove('hidden');
+                afkScreen.classList.add('fade-in');
+                matchHud.classList.add('hidden');
+            } else {
+                afkScreen.classList.add('hidden');
+                afkScreen.classList.remove('fade-in');
+                matchHud.classList.remove('hidden');
+            }
+        }
+        
+        function exitAFK() {
+            const afkScreen = document.getElementById('afkScreen');
+            const matchHud = document.getElementById('matchHud');
+            
+            // Force exit AFK screen and show match HUD
+            afkScreen.classList.add('hidden');
+            afkScreen.classList.remove('fade-in');
+            matchHud.classList.remove('hidden');
+            
+            console.log('Exited AFK screen - showing match HUD');
+        }
+        
+        function hideVictoryScreens() {
+            document.getElementById('mapVictory').classList.add('hidden');
+            document.getElementById('matchVictory').classList.add('hidden');
+        }
+
+
+        // Initialize overlay on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Tournament overlay loaded');
+            // Create initial empty score tracker
+            updateScoreTracker(0, 0);
+        });
+    </script>
+</body>
+</html>

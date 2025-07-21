@@ -41,11 +41,33 @@
           opacity: 0.6;
           border: 1px solid #6b7280;
         }
+
+        /* Dev mode toggle */
+        .dev-mode-content {
+          display: none;
+        }
+        .dev-mode-enabled .dev-mode-content {
+          display: block;
+        }
     </style>
 </head>
 <body class="p-8">
     <div class="max-w-7xl mx-auto">
         <h1 class="text-4xl text-yellow-400 mb-8">Tournament Admin Panel</h1>
+
+        <!-- Dev Mode Toggle -->
+        <div class="bg-orange-900 border border-orange-600 p-4 rounded-lg mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-orange-400">🛠️ Developer Mode</h3>
+                    <p class="text-sm text-orange-200">Enable access to advanced controls and reset functions</p>
+                </div>
+                <button onclick="toggleDevMode()" id="devModeToggle" 
+                        class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded font-bold">
+                    Enable Dev Mode
+                </button>
+            </div>
+        </div>
 
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -133,6 +155,239 @@
             {% endif %}
         </div>
 
+        <!-- Overlay Controls -->
+        <div class="bg-gray-800 p-6 rounded-lg mb-8">
+            <h2 class="text-2xl text-green-500 mb-4">🎥 Stream Overlay Controls</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">  <!-- changed lg:grid-cols-4 → lg:grid-cols-5 -->
+                <!-- AFK Toggle -->
+                <form action="{{ url_for('admin.overlay_toggle_afk') }}" method="POST" class="inline">
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors">
+                        📺 Toggle AFK Screen
+                    </button>
+                </form>
+                
+                <!-- Hide Victory Screens -->
+                <form action="{{ url_for('admin.overlay_hide_victory') }}" method="POST" class="inline">
+                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded transition-colors">
+                        ❌ Hide Victory Screens
+                    </button>
+                </form>
+                
+                <!-- Show Match Victory -->
+                <form action="{{ url_for('admin.overlay_show_match_victory') }}" method="POST" class="inline">
+                    <button type="submit" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded transition-colors">
+                        🏆 Show Match Victory
+                    </button>
+                </form>
+                
+                <!-- Open Overlay -->
+                <a href="{{ url_for('public.tournament_overlay') }}" target="_blank" 
+                   class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition-colors text-center inline-block">
+                    �️ Open Overlay
+                </a>
+
+                <!-- Flip Players -->
+                <form action="{{ url_for('admin.overlay_flip_players') }}" method="POST" class="inline">
+                    <button type="submit"
+                            class="w-full bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 text-white font-bold py-3 px-4 rounded transition-colors">
+                        🔄 Flip Players
+                    </button>
+                </form>
+            </div>
+            
+        </div>
+
+        <!-- Current Match Management -->
+        <div class="bg-gray-800 p-6 rounded-lg mb-8">
+            <h2 class="text-2xl text-green-500 mb-4">🎯 Current Match Management</h2>
+            {% set ns = namespace(current_match=None, current_bracket_type=None) %}
+
+            {# --- Find the current match with priority: in_progress then next_up --- #}
+
+            {# 1) First look for any in_progress match #}
+            {% if not ns.current_match %}
+              {% for bracket_type in ['upper','lower','grand_finals'] %}
+                {% if bracket_type in data.get('brackets',{}) and not ns.current_match %}
+                  {% if bracket_type == 'grand_finals' %}
+                    {% set match = data.brackets[bracket_type] %}
+                    {% if match and match.status == 'in_progress' %}
+                      {% set ns.current_match = match %}
+                      {% set ns.current_bracket_type = bracket_type %}
+                    {% endif %}
+                  {% else %}
+                    {% for round_matches in data.brackets[bracket_type] %}
+                      {% for match in round_matches %}
+                        {% if not ns.current_match and match and match.status == 'in_progress' %}
+                          {% set ns.current_match = match %}
+                          {% set ns.current_bracket_type = bracket_type %}
+                        {% endif %}
+                      {% endfor %}
+                    {% endfor %}
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+
+            {# 2) If none are in_progress, fall back to next_up #}
+            {% if not ns.current_match %}
+              {% for bracket_type in ['upper','lower','grand_finals'] %}
+                {% if bracket_type in data.get('brackets',{}) and not ns.current_match %}
+                  {% if bracket_type == 'grand_finals' %}
+                    {% set match = data.brackets[bracket_type] %}
+                    {% if match and match.status == 'next_up' %}
+                      {% set ns.current_match = match %}
+                      {% set ns.current_bracket_type = bracket_type %}
+                    {% endif %}
+                  {% else %}
+                    {% for round_matches in data.brackets[bracket_type] %}
+                      {% for match in round_matches %}
+                        {% if not ns.current_match and match and match.status == 'next_up' %}
+                          {% set ns.current_match = match %}
+                          {% set ns.current_bracket_type = bracket_type %}
+                        {% endif %}
+                      {% endfor %}
+                    {% endfor %}
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+            
+            {% if ns.current_match %}
+            <div class="bg-gray-700 p-6 rounded-lg border-2 border-green-500">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-green-400">{{ ns.current_bracket_type|title|replace('_', ' ') }}</h3>
+                        <p class="text-sm text-gray-300">Match ID: {{ ns.current_match.id }}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        {% if ns.current_match.get('status') == 'in_progress' %}
+                        <span class="bg-green-600 text-white text-sm px-3 py-1 rounded-full animate-pulse">
+                            🔴 LIVE
+                        </span>
+                        {% elif ns.current_match.get('status') == 'next_up' %}
+                        <span class="bg-yellow-600 text-white text-sm px-3 py-1 rounded-full">
+                            ⏳ NEXT UP
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Players and Score -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <!-- Player 1 -->
+                    <div class="bg-gray-600 p-4 rounded text-center">
+                        {% if ns.current_match.player1 %}
+                        <img src="{{ ns.current_match.player1.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" 
+                             class="w-16 h-16 rounded-full mx-auto mb-2">
+                        <h4 class="text-lg font-bold text-yellow-300">{{ ns.current_match.player1.name }}</h4>
+                        <p class="text-2xl font-bold text-white">{{ ns.current_match.get('score_p1', 0) }}</p>
+                        {% else %}
+                        <p class="text-gray-400 italic">TBD</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- VS and Match Info -->
+                    <div class="flex flex-col justify-center items-center text-center">
+                        <p class="text-gray-400 text-lg font-bold mb-2">VS</p>
+                        <p class="text-sm text-gray-300">Best of 7</p>
+                        <p class="text-xs text-gray-400">First to 4 wins</p>
+                    </div>
+                    
+                    <!-- Player 2 -->
+                    <div class="bg-gray-600 p-4 rounded text-center">
+                        {% if ns.current_match.player2 %}
+                        <img src="{{ ns.current_match.player2.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" 
+                             class="w-16 h-16 rounded-full mx-auto mb-2">
+                        <h4 class="text-lg font-bold text-yellow-300">{{ ns.current_match.player2.name }}</h4>
+                        <p class="text-2xl font-bold text-white">{{ ns.current_match.get('score_p2', 0) }}</p>
+                        {% else %}
+                        <p class="text-gray-400 italic">TBD</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Match URL and Actions -->
+                <div class="space-y-4">
+                    <!-- Multiplayer Room URL Management -->
+                    <div class="bg-gray-800 p-4 rounded">
+                        <h4 class="text-md font-bold text-blue-400 mb-3">🔗 Multiplayer Room</h4>
+                        
+                        {% if ns.current_match.get('mp_room_url') %}
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-sm text-gray-300">Current Room:</span>
+                            <a href="{{ ns.current_match.mp_room_url }}" target="_blank" 
+                               class="text-blue-400 hover:text-blue-300 text-sm font-mono">
+                                {{ ns.current_match.mp_room_url }}
+                            </a>
+                        </div>
+                        {% else %}
+                        <p class="text-gray-400 text-sm mb-3">No multiplayer room set for this match</p>
+                        {% endif %}
+                        
+                        <!-- Set/Update Room URL and optional start -->
+                        <form action="{{ url_for('admin.set_match_room') }}" method="POST" class="flex gap-2">
+                            <input type="hidden" name="match_id" value="{{ ns.current_match.id }}">
+                            <input type="url" name="mp_room_url" 
+                                   placeholder="https://osu.ppy.sh/multiplayer/rooms/..." 
+                                   value="{{ ns.current_match.get('mp_room_url')|default('', true) }}"
+                                   class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button type="submit" name="action" value="set_and_start" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm">
+                                ▶️ Set & Start Match
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Score Refresh -->
+                    {% if ns.current_match.get('mp_room_url') %}
+                    <div class="bg-gray-800 p-4 rounded">
+                        <h4 class="text-md font-bold text-purple-400 mb-3">🔄 Score Management</h4>
+                        <p class="text-sm text-gray-300 mb-3">
+                            Refresh scores from the multiplayer room. Use this after maps are completed.
+                        </p>
+                        <form action="{{ url_for('admin.refresh_match_scores') }}" method="POST" class="inline">
+                            <input type="hidden" name="match_id" value="{{ ns.current_match.id }}">
+                            <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded font-bold">
+                                🔄 Refresh Scores from osu!
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Match Control Actions -->
+                    <div class="bg-gray-800 p-4 rounded dev-mode-content">
+                        <h4 class="text-md font-bold text-green-400 mb-3">⚡ Match Controls</h4>
+                        <div class="flex flex-wrap gap-2">
+                            {% if ns.current_match.get('status') == 'next_up' %}
+                            <form action="{{ url_for('admin.start_match') }}" method="POST" class="inline">
+                                <input type="hidden" name="match_id" value="{{ ns.current_match.id }}">
+                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold">
+                                    ▶️ Start Match
+                                </button>
+                            </form>
+                            {% endif %}
+                            
+                            {% if ns.current_match.get('status') == 'in_progress' %}
+                            <form action="{{ url_for('admin.reset_match') }}" method="POST" class="inline"
+                                  onsubmit="return confirm('Reset this match to Next Up status?');">
+                                <input type="hidden" name="match_id" value="{{ ns.current_match.id }}">
+                                <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">
+                                    ⏹️ Reset to Next Up
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="bg-gray-700 p-6 rounded-lg text-center">
+                <p class="text-gray-400 text-lg">🏁 No current match</p>
+                <p class="text-sm text-gray-500 mt-1">All matches may be completed or tournament is between rounds</p>
+            </div>
+            {% endif %}
+        </div>
+
         <!-- Seeding Management -->
         <div class="bg-gray-800 p-6 rounded-lg mb-8">
             <h2 class="text-2xl text-pink-500 mb-4">Seeding Matches</h2>
@@ -186,18 +441,33 @@
                     <input type="text" name="username" placeholder="Enter osu! Username" class="bg-gray-900 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
                     <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Add Competitor</button>
                 </form>
-                <!-- Reset Competitors Button -->
-                <form action="{{ url_for('admin.reset_competitors') }}" method="POST" onsubmit="return confirm('DANGER! This will remove ALL competitors and reset the entire tournament. Are you absolutely sure?');">
-                    <button type="submit" class="bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-4 rounded">Reset All Competitors</button>
-                </form>
+                
+                <!-- Dangerous Reset Buttons (DEV MODE ONLY) -->
+                <div class="dev-mode-content">
+                    <div class="flex gap-4 items-center border border-red-500 bg-red-900 p-3 rounded">
+                        <span class="text-red-300 text-sm font-bold">DEV DANGER ZONE:</span>
+                        <!-- Reset Competitors Button -->
+                        <form action="{{ url_for('admin.reset_competitors') }}" method="POST" onsubmit="return confirm('DANGER! This will remove ALL competitors and reset the entire tournament. Are you absolutely sure?');">
+                            <button type="submit" class="bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-4 rounded">Reset All Competitors</button>
+                        </form>
 
-                <!-- Reset All Seed Placements -->
-                <form action="{{ url_for('admin.reset_seeding') }}" method="POST" onsubmit="return confirm('This will clear all seed placements. Continue?');">
-                    <button type="submit"
-                            class="bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-2 px-4 rounded">
-                      Reset Seeding
-                    </button>
-                </form>
+                        <!-- Reset All Seed Placements -->
+                        <form action="{{ url_for('admin.reset_seeding') }}" method="POST" onsubmit="return confirm('This will clear all seed placements. Continue?');">
+                            <button type="submit"
+                                    class="bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-2 px-4 rounded">
+                              Reset Seeding
+                            </button>
+                        </form>
+                        
+                        <!-- Regenerate Bracket (also dangerous) -->
+                        <form method="POST" action="{{ url_for('admin.reset_bracket') }}" class="inline">
+                            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold"
+                                    onclick="return confirm('Are you sure you want to regenerate the bracket? This will reset all match progress.')">
+                                🔄 Regenerate Bracket
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -245,16 +515,6 @@
         <!-- Bracket Management -->
         <div class="bg-gray-800 p-6 rounded-lg">
             <h2 class="text-2xl text-pink-500 mb-4">Bracket Management</h2>
-            
-            <div class="flex flex-wrap gap-4 mb-6">
-                <form method="POST" action="{{ url_for('admin.reset_bracket') }}" class="inline">
-                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold"
-                            onclick="return confirm('Are you sure you want to regenerate the bracket? This will reset all match progress.')">
-                        🔄 Regenerate Bracket
-                    </button>
-                </form>
-                
-            </div>
 
             <!-- Match Management Macro -->
             {% macro render_match(match, bracket_type) %}
@@ -368,79 +628,90 @@
                     </span>
                     {% endif %}
                     
-                    <!-- Reset Match Button -->
+                    <!-- Reset Match Button (DEV MODE ONLY) -->
                     {% if match.get('status') != 'next_up' %}
-                    <form action="{{ url_for('admin.reset_match') }}" method="POST" class="inline" 
-                          onsubmit="return confirm('Reset this match to Next Up status?');">
-                        <input type="hidden" name="match_id" value="{{ match.id }}">
-                        <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded text-sm">
-                            🔄 Reset
-                        </button>
-                    </form>
+                    <div class="dev-mode-content">
+                        <form action="{{ url_for('admin.reset_match') }}" method="POST" class="inline" 
+                              onsubmit="return confirm('Reset this match to Next Up status?');">
+                            <input type="hidden" name="match_id" value="{{ match.id }}">
+                            <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded text-sm">
+                                🔄 Reset
+                            </button>
+                        </form>
+                    </div>
                     {% endif %}
                 </div>
 
-                <!-- Quick Win Buttons (only show if not completed and not BYE) -->
+                <!-- Quick Win Buttons (DEV MODE ONLY) -->
                 {% if match.get('status') != 'completed' %}
-                <div class="flex items-center justify-between mb-3">
-                    <form action="{{ url_for('admin.set_winner') }}" method="POST" class="inline">
-                        <input type="hidden" name="match_id" value="{{ match.id }}">
-                        <input type="hidden" name="winner_id" value="{{ match.player1.id }}">
-                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm">
-                            4-0 Win
-                        </button>
-                    </form>
-                    <span class="text-gray-500 text-sm">Quick Actions</span>
-                    <form action="{{ url_for('admin.set_winner') }}" method="POST" class="inline">
-                        <input type="hidden" name="match_id" value="{{ match.id }}">
-                        <input type="hidden" name="winner_id" value="{{ match.player2.id }}">
-                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm">
-                            4-0 Win
-                        </button>
-                    </form>
+                <div class="dev-mode-content mb-3">
+                    <div class="flex items-center justify-between border border-orange-500 bg-orange-900 p-2 rounded">
+                        <form action="{{ url_for('admin.set_winner') }}" method="POST" class="inline">
+                            <input type="hidden" name="match_id" value="{{ match.id }}">
+                            <input type="hidden" name="winner_id" value="{{ match.player1.id }}">
+                            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm">
+                                4-0 Win
+                            </button>
+                        </form>
+                        <span class="text-orange-300 text-sm font-bold">DEV: Quick Actions</span>
+                        <form action="{{ url_for('admin.set_winner') }}" method="POST" class="inline">
+                            <input type="hidden" name="match_id" value="{{ match.id }}">
+                            <input type="hidden" name="winner_id" value="{{ match.player2.id }}">
+                            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm">
+                                4-0 Win
+                            </button>
+                        </form>
+                    </div>
                 </div>
                 {% endif %}
 
-                <!-- Detailed Score Management (only show if not completed and not BYE) -->
+                <!-- Detailed Score Management (DEV MODE ONLY) -->
                 {% if match.get('status') != 'completed' %}
-                <form action="{{ url_for('admin.set_score') }}" method="POST" class="border-t border-gray-600 pt-3">
-                    <input type="hidden" name="match_id" value="{{ match.id }}">
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <!-- Score Inputs -->
-                        <div class="flex items-center justify-center gap-4">
-                            <div class="text-center">
-                                <label class="block text-xs text-gray-400 mb-1">{{ match.player1.name[:10] }}</label>
-                                <input type="number" name="score_p1" min="0" max="4" 
-                                       value="{{ match.get('score_p1', 0) }}"
-                                       class="score-input bg-gray-900 border border-gray-600 rounded px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-pink-500">
-                            </div>
-                            <span class="text-gray-500 mt-4">:</span>
-                            <div class="text-center">
-                                <label class="block text-xs text-gray-400 mb-1">{{ match.player2.name[:10] }}</label>
-                                <input type="number" name="score_p2" min="0" max="4" 
-                                       value="{{ match.get('score_p2', 0) }}"
-                                       class="score-input bg-gray-900 border border-gray-600 rounded px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-pink-500">
-                            </div>
+                <div class="dev-mode-content">
+                    <div class="border border-orange-500 bg-orange-900 p-3 rounded">
+                        <div class="mb-2 text-center">
+                            <span class="text-orange-300 text-sm font-bold">DEV: Manual Score Control</span>
                         </div>
+                        <form action="{{ url_for('admin.set_score') }}" method="POST">
+                            <input type="hidden" name="match_id" value="{{ match.id }}">
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <!-- Score Inputs -->
+                                <div class="flex items-center justify-center gap-4">
+                                    <div class="text-center">
+                                        <label class="block text-xs text-gray-400 mb-1">{{ match.player1.name[:10] }}</label>
+                                        <input type="number" name="score_p1" min="0" max="4" 
+                                               value="{{ match.get('score_p1', 0) }}"
+                                               class="score-input bg-gray-900 border border-gray-600 rounded px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-pink-500">
+                                    </div>
+                                    <span class="text-gray-500 mt-4">:</span>
+                                    <div class="text-center">
+                                        <label class="block text-xs text-gray-400 mb-1">{{ match.player2.name[:10] }}</label>
+                                        <input type="number" name="score_p2" min="0" max="4" 
+                                               value="{{ match.get('score_p2', 0) }}"
+                                               class="score-input bg-gray-900 border border-gray-600 rounded px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-pink-500">
+                                    </div>
+                                </div>
 
-                        <!-- MP Room URL -->
-                        <div>
-                            <label class="block text-xs text-gray-400 mb-1">Multiplayer Room URL</label>
-                            <input type="url" name="mp_room_url" 
-                                   value="{{ match.get('mp_room_url', '') }}"
-                                   placeholder="https://osu.ppy.sh/multiplayer/rooms/..."
-                                   class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        </div>
+                                <!-- MP Room URL -->
+                                <div>
+                                    <label class="block text-xs text-gray-400 mb-1">Multiplayer Room URL</label>
+                                    <input type="url" name="mp_room_url" 
+                                           value="{{ match.get('mp_room_url', '') }}"
+                                           placeholder="https://osu.ppy.sh/multiplayer/rooms/..."
+                                           class="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
 
-                        <!-- Submit Button -->
-                        <div class="flex items-end">
-                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded">
-                                Update Score
-                            </button>
-                        </div>
+                                <!-- Submit Button -->
+                                <div class="flex items-end">
+                                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded">
+                                        Update Score
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
-                </form>
+                </div>
                 {% endif %}
                 {% else %}
                 <!-- BYE match explanation -->
@@ -509,5 +780,136 @@
             {% endif %}
         </div>
     </div>
+
+    <script>
+        // Admin-only keyboard shortcuts for overlay control
+        document.addEventListener('keydown', function(e) {
+            // Only work when not typing in input fields
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return;
+            }
+            
+            if (e.ctrlKey && e.shiftKey) {
+                e.preventDefault(); // Prevent browser shortcuts
+                
+                switch(e.key) {
+                    case 'A': // Ctrl+Shift+A - Toggle AFK
+                        fetch('{{ url_for("admin.overlay_toggle_afk") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            }
+                        }).then(() => {
+                            showNotification('AFK screen toggled', 'info');
+                        });
+                        break;
+                        
+                    case 'H': // Ctrl+Shift+H - Hide victory screens
+                        fetch('{{ url_for("admin.overlay_hide_victory") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            }
+                        }).then(() => {
+                            showNotification('Victory screens hidden', 'info');
+                        });
+                        break;
+                        
+                    case 'R': // Ctrl+Shift+R - Refresh overlay data
+                        fetch('{{ url_for("admin.overlay_refresh_data") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            }
+                        }).then(() => {
+                            showNotification('Overlay data refreshed', 'success');
+                        });
+                        break;
+                        
+                    case 'V': // Ctrl+Shift+V - Show match victory
+                        fetch('{{ url_for("admin.overlay_show_match_victory") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                            }
+                        }).then(() => {
+                            showNotification('Match victory screen shown', 'success');
+                        });
+                        break;
+                        
+                    case 'O': // Ctrl+Shift+O - Open overlay in new tab
+                        window.open('{{ url_for("public.tournament_overlay") }}', '_blank');
+                        showNotification('Overlay opened in new tab', 'info');
+                        break;
+                }
+            }
+        });
+        
+        // Show notification function
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded shadow-lg z-50 transition-all duration-300 ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 
+                'bg-blue-500'
+            } text-white`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+        
+        // Dev mode toggle functionality
+        function toggleDevMode() {
+            const body = document.body;
+            const button = document.getElementById('devModeToggle');
+            
+            if (body.classList.contains('dev-mode-enabled')) {
+                body.classList.remove('dev-mode-enabled');
+                button.textContent = 'Enable Dev Mode';
+                button.className = 'bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded font-bold';
+                localStorage.setItem('devModeEnabled', 'false');
+            } else {
+                body.classList.add('dev-mode-enabled');
+                button.textContent = 'Disable Dev Mode';
+                button.className = 'bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold';
+                localStorage.setItem('devModeEnabled', 'true');
+            }
+        }
+        
+        // Show keyboard shortcuts help
+        document.addEventListener('DOMContentLoaded', function() {
+            // Restore dev mode state from localStorage
+            const devModeEnabled = localStorage.getItem('devModeEnabled') === 'true';
+            if (devModeEnabled) {
+                document.body.classList.add('dev-mode-enabled');
+                document.getElementById('devModeToggle').textContent = 'Disable Dev Mode';
+                document.getElementById('devModeToggle').className = 'bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold';
+            }
+            
+            // Add help tooltip or modal trigger if needed
+            console.log('Admin overlay shortcuts:');
+            console.log('Ctrl+Shift+A - Toggle AFK screen');
+            console.log('Ctrl+Shift+H - Hide victory screens');
+            console.log('Ctrl+Shift+R - Refresh overlay data');
+            console.log('Ctrl+Shift+O - Open overlay');
+        });
+        
+        // preserve/restore scroll position across full reloads
+        document.addEventListener('DOMContentLoaded', function() {
+            const y = sessionStorage.getItem('scrollPos');
+            if (y) window.scrollTo(0, +y);
+        });
+        window.addEventListener('beforeunload', function() {
+            sessionStorage.setItem('scrollPos', window.scrollY);
+        });
+    </script>
 </body>
 </html>

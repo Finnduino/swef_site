@@ -8,6 +8,9 @@ deployment:
     # Create necessary directories
     - /bin/mkdir -p $DEPLOYPATH/app
     - /bin/mkdir -p $DEPLOYPATH/app/templates
+    - /bin/mkdir -p $DEPLOYPATH/app/routes
+    - /bin/mkdir -p $DEPLOYPATH/app/services
+    - /bin/mkdir -p $DEPLOYPATH/app/utils
     - /bin/mkdir -p $DEPLOYPATH/static
     
     # Copy all application files

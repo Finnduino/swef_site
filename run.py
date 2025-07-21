@@ -1,7 +1,7 @@
 from app import create_app
 from config import OSU_CALLBACK_URL
 
-app = create_app()
+app, socketio = create_app()
 
 if __name__ == '__main__':
     # Extract port from the callback URL for development consistency
@@ -9,4 +9,4 @@ if __name__ == '__main__':
         port = int(OSU_CALLBACK_URL.split(':')[-1].split('/')[0])
     except (ValueError, IndexError):
         port = 5000 # Default port if parsing fails
-    app.run(debug=False, port=port)
+    socketio.run(app, debug=True, port=port)
