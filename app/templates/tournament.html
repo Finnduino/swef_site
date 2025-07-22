@@ -156,6 +156,45 @@
       opacity: 0.6;
       border: 1px solid #6b7280;
     }
+    
+    /* Pre-generated bracket structure styles */
+    .match.empty-slot {
+      opacity: 0.3;
+      background-color: #111827; /* gray-900 */
+      border: 1px dashed #4b5563; /* gray-600 */
+    }
+    
+    .match.empty-slot .player {
+      background-color: #1f2937; /* gray-800 */
+      color: #6b7280; /* gray-500 */
+      font-style: italic;
+    }
+    
+    /* Improved connector styles for better visibility */
+    .connector-line {
+      background: linear-gradient(to right, #4b5563, #6b7280, #4b5563);
+    }
+    
+    .connector.vertical {
+      background: linear-gradient(to bottom, #4b5563, #6b7280, #4b5563);
+    }
+    
+    /* Tournament tree structure improvements */
+    .bracket-stage {
+      min-height: 600px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .round-title {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      transform: rotate(180deg);
+      margin: 0 10px;
+      color: #9ca3af;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body class="text-gray-100">
@@ -574,6 +613,41 @@
       </div>
       {% endif %}
       
+      {# Macro to calculate theoretical bracket structure #}
+      {% macro calculate_bracket_structure(num_competitors) %}
+        {% if num_competitors <= 1 %}{% set next_pow2 = 1 %}
+        {% elif num_competitors <= 2 %}{% set next_pow2 = 2 %}
+        {% elif num_competitors <= 4 %}{% set next_pow2 = 4 %}
+        {% elif num_competitors <= 8 %}{% set next_pow2 = 8 %}
+        {% elif num_competitors <= 16 %}{% set next_pow2 = 16 %}
+        {% elif num_competitors <= 32 %}{% set next_pow2 = 32 %}
+        {% elif num_competitors <= 64 %}{% set next_pow2 = 64 %}
+        {% else %}{% set next_pow2 = 128 %}
+        {% endif %}
+        {{ next_pow2 }}
+      {% endmacro %}
+      
+      {# Macro to generate empty bracket slots for visualization #}
+      {% macro generate_empty_match(round_index, match_index, bracket_type='upper') %}
+        <div class="match empty-slot">
+          <div class="text-center mb-2">
+            <span class="inline-block bg-gray-600 text-gray-400 px-2 py-1 rounded-full text-xs">
+              🏁 Awaiting Players
+            </span>
+          </div>
+          <div class="player">
+            <div class="player-info">
+              <span class="text-gray-500 italic">TBD</span>
+            </div>
+          </div>
+          <div class="player">
+            <div class="player-info">
+              <span class="text-gray-500 italic">TBD</span>
+            </div>
+          </div>
+        </div>
+      {% endmacro %}
+
       {% macro display_player(player, winner, match) %}
         {% set is_winner = winner and player.id and winner.id == player.id %}
         {% set is_eliminated = player.id and (player.id in eliminated_ids) %}
@@ -665,9 +739,33 @@
       </div>
       {% endif %}
 
-      <div class="bracket">
+      {# Calculate expected tournament structure #}
+      {% set total_competitors = data.competitors | length %}
+      {% if total_competitors <= 1 %}{% set power_of_two = 1 %}
+      {% elif total_competitors <= 2 %}{% set power_of_two = 2 %}
+      {% elif total_competitors <= 4 %}{% set power_of_two = 4 %}
+      {% elif total_competitors <= 8 %}{% set power_of_two = 8 %}
+      {% elif total_competitors <= 16 %}{% set power_of_two = 16 %}
+      {% elif total_competitors <= 32 %}{% set power_of_two = 32 %}
+      {% elif total_competitors <= 64 %}{% set power_of_two = 64 %}
+      {% else %}{% set power_of_two = 128 %}
+      {% endif %}
+      
+      {# Calculate expected rounds #}
+      {% if power_of_two <= 1 %}{% set expected_rounds = 0 %}
+      {% elif power_of_two <= 2 %}{% set expected_rounds = 1 %}
+      {% elif power_of_two <= 4 %}{% set expected_rounds = 2 %}
+      {% elif power_of_two <= 8 %}{% set expected_rounds = 3 %}
+      {% elif power_of_two <= 16 %}{% set expected_rounds = 4 %}
+      {% elif power_of_two <= 32 %}{% set expected_rounds = 5 %}
+      {% elif power_of_two <= 64 %}{% set expected_rounds = 6 %}
+      {% else %}{% set expected_rounds = 7 %}
+      {% endif %}
+      
+      <div class="bracket-stage">
         <!-- Upper Bracket -->
         <div class="flex">
+          {# Show existing rounds #}
           {% for round_matches in data.brackets.upper %}
           <div class="round">
             <h3 class="text-xl font-semibold text-pink-500 mb-6 text-center">Round {{ loop.index }}</h3>
@@ -714,8 +812,6 @@
                       </svg>
                     </a>
                   </div>
-                  
-                  
                   {% endif %}
                   
                   <!-- Add clickable match details link -->
@@ -764,86 +860,270 @@
           </div>
           {% endif %}
           {% endfor %}
+          
+          {# Show future rounds as placeholders if tournament is still active #}
+          {% if data.brackets.upper and total_competitors > 1 %}
+            {% set current_rounds = data.brackets.upper | length %}
+            
+            {% for future_round in range(current_rounds + 1, expected_rounds + 1) %}
+              {% if future_round <= expected_rounds %}
+              <div class="round-connectors">
+                <div class="connector-container">
+                  <div class="connector"><div class="connector-line"></div></div>
+                  <div class="connector vertical"></div>
+                  <div class="connector"><div class="connector-line"></div></div>
+                </div>
+              </div>
+              <div class="round">
+                <h3 class="text-xl font-semibold text-pink-300 mb-6 text-center opacity-50">Round {{ future_round }}</h3>
+                {# Calculate matches in this round #}
+                {% if future_round == 1 %}{% set matches_in_round = power_of_two // 2 %}
+                {% elif future_round == 2 %}{% set matches_in_round = power_of_two // 4 %}
+                {% elif future_round == 3 %}{% set matches_in_round = power_of_two // 8 %}
+                {% elif future_round == 4 %}{% set matches_in_round = power_of_two // 16 %}
+                {% elif future_round == 5 %}{% set matches_in_round = power_of_two // 32 %}
+                {% elif future_round == 6 %}{% set matches_in_round = power_of_two // 64 %}
+                {% else %}{% set matches_in_round = 1 %}
+                {% endif %}
+                {% for match_num in range(matches_in_round) %}
+                <div class="match-container">
+                  {{ generate_empty_match(future_round - 1, match_num, 'upper') }}
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
         </div>
       </div>
 
       <!-- Lower Bracket -->
       <div class="mt-16">
         <h3 class="text-3xl md:text-4xl font-bold text-blue-400 mb-12 text-center">Lower Bracket</h3>
-        <div class="bracket">
+        
+        {# Calculate expected lower bracket structure based on actual double elimination format #}
+        {% if power_of_two <= 2 %}
+          {% set expected_lower_rounds = 1 %}
+          {% set total_lower_matches = 1 %}
+        {% elif power_of_two <= 4 %}
+          {% set expected_lower_rounds = 2 %}
+          {% set total_lower_matches = 2 %}
+        {% elif power_of_two <= 8 %}
+          {% set expected_lower_rounds = 4 %}
+          {% set total_lower_matches = 4 %}
+        {% elif power_of_two <= 16 %}
+          {% set expected_lower_rounds = 6 %}
+          {% set total_lower_matches = 8 %}
+        {% elif power_of_two <= 32 %}
+          {% set expected_lower_rounds = 8 %}
+          {% set total_lower_matches = 16 %}
+        {% else %}
+          {% set expected_lower_rounds = 10 %}
+          {% set total_lower_matches = 32 %}
+        {% endif %}
+        
+        {# Count actual lower bracket matches #}
+        {% set actual_lower_matches = 0 %}
+        {% if data.brackets.lower %}
+          {% for round_matches in data.brackets.lower %}
+            {% set actual_lower_matches = actual_lower_matches + round_matches|length %}
+          {% endfor %}
+        {% endif %}
+        
+        {# Determine if lower bracket is fully populated #}
+        {% set is_lower_bracket_complete = actual_lower_matches >= total_lower_matches %}
+        
+        <!-- Hybrid lower bracket view: show populated matches + placeholders -->
+        <div class="bracket-stage">
           <div class="flex">
-            {% for round_matches in data.brackets.lower %}
-            <div class="round">
-              <h3 class="text-xl font-semibold text-blue-500 mb-6 text-center">Round {{ loop.index }}</h3>
-              {% for match in round_matches %}
-              <div class="match-container">
-                <div class="match 
-                     {% if match.get('status') == 'in_progress' %}border-2 border-green-400 shadow-green-400/50{% endif %}
-                     {% if match.get('status') == 'completed' %}opacity-75{% endif %}">
-                  
-                  <!-- Status indicator for public view -->
-                  {% if match.get('status') == 'in_progress' %}
-                  <div class="text-center mb-2">
-                    <span class="inline-block bg-red-500 text-white px-2 py-1 rounded-full text-xs animate-pulse">
-                      🔴 LIVE NOW
-                    </span>
+            {# Show existing populated rounds #}
+            {% if data.brackets.lower %}
+              {% for round_matches in data.brackets.lower %}
+              <div class="round">
+                <h3 class="text-xl font-semibold text-blue-500 mb-6 text-center">Round {{ loop.index }}</h3>
+                {% for match in round_matches %}
+                <div class="match-container">
+                  <div class="match 
+                       {% if match.get('status') == 'in_progress' %}border-2 border-green-400 shadow-green-400/50{% endif %}
+                       {% if match.get('status') == 'completed' %}opacity-75{% endif %}">
+                    
+                    <!-- Status indicator for public view -->
+                    {% if match.get('status') == 'in_progress' %}
+                    <div class="text-center mb-2">
+                      <span class="inline-block bg-red-500 text-white px-2 py-1 rounded-full text-xs animate-pulse">
+                        🔴 LIVE NOW
+                      </span>
+                    </div>
+                    {% elif match.get('status') == 'next_up' %}
+                    <div class="text-center mb-2">
+                      <span class="inline-block bg-gray-600 text-white px-2 py-1 rounded-full text-xs">
+                        ⏳ Coming Up
+                      </span>
+                    </div>
+                    {% endif %}
+                    
+                    {{ display_player(match.player1, match.winner, match) }}
+                    {{ display_player(match.player2, match.winner, match) }}
+                    
+                    <!-- Show multiplayer room link if available and match is in progress -->
+                    {% if match.get('mp_room_url') and match.get('status') == 'in_progress' %}
+                    <div class="mt-2 text-center">
+                      <a href="{{ match.mp_room_url }}" target="_blank" 
+                         class="inline-flex items-center text-red-400 hover:text-red-300 text-sm font-bold animate-pulse">
+                        🔴 WATCH LIVE
+                        <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                      </a>
+                    </div>
+                    
+                    {% elif match.get('mp_room_url') and match.get('status') == 'completed' %}
+                    <div class="mt-2 text-center">
+                      <a href="{{ match.mp_room_url }}" target="_blank" 
+                         class="inline-flex items-center text-blue-400 hover:text-blue-300 text-xs">
+                        📺 View Match
+                      </a>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Add clickable match details link -->
+                    {% if match.get('status') in ['in_progress', 'completed'] %}
+                    <div class="mt-2 text-center">
+                      <a href="{{ url_for('public.match_details', match_id=match.id) }}" 
+                         class="inline-flex items-center text-yellow-400 hover:text-yellow-300 text-xs font-bold">
+                        📊 Match Details
+                      </a>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Show match score if completed -->
+                    {% if match.get('winner') and (match.get('score_p1', 0) > 0 or match.get('score_p2', 0) > 0) %}
+                    <div class="mt-2 text-center">
+                      <span class="text-xs text-gray-400 font-mono">
+                        Final: {{ match.get('score_p1', 0) }} - {{ match.get('score_p2', 0) }}
+                      </span>
+                    </div>
+                    {% endif %}
                   </div>
-                  {% elif match.get('status') == 'next_up' %}
-                  <div class="text-center mb-2">
-                    <span class="inline-block bg-gray-600 text-white px-2 py-1 rounded-full text-xs">
-                      ⏳ Coming Up
-                    </span>
-                  </div>
-                  {% endif %}
-                  
-                  {{ display_player(match.player1, match.winner, match) }}
-                  {{ display_player(match.player2, match.winner, match) }}
-                  
-                  <!-- Show multiplayer room link if available and match is in progress -->
-                  {% if match.get('mp_room_url') and match.get('status') == 'in_progress' %}
-                  <div class="mt-2 text-center">
-                    <a href="{{ match.mp_room_url }}" target="_blank" 
-                       class="inline-flex items-center text-red-400 hover:text-red-300 text-sm font-bold animate-pulse">
-                      🔴 WATCH LIVE
-                      <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                      </svg>
-                    </a>
-                  </div>
-                  
-                  {% elif match.get('mp_room_url') and match.get('status') == 'completed' %}
-                  <div class="mt-2 text-center">
-                    <a href="{{ match.mp_room_url }}" target="_blank" 
-                       class="inline-flex items-center text-blue-400 hover:text-blue-300 text-xs">
-                      📺 View Match
-                    </a>
-                  </div>
-                  {% endif %}
-                  
-                  <!-- Show match score if completed -->
-                  {% if match.get('winner') and (match.get('score_p1', 0) > 0 or match.get('score_p2', 0) > 0) %}
-                  <div class="mt-2 text-center">
-                    <span class="text-xs text-gray-400 font-mono">
-                      Final: {{ match.get('score_p1', 0) }} - {{ match.get('score_p2', 0) }}
-                    </span>
-                  </div>
-                  {% endif %}
-                </div>
-              </div>
-              {% endfor %}
-            </div>
-             {% if not loop.last %}
-              <div class="round-connectors">
-                {% for match in round_matches | batch(2) %}
-                <div class="connector-container">
-                  <div class="connector"><div class="connector-line"></div></div>
-                  <div class="connector vertical"></div>
-                  <div class="connector"><div class="connector-line"></div></div>
                 </div>
                 {% endfor %}
               </div>
+              {% if not loop.last %}
+                <div class="round-connectors">
+                  {% for match in round_matches | batch(2) %}
+                  <div class="connector-container">
+                    <div class="connector"><div class="connector-line"></div></div>
+                    <div class="connector vertical"></div>
+                    <div class="connector"><div class="connector-line"></div></div>
+                  </div>
+                  {% endfor %}
+                </div>
               {% endif %}
-            {% endfor %}
+              {% endfor %}
+              
+              {# Show connectors to future rounds if not complete #}
+              {% if not is_lower_bracket_complete and expected_lower_rounds > data.brackets.lower|length %}
+                <div class="round-connectors">
+                  <div class="connector-container">
+                    <div class="connector"><div class="connector-line opacity-30"></div></div>
+                    <div class="connector vertical opacity-30"></div>
+                    <div class="connector"><div class="connector-line opacity-30"></div></div>
+                  </div>
+                </div>
+              {% endif %}
+            {% endif %}
+            
+            {# Show placeholder rounds for remaining lower bracket structure #}
+            {% if not is_lower_bracket_complete %}
+              {% set current_lower_rounds = data.brackets.lower|length if data.brackets.lower else 0 %}
+              
+              {# Show preview structure for missing rounds based on actual double elimination structure #}
+              {% for future_round in range(current_lower_rounds + 1, expected_lower_rounds + 1) %}
+                {% if future_round <= expected_lower_rounds %}
+                <div class="round opacity-30">
+                  <h3 class="text-xl font-semibold text-blue-300 mb-6 text-center">Round {{ future_round }}</h3>
+                  
+                  {# Calculate matches in this future round based on actual double elimination structure #}
+                  {% if power_of_two <= 4 %}
+                    {# 4-man bracket: 1-1 lower bracket structure #}
+                    {% set future_matches = 1 %}
+                  {% elif power_of_two <= 8 %}
+                    {# 8-man bracket: 1-2-1-1 lower bracket structure (for 7-man tournament) #}
+                    {% if future_round == 1 %}
+                      {% set future_matches = 1 %}
+                    {% elif future_round == 2 %}
+                      {% set future_matches = 2 %}
+                    {% elif future_round == 3 %}
+                      {% set future_matches = 1 %}
+                    {% else %}
+                      {% set future_matches = 1 %}
+                    {% endif %}
+                  {% elif power_of_two <= 16 %}
+                    {# 16-man bracket: 2-4-2-2-1-1 lower bracket structure #}
+                    {% if future_round == 1 %}
+                      {% set future_matches = 2 %}
+                    {% elif future_round == 2 %}
+                      {% set future_matches = 4 %}
+                    {% elif future_round == 3 %}
+                      {% set future_matches = 2 %}
+                    {% elif future_round == 4 %}
+                      {% set future_matches = 2 %}
+                    {% elif future_round == 5 %}
+                      {% set future_matches = 1 %}
+                    {% else %}
+                      {% set future_matches = 1 %}
+                    {% endif %}
+                  {% else %}
+                    {# Default calculation for larger brackets #}
+                    {% if future_round == expected_lower_rounds %}
+                      {% set future_matches = 1 %}
+                    {% elif future_round % 2 == 1 %}
+                      {% set future_matches = (power_of_two // (4 * (2 ** ((future_round - 1) // 2)))) %}
+                    {% else %}
+                      {% set future_matches = (power_of_two // (2 * (2 ** (future_round // 2)))) %}
+                    {% endif %}
+                  {% endif %}
+                  
+                  {% for match_num in range(future_matches) %}
+                  <div class="match-container">
+                    <div class="match empty-slot">
+                      <div class="text-center mb-2">
+                        <span class="inline-block bg-blue-600 text-blue-200 px-2 py-1 rounded-full text-xs">
+                          {% if future_round == expected_lower_rounds %}
+                            🏆 Lower Finals
+                          {% else %}
+                            🕐 Awaiting Players
+                          {% endif %}
+                        </span>
+                      </div>
+                      <div class="player">
+                        <div class="player-info">
+                          <span class="text-blue-400 italic">TBD</span>
+                        </div>
+                      </div>
+                      <div class="player">
+                        <div class="player-info">
+                          <span class="text-blue-400 italic">TBD</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+                
+                {# Show connectors between future rounds #}
+                {% if not loop.last %}
+                <div class="round-connectors opacity-30">
+                  <div class="connector-container">
+                    <div class="connector"><div class="connector-line"></div></div>
+                    <div class="connector vertical"></div>
+                    <div class="connector"><div class="connector-line"></div></div>
+                  </div>
+                </div>
+                {% endif %}
+                {% endif %}
+              {% endfor %}
+            {% endif %}
           </div>
         </div>
       </div>
