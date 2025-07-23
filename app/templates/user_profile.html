@@ -1,22 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
+<main>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ user.username }} - Sand World Profile</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@600;700&display=swap');
     body {
       font-family: 'Fira Code', monospace;
       background: radial-gradient(ellipse at center, #0f0f0f 0%, #000000 100%);
     }
-    h1, h2 {
+    h1, h2, h3 {
       font-family: 'Orbitron', sans-serif;
+    }
+    
+    .profile-card {
+      background: linear-gradient(135deg, #2d3748, #1a202c);
+      border: 2px solid #4a5568;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      margin-bottom: 2rem;
+    }
+    
+    .mappool-section {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(59, 130, 246, 0.1));
+      border: 2px solid rgba(34, 197, 94, 0.3);
+    }
+    
+    .match-card {
+      background: linear-gradient(135deg, #2d3748, #1a202c);
+      border: 2px solid #4a5568;
+      border-radius: 16px;
+      transition: all 0.3s ease;
+    }
+    
+    .match-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+    
+    .status-next-up {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+    
+    .status-in-progress {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
     }
   </style>
 </head>
-<body class="text-gray-100">
+<body class="min-h-screen flex flex-col text-gray-100">
 
   <!-- Navigation -->
   <nav class="bg-black border-b border-gray-800 px-6 py-4 flex justify-between items-center">
@@ -27,9 +61,9 @@
     </ul>
   </nav>
 
-  <!-- User Profile Section -->
-  <section class="py-24 px-6">
-    <div class="max-w-4xl mx-auto bg-gray-900 rounded-2xl shadow-2xl p-8 md:p-12 border border-gray-800">
+  <div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- User Profile Section -->
+    <div class="profile-card p-8 md:p-12 mb-8">
       <div class="flex flex-col md:flex-row items-center gap-8">
         <div class="flex-shrink-0">
           <img src="{{ user.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" alt="{{ user.username }}'s avatar" class="w-40 h-40 rounded-full border-4 border-yellow-400">
@@ -40,6 +74,9 @@
             <span><span class="font-bold text-pink-400">PP:</span> {{ "%.2f"|format(user.statistics.pp or 0) }}</span>
             <span><span class="font-bold text-blue-400">Global Rank:</span> #{{ "{:,}".format(user.statistics.global_rank or 0) }}</span>
             <span><span class="font-bold text-green-400">Country Rank:</span> #{{ "{:,}".format(user.statistics.country_rank or 0) }}</span>
+            {% if user.get('placement') %}
+            <span><span class="font-bold text-purple-400">Tournament Seed:</span> #{{ user.placement }}</span>
+            {% endif %}
           </div>
           <div class="mt-6">
             <a href="https://osu.ppy.sh/users/{{ user.id }}" target="_blank" rel="noopener noreferrer" class="inline-block bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-6 rounded-lg transition transform hover:scale-105">
@@ -49,6 +86,175 @@
         </div>
       </div>
     </div>
-  </section>
+    <!-- Match History -->
+    <div class="profile-card p-8">
+      <h2 class="text-3xl font-bold text-yellow-400 mb-6">🎮 {{ user.username }}'s Matches</h2>
+      
+      {% set user_matches = [] %}
+      {% if data and data.brackets %}
+        {% for bracket_type in ['upper', 'lower', 'grand_finals'] %}
+          {% if bracket_type in data.brackets and data.brackets[bracket_type] %}
+            {% if bracket_type == 'grand_finals' %}
+              {% set match = data.brackets[bracket_type] %}
+              {% if match and (match.player1.id == user.id or match.player2.id == user.id) %}
+                {% set _ = user_matches.append(match) %}
+              {% endif %}
+            {% else %}
+              {% for round_matches in data.brackets[bracket_type] %}
+                {% for match in round_matches %}
+                  {% if match and (match.player1.id == user.id or match.player2.id == user.id) %}
+                    {% set _ = user_matches.append(match) %}
+                  {% endif %}
+                {% endfor %}
+              {% endfor %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+      
+      {% if user_matches %}
+        <div class="space-y-4">
+          {% for match in user_matches %}
+          <div class="match-card p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-4">
+                <h3 class="text-xl font-bold text-white">
+                  {{ match.player1.name }} vs {{ match.player2.name }}
+                </h3>
+                {% if match.bracket %}
+                <span class="bg-gray-700 px-3 py-1 rounded-full text-sm text-gray-300">
+                  {{ match.bracket|title }} Bracket
+                </span>
+                {% endif %}
+              </div>
+              
+              <div class="flex items-center gap-3">
+                <!-- Status Badge -->
+                {% if match.status == 'next_up' %}
+                <span class="status-next-up text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                  ⏳ Next Up
+                </span>
+                {% elif match.status == 'in_progress' %}
+                <span class="status-in-progress text-white px-4 py-2 rounded-full text-sm font-bold animate-pulse shadow-lg">
+                  🔴 LIVE
+                </span>
+                {% elif match.status == 'completed' %}
+                <span class="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                  ✓ Completed
+                </span>
+                {% else %}
+                <span class="bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                  📅 Scheduled
+                </span>
+                {% endif %}
+                
+                <!-- Score -->
+                <div class="text-2xl font-mono font-bold text-white">
+                  {{ match.get('score_p1', 0) }} : {{ match.get('score_p2', 0) }}
+                </div>
+              </div>
+            </div>
+            
+            <!-- Match Actions -->
+            <div class="flex items-center gap-4">
+              <a href="{{ url_for('public.match_details', match_id=match.id) }}" 
+                 class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-all">
+                📊 View Details
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-center text-gray-400 py-8">
+          <p class="text-lg">🎾 No matches found</p>
+          <p class="text-sm mt-2">{{ user.username }}'s matches will appear here once they're scheduled</p>
+        </div>
+      {% endif %}
+    </div>
 
-  {% include 'footer.html' %}
+    
+    <!-- Mappool Section -->
+    {% if user.get('mappool_url') or user.get('mappool_ids') or user.get('mappool_details') %}
+    <div class="mappool-section rounded-lg p-8 mb-8">
+      <h2 class="text-3xl font-bold text-green-400 mb-6">📋 {{ user.username }}'s Mappool</h2>
+      
+      <div class="bg-green-900 bg-opacity-50 rounded-lg p-6 border border-green-600 mb-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-xl font-bold text-green-300 mb-2">✅ Mappool Available</h3>
+            <p class="text-green-200">Uploaded: {{ user.get('mappool_uploaded', 'Unknown time') }}</p>
+            {% if user.get('mappool_ids') %}
+            <p class="text-green-200 text-sm mt-1">{{ user.mappool_ids|length }} beatmaps</p>
+            {% endif %}
+            {% if user.get('mappool_url') %}
+            <a href="{{ user.mappool_url }}" target="_blank" 
+               class="inline-block mt-3 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition">
+              View Playlist →
+            </a>
+            {% endif %}
+          </div>
+          <div class="text-green-400 text-4xl">✓</div>
+        </div>
+      </div>
+      
+      <!-- Display detailed mappool if available -->
+      {% if user.get('mappool_details') %}
+      <div class="bg-gray-800 bg-opacity-50 rounded-lg p-6 border border-gray-600 mb-6">
+        <h3 class="text-xl font-bold text-blue-400 mb-4">🎵 Mappool Details</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {% for map in user.mappool_details %}
+          <div class="bg-gray-700 rounded-lg p-4 border border-gray-600 hover:border-blue-400 transition-colors">
+            <div class="flex items-start justify-between mb-2">
+              <div class="flex-1">
+                <a href="{{ map.url }}" target="_blank" class="text-blue-300 hover:text-blue-200 font-semibold text-sm">
+                  {{ map.title }}
+                </a>
+                <p class="text-gray-300 text-xs">by {{ map.artist }}</p>
+                <p class="text-gray-400 text-xs">{{ map.difficulty_name }} ({{ map.mapper }})</p>
+              </div>
+              <div class="text-yellow-400 font-bold text-sm">
+                ★{{ "%.2f"|format(map.star_rating) }}
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-2 text-xs text-gray-400 mt-3">
+              <div class="text-center">
+                <div class="text-white font-mono">{{ "{}:{:02d}".format(map.length // 60, map.length % 60) }}</div>
+                <div>Length</div>
+              </div>
+              <div class="text-center">
+                <div class="text-white font-mono">{{ "%.0f"|format(map.bpm) }}</div>
+                <div>BPM</div>
+              </div>
+              <div class="text-center">
+                <div class="text-white font-mono">{{ "%.1f"|format(map.cs) }}</div>
+                <div>CS</div>
+              </div>
+              <div class="text-center">
+                <div class="text-white font-mono">{{ "%.1f"|format(map.ar) }}</div>
+                <div>AR</div>
+              </div>
+              <div class="text-center">
+                <div class="text-white font-mono">{{ "%.1f"|format(map.od) }}</div>
+                <div>OD</div>
+              </div>
+              <div class="text-center">
+                <div class="text-white font-mono">{{ "%.1f"|format(map.hp) }}</div>
+                <div>HP</div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    
+  </div>
+</main>
+</body>
+{% include 'footer.html' %}
+</html>

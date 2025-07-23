@@ -20,11 +20,13 @@
             border: 2px solid #4a5568;
             border-radius: 20px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            margin-bottom: 2rem;
         }
         
         .mappool-section {
             background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(59, 130, 246, 0.1));
             border: 2px solid rgba(34, 197, 94, 0.3);
+            margin-top: 2rem;
         }
         
         .match-card {
@@ -77,6 +79,102 @@
                     </div>
                 </div>
             </div>
+        </div>
+        
+        <!-- Your Matches -->
+        <div class="profile-card p-8">
+            <h2 class="text-3xl font-bold text-yellow-400 mb-6">🎮 Your Matches</h2>
+            
+            {% set player_matches = [] %}
+            {% for bracket_type in ['upper', 'lower', 'grand_finals'] %}
+                {% if bracket_type in data.brackets and data.brackets[bracket_type] %}
+                    {% if bracket_type == 'grand_finals' %}
+                        {% set match = data.brackets[bracket_type] %}
+                        {% if match and (match.player1.id == player.id or match.player2.id == player.id) %}
+                            {% set _ = player_matches.append(match) %}
+                        {% endif %}
+                    {% else %}
+                        {% for round_matches in data.brackets[bracket_type] %}
+                            {% for match in round_matches %}
+                                {% if match and (match.player1.id == player.id or match.player2.id == player.id) %}
+                                    {% set _ = player_matches.append(match) %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            
+            {% if player_matches %}
+                <div class="space-y-4">
+                    {% for match in player_matches %}
+                    <div class="match-card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-4">
+                                <h3 class="text-xl font-bold text-white">
+                                    {{ match.player1.name }} vs {{ match.player2.name }}
+                                </h3>
+                                {% if match.bracket %}
+                                <span class="bg-gray-700 px-3 py-1 rounded-full text-sm text-gray-300">
+                                    {{ match.bracket|title }} Bracket
+                                </span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="flex items-center gap-3">
+                                <!-- Status Badge -->
+                                {% if match.status == 'next_up' %}
+                                <span class="status-next-up text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                                    ⏳ Next Up
+                                </span>
+                                {% elif match.status == 'in_progress' %}
+                                <span class="status-in-progress text-white px-4 py-2 rounded-full text-sm font-bold animate-pulse shadow-lg">
+                                    🔴 LIVE
+                                </span>
+                                {% elif match.status == 'completed' %}
+                                <span class="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                                    ✓ Completed
+                                </span>
+                                {% else %}
+                                <span class="bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                                    📅 Scheduled
+                                </span>
+                                {% endif %}
+                                
+                                <!-- Score -->
+                                <div class="text-2xl font-mono font-bold text-white">
+                                    {{ match.get('score_p1', 0) }} : {{ match.get('score_p2', 0) }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Match Actions -->
+                        <div class="flex items-center gap-4">
+                            {% if match.status in ['next_up', 'in_progress'] and (player.get('mappool_url') or player.get('mappool_ids') or player.get('mappool_details')) %}
+                            <a href="{{ url_for('player.match_interface', match_id=match.id) }}" 
+                               class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg">
+                                🎯 Manage Match
+                            </a>
+                            {% elif match.status in ['next_up', 'in_progress'] and not (player.get('mappool_url') or player.get('mappool_ids') or player.get('mappool_details')) %}
+                            <div class="bg-red-600 text-white px-6 py-2 rounded-lg font-bold">
+                                ❌ Upload Mappool First
+                            </div>
+                            {% endif %}
+                            
+                            <a href="{{ url_for('public.match_details', match_id=match.id) }}" 
+                               class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-all">
+                                📊 View Details
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center text-gray-400 py-8">
+                    <p class="text-lg">🎾 No matches scheduled yet</p>
+                    <p class="text-sm mt-2">Your matches will appear here once the bracket is generated</p>
+                </div>
+            {% endif %}
         </div>
 
         <!-- Mappool Management -->
@@ -220,104 +318,9 @@
             </form>
         </div>
 
-        <!-- Your Matches -->
-        <div class="profile-card p-8">
-            <h2 class="text-3xl font-bold text-yellow-400 mb-6">🎮 Your Matches</h2>
-            
-            {% set player_matches = [] %}
-            {% for bracket_type in ['upper', 'lower', 'grand_finals'] %}
-                {% if bracket_type in data.brackets and data.brackets[bracket_type] %}
-                    {% if bracket_type == 'grand_finals' %}
-                        {% set match = data.brackets[bracket_type] %}
-                        {% if match and (match.player1.id == player.id or match.player2.id == player.id) %}
-                            {% set _ = player_matches.append(match) %}
-                        {% endif %}
-                    {% else %}
-                        {% for round_matches in data.brackets[bracket_type] %}
-                            {% for match in round_matches %}
-                                {% if match and (match.player1.id == player.id or match.player2.id == player.id) %}
-                                    {% set _ = player_matches.append(match) %}
-                                {% endif %}
-                            {% endfor %}
-                        {% endfor %}
-                    {% endif %}
-                {% endif %}
-            {% endfor %}
-            
-            {% if player_matches %}
-                <div class="space-y-4">
-                    {% for match in player_matches %}
-                    <div class="match-card p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center gap-4">
-                                <h3 class="text-xl font-bold text-white">
-                                    {{ match.player1.name }} vs {{ match.player2.name }}
-                                </h3>
-                                {% if match.bracket %}
-                                <span class="bg-gray-700 px-3 py-1 rounded-full text-sm text-gray-300">
-                                    {{ match.bracket|title }} Bracket
-                                </span>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="flex items-center gap-3">
-                                <!-- Status Badge -->
-                                {% if match.status == 'next_up' %}
-                                <span class="status-next-up text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
-                                    ⏳ Next Up
-                                </span>
-                                {% elif match.status == 'in_progress' %}
-                                <span class="status-in-progress text-white px-4 py-2 rounded-full text-sm font-bold animate-pulse shadow-lg">
-                                    🔴 LIVE
-                                </span>
-                                {% elif match.status == 'completed' %}
-                                <span class="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
-                                    ✓ Completed
-                                </span>
-                                {% else %}
-                                <span class="bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
-                                    📅 Scheduled
-                                </span>
-                                {% endif %}
-                                
-                                <!-- Score -->
-                                <div class="text-2xl font-mono font-bold text-white">
-                                    {{ match.get('score_p1', 0) }} : {{ match.get('score_p2', 0) }}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Match Actions -->
-                        <div class="flex items-center gap-4">
-                            {% if match.status in ['next_up', 'in_progress'] and (player.get('mappool_url') or player.get('mappool_ids') or player.get('mappool_details')) %}
-                            <a href="{{ url_for('player.match_interface', match_id=match.id) }}" 
-                               class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg">
-                                🎯 Manage Match
-                            </a>
-                            {% elif match.status in ['next_up', 'in_progress'] and not (player.get('mappool_url') or player.get('mappool_ids') or player.get('mappool_details')) %}
-                            <div class="bg-red-600 text-white px-6 py-2 rounded-lg font-bold">
-                                ❌ Upload Mappool First
-                            </div>
-                            {% endif %}
-                            
-                            <a href="{{ url_for('public.match_details', match_id=match.id) }}" 
-                               class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-all">
-                                📊 View Details
-                            </a>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="text-center text-gray-400 py-8">
-                    <p class="text-lg">🎾 No matches scheduled yet</p>
-                    <p class="text-sm mt-2">Your matches will appear here once the bracket is generated</p>
-                </div>
-            {% endif %}
-        </div>
+        
     </div>
 
     {% include 'footer.html' %}
 </body>
-</html>
 </html>

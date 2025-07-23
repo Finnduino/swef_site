@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, request, url_for, flash, jsonify
+from flask import Blueprint, render_template, redirect, request, url_for, flash, jsonify, session
 import requests
 from datetime import datetime, timedelta
 from config import OSU_CLIENT_ID, OSU_CLIENT_SECRET, OSU_CALLBACK_URL, AUTHORIZATION_URL, TOKEN_URL, OSU_API_BASE_URL
@@ -13,6 +13,11 @@ public_bp = Blueprint('public', __name__)
 @public_bp.route('/')
 def index():
     return render_template('index.html')
+
+
+@public_bp.route('/legal')
+def legal():
+    return render_template('legal.html')
 
 
 @public_bp.route('/tournament')
@@ -115,11 +120,39 @@ def osu_callback():
 
 @public_bp.route('/user/<int:user_id>')
 def user_profile(user_id):
+    # Check if user is viewing their own profile and redirect to player profile
+    if session.get('user_id') == user_id:
+        return redirect(url_for('player.profile'))
+    
     try:
         user = api.user(user_id)
-        return render_template('user_profile.html', user=user)
+        # Get tournament data to show mappool and matches
+        data = get_tournament_data()
+        
+        # Find user in competitors to get additional tournament data
+        user_data = None
+        for competitor in data.get('competitors', []):
+            if competitor.get('id') == user_id:
+                user_data = competitor
+                break
+        
+        # Create a user dict that combines API data with tournament data
+        user_dict = {
+            'id': user.id,
+            'username': user.username,
+            'avatar_url': user.avatar_url,
+            'statistics': user.statistics,
+            'placement': user_data.get('placement') if user_data else None,
+            'mappool_url': user_data.get('mappool_url') if user_data else None,
+            'mappool_ids': user_data.get('mappool_ids') if user_data else None,
+            'mappool_details': user_data.get('mappool_details') if user_data else None,
+            'mappool_uploaded': user_data.get('mappool_uploaded') if user_data else None
+        }
+        
+        return render_template('user_profile.html', user=user_dict, data=data)
     except Exception as e:
         flash(f'Could not find or load user with ID {user_id}. Error: {e}', 'error')
+        print(f"Error loading user profile: {e}")
         return redirect(url_for('public.tournament'))
 
 

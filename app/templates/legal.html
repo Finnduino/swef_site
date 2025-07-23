@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Legal Disclaimer - Sand World Evil Financing LLC LTD OY</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
+    body { font-family: 'Fira Code', monospace; background: #000; }
+  </style>
+</head>
+<body class="text-gray-100 min-h-screen flex flex-col">
+
+  <!-- Navigation -->
+  <nav class="bg-black border-b border-gray-800 px-6 py-4 flex justify-between items-center">
+    <div class="text-yellow-400 font-bold text-2xl tracking-wider">SAND WORLD</div>
+    <ul class="flex space-x-6 text-sm font-mono">
+      <li><a href="{{ url_for('public.index') }}" class="text-gray-300 hover:text-yellow-400">Home</a></li>
+      <li><a href="{{ url_for('public.tournament') }}" class="text-gray-300 hover:text-yellow-400">OSU Cup</a></li>
+      {% if session.get('user_id') %}
+      <li><a href="{{ url_for('player.profile') }}" class="text-gray-300 hover:text-yellow-400">Profile</a></li>
+      <li><a href="{{ url_for('public.logout') }}" class="text-gray-300 hover:text-red-400">Logout</a></li>
+      {% else %}
+      <li><a href="{{ url_for('public.osu_login') }}" class="bg-pink-500 hover:bg-pink-600 text-white px-3 py-1 rounded">Login</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+
+  <!-- Legal Disclaimer Content -->
+  <main class="flex-grow">
+    <section class="py-16 px-6 bg-black">
+      <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold text-yellow-400 text-center mb-12">Legal Disclaimer</h1>
+        
+        <div class="bg-gray-900 p-8 rounded-2xl shadow-2xl border border-gray-700">
+          <div class="space-y-6 text-gray-300 leading-relaxed">
+            
+            <div class="bg-red-900 border border-red-600 p-6 rounded-xl">
+              <h2 class="text-2xl font-bold text-red-400 mb-4">⚠️ IMPORTANT NOTICE</h2>
+              <p class="text-red-200 font-semibold">
+                This website and its content are purely fictional and created for entertainment purposes only.
+              </p>
+            </div>
+
+            <div>
+              <h3 class="text-xl font-semibold text-yellow-300 mb-3">No Real Legal Entity</h3>
+              <p>
+                "Sand World Evil Financing LLC LTD OY" is NOT a real company, corporation, or legal entity of any kind. 
+                It does not exist in any jurisdiction and has no legal standing whatsoever. This is purely a fictional 
+                name created for entertainment purposes.
+              </p>
+            </div>
+
+            <div>
+              <h3 class="text-xl font-semibold text-yellow-300 mb-3">Entertainment Purpose Only</h3>
+              <p>
+                This website was created in the pure interest of entertaining a friend group. All content, including 
+                references to "evil financing," "shadow loans," "malevolent spirits," and other dark-themed elements 
+                are entirely satirical and fictional.
+              </p>
+            </div>
+
+            <div>
+              <h3 class="text-xl font-semibold text-yellow-300 mb-3">No Endorsement of Illegal Activity</h3>
+              <p>
+                We do <strong class="text-red-400">NOT</strong> endorse, promote, or encourage any illegal behavior, 
+                criminal activities, or harmful actions of any kind. The "evil" theme is purely comedic and should 
+                not be interpreted as genuine support for any unlawful conduct.
+              </p>
+            </div>
+
+            <div>
+              <h3 class="text-xl font-semibold text-yellow-300 mb-3">Gaming Tournament</h3>
+              <p>
+                The osu! tournament hosted on this website is a legitimate gaming competition among friends. 
+                All tournament activities are conducted in accordance with the game's terms of service and 
+                community guidelines. Yes, the sponsorship is real. 
+              </p>
+            </div>
+
+            <div>
+              <h3 class="text-xl font-semibold text-yellow-300 mb-3">No Real Services</h3>
+              <p>
+                No actual financial services, loans, alcohol manufacturing, or any other business services are 
+                provided through this website. All service descriptions are fictional and for comedic effect only.
+              </p>
+            </div>
+
+            <div>
+              <h3 class="text-xl font-semibold text-yellow-300 mb-3">Data Collection & Retention</h3>
+              <p class="mb-3">
+                This website collects minimal data necessary for tournament functionality:
+              </p>
+              <ul class="list-disc list-inside space-y-2 ml-4">
+                <li>
+                  <strong>osu! Authentication:</strong> We collect only your osu! user ID during the authentication process. 
+                  No passwords or sensitive account information are stored on our servers.
+                </li>
+                <li>
+                  <strong>Public Game Data:</strong> Already public, tournament-related game statistics and match results from osu! are 
+                  collected and displayed publicly as part of the tournament system.
+                </li>
+                <li>
+                  <strong>No Personal Information:</strong> We do not collect names, email addresses, or any other 
+                  personal information beyond what is publicly available through osu! profiles.
+                </li>
+              </ul>
+              <p class="mt-4">
+                <strong>Data Controller:</strong> Aleksis Naula (<a href="mailto:aleksis.naula@gmail.com" class="text-yellow-400 underline">aleksis.naula@gmail.com</a>)
+              </p>
+              <p class="mt-4">
+                <strong>Data Deletion:</strong> If you wish to have your data deleted, contact the data controller. 
+                Upon request, we will remove your user ID and all associated personal data including match history, 
+                mappool uploads, and tournament records. Match results may be retained in anonymized form for archival purposes.
+              </p>
+            </div>
+
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-600">
+              <h3 class="text-xl font-semibold text-yellow-300 mb-3">Contact</h3>
+              <p>
+                If you have any concerns about the content of this website or need clarification about its 
+                fictional nature, please understand that this is simply a fun project created by friends for friends.
+              </p>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="text-center mt-8">
+          <a href="{{ url_for('public.index') }}" 
+             class="inline-block bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-6 rounded-full shadow-md transition">
+            Return to Home
+          </a>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  {% include 'footer.html' %}
+
+</body>
+</html>
