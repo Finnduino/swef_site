@@ -71,7 +71,7 @@
   <!-- Tournament Preview -->
   <section class="py-12 bg-black border-t border-gray-800">
     <div class="max-w-4xl mx-auto text-center">
-      <h2 class="text-3xl font-bold text-yellow-400 mb-4">🔥 OSU Cup 2025</h2>
+      <h2 class="text-3xl font-bold text-yellow-400 mb-4">🔥SWEF OSU Cup 2025</h2>
       <p class="text-gray-400">Witness peak evil gameplay. Check standings, matchups, and stream schedules.</p>
       <a href="{{ url_for('public.tournament') }}" class="mt-6 inline-block bg-yellow-500 text-black font-bold py-2 px-6 rounded-full shadow-md hover:bg-yellow-600 transition">View Tournament</a>
     </div>
@@ -104,7 +104,7 @@
 
   <!-- Evil Metrics -->
   <section class="py-20 bg-black text-center border-t border-gray-800">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
       <div>
         <div class="text-4xl font-bold text-yellow-400">999+</div>
         <div class="text-gray-400 mt-2">Evil Loans</div>
@@ -117,17 +117,10 @@
         <div class="text-4xl font-bold text-yellow-400">27y</div>
         <div class="text-gray-400 mt-2">Oldest Distillery</div>
       </div>
-      <div>
-        <div class="text-4xl font-bold text-yellow-400">43</div>
-        <div class="text-gray-400 mt-2">Civilian Targets Struck</div>
-      </div>
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer class="py-8 text-center text-sm text-gray-500 bg-black border-t border-gray-800">
-    &copy; 2025 Sand World Evil Financing LLC LTD OY. All rights reserved.
-  </footer>
+  {% include 'footer.html' %}
 
   <!-- Invisible Admin Button -->
   <div class="fixed bottom-0 right-0 w-8 h-8 opacity-0 hover:opacity-20 transition-opacity duration-300">

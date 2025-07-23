@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Profile - {{ player.name }} - Sand World Tournament</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@600;700&display=swap');
+        body {
+            font-family: 'Fira Code', monospace;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+        }
+        h1, h2, h3 {
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        .profile-card {
+            background: linear-gradient(135deg, #2d3748, #1a202c);
+            border: 2px solid #4a5568;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .mappool-section {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(59, 130, 246, 0.1));
+            border: 2px solid rgba(34, 197, 94, 0.3);
+        }
+        
+        .match-card {
+            background: linear-gradient(135deg, #2d3748, #1a202c);
+            border: 2px solid #4a5568;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .match-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+        
+        .status-next-up {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        
+        .status-in-progress {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+    </style>
+</head>
+<body class="text-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gradient-to-r from-gray-900 to-black border-b-2 border-yellow-400 px-6 py-4 flex justify-between items-center">
+        <div class="text-yellow-400 font-bold text-2xl tracking-wider">SAND WORLD</div>
+        <ul class="flex space-x-6 text-sm font-mono">
+            <li><a href="{{ url_for('public.index') }}" class="text-gray-300 hover:text-yellow-400 transition-colors">Home</a></li>
+            <li><a href="{{ url_for('public.tournament') }}" class="text-gray-300 hover:text-yellow-400 transition-colors">Tournament</a></li>
+            <li><a href="{{ url_for('player.profile') }}" class="text-yellow-400">Profile</a></li>
+        </ul>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Player Header -->
+        <div class="profile-card p-8 mb-8">
+            <div class="flex items-center gap-6 mb-6">
+                <img src="{{ player.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" 
+                     alt="{{ player.name }}" 
+                     class="w-24 h-24 rounded-full border-4 border-yellow-400 shadow-lg">
+                <div>
+                    <h1 class="text-4xl font-bold text-yellow-400 mb-2">{{ player.name }}</h1>
+                    <div class="flex items-center gap-4 text-gray-300">
+                        <span class="bg-purple-600 px-3 py-1 rounded-full text-sm">{{ "{:,}".format(player.pp) }}pp</span>
+                        <span class="bg-blue-600 px-3 py-1 rounded-full text-sm">Rank #{{ "{:,}".format(player.rank) }}</span>
+                        {% if player.get('placement') %}
+                        <span class="bg-green-600 px-3 py-1 rounded-full text-sm">Seed #{{ player.placement }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mappool Management -->
+        <div class="mappool-section rounded-lg p-8 mb-8">
+            <h2 class="text-3xl font-bold text-green-400 mb-6">📋 Your Mappool</h2>
+            
+            {% if player.get('mappool_url') %}
+            <div class="bg-green-900 bg-opacity-50 rounded-lg p-6 border border-green-600 mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-green-300 mb-2">✅ Mappool Uploaded</h3>
+                        <p class="text-green-200">Uploaded: {{ player.get('mappool_uploaded', 'Unknown time') }}</p>
+                        <a href="{{ player.mappool_url }}" target="_blank" 
+                           class="inline-block mt-3 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition">
+                            View Your Playlist →
+                        </a>
+                    </div>
+                    <div class="text-green-400 text-4xl">✓</div>
+                </div>
+            </div>
+            
+            <div class="bg-yellow-900 bg-opacity-30 border border-yellow-600 rounded-lg p-4">
+                <h4 class="text-yellow-400 font-bold mb-2">⚠️ Want to Update?</h4>
+                <p class="text-yellow-300 mb-3">You can upload a new mappool, but make sure it contains exactly 10 maps that are at least 2 minutes long.</p>
+            </div>
+            {% else %}
+            <div class="bg-red-900 bg-opacity-50 rounded-lg p-6 border border-red-600 mb-6">
+                <div class="flex items-center gap-4">
+                    <div class="text-red-400 text-4xl">⚠️</div>
+                    <div>
+                        <h3 class="text-xl font-bold text-red-300 mb-2">Mappool Required</h3>
+                        <p class="text-red-200">You must upload your 10-map playlist before your matches can begin.</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Upload Form -->
+            <form action="{{ url_for('player.upload_mappool') }}" method="POST" class="space-y-4">
+                <div>
+                    <label for="playlist_url" class="block text-lg font-semibold text-white mb-2">
+                        📎 osu! Playlist URL
+                    </label>
+                    <input type="url" 
+                           id="playlist_url" 
+                           name="playlist_url" 
+                           value="{{ player.get('mappool_url', '') }}"
+                           placeholder="https://osu.ppy.sh/playlists/..."
+                           class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                           required>
+                </div>
+                
+                <div class="bg-blue-900 bg-opacity-30 border border-blue-600 rounded-lg p-4">
+                    <h4 class="text-blue-400 font-bold mb-2">📋 Mappool Requirements</h4>
+                    <ul class="text-blue-300 space-y-1 text-sm">
+                        <li>• Exactly 10 maps in your playlist</li>
+                        <li>• All maps must be at least 2 minutes long</li>
+                        <li>• Mix of different difficulties recommended</li>
+                        <li>• No duplicate artists/songs</li>
+                    </ul>
+                </div>
+                
+                <button type="submit" 
+                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg">
+                    {% if player.get('mappool_url') %}
+                    🔄 Update Mappool
+                    {% else %}
+                    📤 Upload Mappool
+                    {% endif %}
+                </button>
+            </form>
+        </div>
+
+        <!-- Your Matches -->
+        <div class="profile-card p-8">
+            <h2 class="text-3xl font-bold text-yellow-400 mb-6">🎮 Your Matches</h2>
+            
+            {% set player_matches = [] %}
+            {% for bracket_type in ['upper', 'lower', 'grand_finals'] %}
+                {% if bracket_type in data.brackets and data.brackets[bracket_type] %}
+                    {% if bracket_type == 'grand_finals' %}
+                        {% set match = data.brackets[bracket_type] %}
+                        {% if match and (match.player1.id == player.id or match.player2.id == player.id) %}
+                            {% set _ = player_matches.append(match) %}
+                        {% endif %}
+                    {% else %}
+                        {% for round_matches in data.brackets[bracket_type] %}
+                            {% for match in round_matches %}
+                                {% if match and (match.player1.id == player.id or match.player2.id == player.id) %}
+                                    {% set _ = player_matches.append(match) %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            
+            {% if player_matches %}
+                <div class="space-y-4">
+                    {% for match in player_matches %}
+                    <div class="match-card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-4">
+                                <h3 class="text-xl font-bold text-white">
+                                    {{ match.player1.name }} vs {{ match.player2.name }}
+                                </h3>
+                                {% if match.bracket %}
+                                <span class="bg-gray-700 px-3 py-1 rounded-full text-sm text-gray-300">
+                                    {{ match.bracket|title }} Bracket
+                                </span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="flex items-center gap-3">
+                                <!-- Status Badge -->
+                                {% if match.status == 'next_up' %}
+                                <span class="status-next-up text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                                    ⏳ Next Up
+                                </span>
+                                {% elif match.status == 'in_progress' %}
+                                <span class="status-in-progress text-white px-4 py-2 rounded-full text-sm font-bold animate-pulse shadow-lg">
+                                    🔴 LIVE
+                                </span>
+                                {% elif match.status == 'completed' %}
+                                <span class="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                                    ✓ Completed
+                                </span>
+                                {% else %}
+                                <span class="bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                                    📅 Scheduled
+                                </span>
+                                {% endif %}
+                                
+                                <!-- Score -->
+                                <div class="text-2xl font-mono font-bold text-white">
+                                    {{ match.get('score_p1', 0) }} : {{ match.get('score_p2', 0) }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Match Actions -->
+                        <div class="flex items-center gap-4">
+                            {% if match.status in ['next_up', 'in_progress'] and player.get('mappool_url') %}
+                            <a href="{{ url_for('player.match_interface', match_id=match.id) }}" 
+                               class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg">
+                                🎯 Manage Match
+                            </a>
+                            {% elif match.status in ['next_up', 'in_progress'] and not player.get('mappool_url') %}
+                            <div class="bg-red-600 text-white px-6 py-2 rounded-lg font-bold">
+                                ❌ Upload Mappool First
+                            </div>
+                            {% endif %}
+                            
+                            <a href="{{ url_for('public.match_details', match_id=match.id) }}" 
+                               class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-all">
+                                📊 View Details
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center text-gray-400 py-8">
+                    <p class="text-lg">🎾 No matches scheduled yet</p>
+                    <p class="text-sm mt-2">Your matches will appear here once the bracket is generated</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% include 'footer.html' %}
+</body>
+</html>

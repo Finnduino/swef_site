@@ -213,7 +213,7 @@
   <!-- Tournament Info -->
   <section class="py-24 px-6 bg-section-dark">
     <div class="max-w-4xl mx-auto text-center">
-      <h1 class="text-4xl md:text-5xl font-bold text-yellow-400">Sand World Esports<br>
+      <h1 class="text-4xl md:text-5xl font-bold text-yellow-400">Sand World Evil Financing<br>
          OSU Cup 2025</h1>
       <p class="mt-6 text-lg text-gray-300">
         Straight up clicking these circles evil mode.
@@ -236,6 +236,57 @@
         <a href="{{ url_for('public.osu_login') }}" class="inline-block bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-10 rounded-full shadow-lg transition transform hover:scale-105">
           Sign Up with osu!
         </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sponsor Section -->
+  <section class="py-10 px-6 bg-gradient-to-r from-purple-900 via-blue-900 to-purple-900 border-t border-yellow-600">
+    <div class="max-w-3xl mx-auto text-center">
+      <h2 class="text-2xl md:text-3xl font-bold text-yellow-400 mb-6">
+        🌟 Tournament Sponsor 🌟
+      </h2>
+      
+      <div class="bg-black bg-opacity-50 rounded-lg p-6 border border-yellow-400 shadow-xl">
+        <div class="flex flex-col md:flex-row items-center justify-center gap-6">
+          <!-- Sponsor Logo -->
+          <div class="flex-shrink-0">
+            <img src="{{ url_for('static', filename='edgar.jpg') }}" 
+                 alt="Bar Edgar Logo" 
+                 class="w-20 h-20 rounded-full border-2 border-black shadow-md object-cover">
+          </div>
+          
+          <!-- Sponsor Info -->
+          <div class="text-center md:text-left">
+            <h3 class="text-xl md:text-2xl font-bold text-white mb-1">
+              Bar Edgar
+            </h3>
+            <p class="text-yellow-300 mb-3 text-sm">
+              Supporting competitive osu! gaming
+            </p>
+            <p class="text-gray-300 text-sm max-w-sm">
+              Thank you for making this tournament possible!
+            </p>
+            
+            <!-- Sponsor CTA Button -->
+            <div class="mt-4">
+              <a href="https://www.instagram.com/baredgarloimaa/?hl=en" target="_blank" 
+                 class="inline-block bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold py-2 px-6 rounded-full shadow-md transition transform hover:scale-105 text-sm">
+                🚀 Visit Sponsor
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Additional Sponsor Info -->
+      <div class="mt-4 text-center">
+        <p class="text-gray-400 text-xs">
+          Interested in sponsoring? 
+          <a href="aleksis.naula@gmail.com" class="text-yellow-400 hover:text-yellow-300 underline">
+            Contact us!
+          </a>
+        </p>
       </div>
     </div>
   </section>
@@ -1131,9 +1182,7 @@
     </div>
   </section>
 
-  <footer class="py-8 text-center text-sm text-gray-500 bg-black border-t border-gray-800">
-    &copy; 2025 Sand World Evil Financing. Paid for by Lebanese Taxpayers.
-  </footer>
+  {% include 'footer.html' %}
 
 </body>
 </html>

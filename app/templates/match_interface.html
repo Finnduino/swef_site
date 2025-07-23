@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Interface - {{ match.player1.name }} vs {{ match.player2.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@600;700&display=swap');
+        body {
+            font-family: 'Fira Code', monospace;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+        }
+        h1, h2, h3 {
+            font-family: 'Orbitron', sans-serif;
+        }
+        
+        .interface-card {
+            background: linear-gradient(135deg, #2d3748, #1a202c);
+            border: 2px solid #4a5568;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .map-card {
+            background: linear-gradient(135deg, #374151, #1f2937);
+            border: 2px solid #6b7280;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .map-card:hover:not(.disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+        
+        .map-banned {
+            background: linear-gradient(135deg, #7f1d1d, #991b1b);
+            border-color: #ef4444;
+            opacity: 0.6;
+        }
+        
+        .map-picked {
+            background: linear-gradient(135deg, #065f46, #047857);
+            border-color: #10b981;
+        }
+        
+        .map-your-pool {
+            border-color: #3b82f6;
+        }
+        
+        .map-opponent-pool {
+            border-color: #f59e0b;
+        }
+        
+        .ability-card {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1));
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .ability-card:hover:not(.disabled) {
+            transform: translateY(-2px);
+            border-color: rgba(59, 130, 246, 0.6);
+        }
+        
+        .ability-used {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .your-turn {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .phase-indicator {
+            background: linear-gradient(135deg, #7c3aed, #5b21b6);
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="text-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gradient-to-r from-gray-900 to-black border-b-2 border-yellow-400 px-6 py-4 flex justify-between items-center">
+        <div class="text-yellow-400 font-bold text-2xl tracking-wider">SAND WORLD</div>
+        <ul class="flex space-x-6 text-sm font-mono">
+            <li><a href="{{ url_for('public.index') }}" class="text-gray-300 hover:text-yellow-400 transition-colors">Home</a></li>
+            <li><a href="{{ url_for('public.tournament') }}" class="text-gray-300 hover:text-yellow-400 transition-colors">Tournament</a></li>
+            <li><a href="{{ url_for('player.profile') }}" class="text-gray-300 hover:text-yellow-400 transition-colors">Profile</a></li>
+        </ul>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8 max-w-7xl" id="app">
+        <!-- Match Header -->
+        <div class="interface-card p-8 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h1 class="text-4xl font-bold text-yellow-400">Match Interface</h1>
+                <div class="phase-indicator text-white px-6 py-3 rounded-full font-bold text-lg" id="phase-indicator">
+                    Initializing...
+                </div>
+            </div>
+            
+            <!-- Players -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- You -->
+                <div class="text-center p-6 rounded-xl bg-gray-700" id="your-turn-card">
+                    <img src="{{ match.player1.avatar_url if is_player1 else match.player2.avatar_url }}" 
+                         class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-blue-400">
+                    <h3 class="text-xl font-bold text-blue-400 mb-2">YOU</h3>
+                    <p class="text-white font-semibold">{{ match.player1.name if is_player1 else match.player2.name }}</p>
+                    <div class="mt-2" id="your-turn-indicator" style="display: none;">
+                        <span class="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold your-turn">
+                            Your Turn!
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- VS -->
+                <div class="text-center flex items-center justify-center">
+                    <div class="text-6xl font-bold text-gray-500">VS</div>
+                </div>
+                
+                <!-- Opponent -->
+                <div class="text-center p-6 rounded-xl bg-gray-700">
+                    <img src="{{ match.player2.avatar_url if is_player1 else match.player1.avatar_url }}" 
+                         class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-red-400">
+                    <h3 class="text-xl font-bold text-red-400 mb-2">OPPONENT</h3>
+                    <p class="text-white font-semibold">{{ match.player2.name if is_player1 else match.player1.name }}</p>
+                    <div class="mt-2" id="opponent-turn-indicator" style="display: none;">
+                        <span class="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+                            Their Turn
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phase Progress -->
+        <div class="interface-card p-6 mb-8">
+            <h2 class="text-2xl font-bold text-yellow-400 mb-4">📋 Match Progress</h2>
+            <div class="flex items-center justify-between">
+                <div class="flex-1 text-center" id="ban-phase-indicator">
+                    <div class="text-2xl mb-2">🚫</div>
+                    <div class="text-sm">Ban Phase</div>
+                    <div class="text-xs text-gray-400">0/6 maps</div>
+                </div>
+                <div class="flex-1 text-center" id="pick-phase-indicator">
+                    <div class="text-2xl mb-2">🎯</div>
+                    <div class="text-sm">Pick Phase</div>
+                    <div class="text-xs text-gray-400">0/6 maps</div>
+                </div>
+                <div class="flex-1 text-center" id="play-phase-indicator">
+                    <div class="text-2xl mb-2">🎮</div>
+                    <div class="text-sm">Play Phase</div>
+                    <div class="text-xs text-gray-400">Ready to fight!</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Player Abilities -->
+        <div class="interface-card p-6 mb-8">
+            <h2 class="text-2xl font-bold text-yellow-400 mb-4">⚡ Your Abilities</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Force NoMod -->
+                <div class="ability-card p-4" onclick="selectAbility('force_nomod')" id="force-nomod-ability">
+                    <h3 class="text-lg font-bold text-blue-400 mb-2">🔵 Force NoMod</h3>
+                    <p class="text-sm text-gray-300 mb-2">Force both players to play with no mods</p>
+                    <div class="text-xs text-gray-400">
+                        <span class="bg-blue-900 px-2 py-1 rounded">Single Use</span>
+                    </div>
+                </div>
+                
+                <!-- Force Mod -->
+                <div class="ability-card p-4" onclick="selectAbility('force_mod')" id="force-mod-ability">
+                    <h3 class="text-lg font-bold text-purple-400 mb-2">🟣 Force Mod</h3>
+                    <p class="text-sm text-gray-300 mb-2">Force both players to use a specific mod</p>
+                    <div class="text-xs text-gray-400">
+                        <span class="bg-purple-900 px-2 py-1 rounded">Single Use</span>
+                    </div>
+                </div>
+                
+                <!-- Personal Mod -->
+                <div class="ability-card p-4" onclick="selectAbility('personal_mod')" id="personal-mod-ability">
+                    <h3 class="text-lg font-bold text-green-400 mb-2">🟢 Personal Mod</h3>
+                    <p class="text-sm text-gray-300 mb-2">Use a mod while opponent plays NoMod</p>
+                    <div class="text-xs text-gray-400">
+                        <span class="bg-green-900 px-2 py-1 rounded">Uses: 0/2</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Pool Display -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Your Maps -->
+            <div class="interface-card p-6">
+                <h2 class="text-2xl font-bold text-blue-400 mb-4">🎵 Your Maps</h2>
+                {% if player_mappool %}
+                <div class="space-y-3" id="your-maps">
+                    <!-- Maps will be loaded via JavaScript -->
+                </div>
+                <a href="{{ player_mappool }}" target="_blank" class="inline-block mt-4 text-blue-400 hover:text-blue-300">
+                    View Full Playlist →
+                </a>
+                {% else %}
+                <div class="text-center text-gray-400 py-8">
+                    <p>No mappool uploaded</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Opponent's Maps -->
+            <div class="interface-card p-6">
+                <h2 class="text-2xl font-bold text-yellow-400 mb-4">🎵 Opponent's Maps</h2>
+                {% if opponent_mappool %}
+                <div class="space-y-3" id="opponent-maps">
+                    <!-- Maps will be loaded via JavaScript -->
+                </div>
+                <a href="{{ opponent_mappool }}" target="_blank" class="inline-block mt-4 text-yellow-400 hover:text-yellow-300">
+                    View Full Playlist →
+                </a>
+                {% else %}
+                <div class="text-center text-gray-400 py-8">
+                    <p>Opponent hasn't uploaded mappool</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Actions Summary -->
+        <div class="interface-card p-6 mt-8">
+            <h2 class="text-2xl font-bold text-yellow-400 mb-4">📊 Match Summary</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Banned Maps -->
+                <div>
+                    <h3 class="text-lg font-bold text-red-400 mb-3">🚫 Banned Maps</h3>
+                    <div class="space-y-2" id="banned-maps-list">
+                        <div class="text-gray-500">No maps banned yet</div>
+                    </div>
+                </div>
+                
+                <!-- Picked Maps -->
+                <div>
+                    <h3 class="text-lg font-bold text-green-400 mb-3">🎯 Picked Maps</h3>
+                    <div class="space-y-2" id="picked-maps-list">
+                        <div class="text-gray-500">No maps picked yet</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mod Selection Modal -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;" id="mod-modal">
+        <div class="bg-gray-800 p-8 rounded-lg border-2 border-purple-500 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold text-purple-400 mb-4">Select Mod</h3>
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <button onclick="selectMod('HD')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition">HD</button>
+                <button onclick="selectMod('HR')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition">HR</button>
+                <button onclick="selectMod('DT')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition">DT</button>
+                <button onclick="selectMod('FL')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition">FL</button>
+                <button onclick="selectMod('EZ')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition">EZ</button>
+                <button onclick="selectMod('HT')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition">HT</button>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModModal()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40" style="display: none;" id="loading-overlay">
+        <div class="bg-gray-800 p-8 rounded-lg border-2 border-yellow-500">
+            <div class="text-yellow-400 text-2xl font-bold mb-4 text-center">Processing...</div>
+            <div class="w-16 h-16 border-4 border-yellow-400 border-dashed rounded-full animate-spin mx-auto"></div>
+        </div>
+    </div>
+
+    {% include 'footer.html' %}
+
+    <script>
+        // Match Interface JavaScript (Vanilla JS)
+        class MatchInterface {
+            constructor() {
+                this.matchId = '{{ match.id }}';
+                this.isPlayer1 = {{ 'true' if is_player1 else 'false' }};
+                
+                // State
+                this.loading = false;
+                this.currentPhase = 'ban';
+                this.currentTurn = 'player1';
+                this.bannedMaps = [];
+                this.pickedMaps = [];
+                this.abilities = {
+                    force_nomod: false,
+                    force_mod: false,
+                    personal_mod: 0
+                };
+                this.mapMods = {};
+                
+                // Modal state
+                this.showModModal = false;
+                this.selectedAbility = null;
+                this.selectedMap = null;
+                this.availableMods = ['HD', 'HR', 'DT', 'FL', 'EZ', 'HT'];
+                
+                this.init();
+            }
+            
+            init() {
+                this.loadMatchState();
+                this.initializeMaps();
+                this.startPolling();
+                this.setupModalEvents();
+            }
+            
+            get isYourTurn() {
+                const playerKey = this.isPlayer1 ? 'player1' : 'player2';
+                return this.currentTurn === playerKey && this.currentPhase !== 'play';
+            }
+            
+            async loadMatchState() {
+                try {
+                    const response = await fetch(`/player/match/${this.matchId}/state`);
+                    const data = await response.json();
+                    
+                    if (data.match_state) {
+                        const state = data.match_state;
+                        this.currentPhase = state.phase || 'ban';
+                        this.currentTurn = state.current_turn || 'player1';
+                        this.bannedMaps = state.banned_maps || [];
+                        this.pickedMaps = state.picked_maps || [];
+                        this.mapMods = state.map_mods || {};
+                        
+                        const playerKey = this.isPlayer1 ? 'player1' : 'player2';
+                        if (state.abilities_used && state.abilities_used[playerKey]) {
+                            this.abilities = state.abilities_used[playerKey];
+                        }
+                    }
+                    
+                    this.updateUI();
+                } catch (error) {
+                    console.error('Error loading match state:', error);
+                }
+            }
+            
+            updateUI() {
+                this.updatePhaseIndicator();
+                this.updateTurnIndicators();
+                this.updateProgressCounts();
+                this.updateAbilities();
+                this.updateMatchSummary();
+            }
+            
+            updatePhaseIndicator() {
+                const indicator = document.getElementById('phase-indicator');
+                if (this.currentPhase === 'ban') {
+                    indicator.textContent = `🚫 Ban Phase (${this.bannedMaps.length}/6)`;
+                    indicator.className = 'bg-red-600 text-white px-6 py-3 rounded-full font-bold text-lg';
+                } else if (this.currentPhase === 'pick') {
+                    indicator.textContent = `🎯 Pick Phase (${this.pickedMaps.length}/6)`;
+                    indicator.className = 'bg-green-600 text-white px-6 py-3 rounded-full font-bold text-lg';
+                } else if (this.currentPhase === 'play') {
+                    indicator.textContent = '🎮 Ready to Play!';
+                    indicator.className = 'bg-blue-600 text-white px-6 py-3 rounded-full font-bold text-lg';
+                }
+            }
+            
+            updateTurnIndicators() {
+                const yourTurnCard = document.querySelector('.text-center.p-6.rounded-xl');
+                const opponentCard = document.querySelectorAll('.text-center.p-6.rounded-xl')[2];
+                
+                if (this.isYourTurn) {
+                    yourTurnCard.className = 'text-center p-6 rounded-xl bg-green-900 border-2 border-green-500';
+                } else {
+                    yourTurnCard.className = 'text-center p-6 rounded-xl bg-gray-700';
+                }
+            }
+            
+            updateProgressCounts() {
+                // Update banned maps count
+                const banPhaseCount = document.querySelector('#ban-phase-indicator .text-xs');
+                if (banPhaseCount) {
+                    banPhaseCount.textContent = `${this.bannedMaps.length}/6 maps`;
+                }
+                
+                // Update picked maps count  
+                const pickPhaseCount = document.querySelector('#pick-phase-indicator .text-xs');
+                if (pickPhaseCount) {
+                    pickPhaseCount.textContent = `${this.pickedMaps.length}/6 maps`;
+                }
+                
+                // Update phase highlighting
+                const banIndicator = document.getElementById('ban-phase-indicator');
+                const pickIndicator = document.getElementById('pick-phase-indicator');
+                const playIndicator = document.getElementById('play-phase-indicator');
+                
+                banIndicator.className = this.currentPhase === 'ban' 
+                    ? 'flex-1 text-center text-red-400 font-bold' 
+                    : 'flex-1 text-center';
+                
+                pickIndicator.className = this.currentPhase === 'pick' 
+                    ? 'flex-1 text-center text-green-400 font-bold' 
+                    : 'flex-1 text-center';
+                    
+                playIndicator.className = this.currentPhase === 'play' 
+                    ? 'flex-1 text-center text-blue-400 font-bold' 
+                    : 'flex-1 text-center';
+            }
+            
+            updateAbilities() {
+                // Force NoMod
+                const forceNomodCard = document.querySelector('[onclick*="force_nomod"]');
+                if (forceNomodCard) {
+                    if (this.abilities.force_nomod) {
+                        forceNomodCard.className = 'ability-card p-4 ability-used';
+                        forceNomodCard.innerHTML = `
+                            <h3 class="text-lg font-bold text-gray-500 mb-2">🔵 Force NoMod</h3>
+                            <p class="text-sm text-gray-500 mb-2">Used ✓</p>
+                        `;
+                    }
+                }
+                
+                // Force Mod  
+                const forceModCard = document.querySelector('[onclick*="force_mod"]');
+                if (forceModCard && this.abilities.force_mod) {
+                    forceModCard.className = 'ability-card p-4 ability-used';
+                    forceModCard.innerHTML = `
+                        <h3 class="text-lg font-bold text-gray-500 mb-2">🟣 Force Mod</h3>
+                        <p class="text-sm text-gray-500 mb-2">Used ✓</p>
+                    `;
+                }
+                
+                // Personal Mod
+                const personalModCard = document.querySelector('[onclick*="personal_mod"]');
+                if (personalModCard) {
+                    if (this.abilities.personal_mod >= 2) {
+                        personalModCard.className = 'ability-card p-4 ability-used';
+                        personalModCard.innerHTML = `
+                            <h3 class="text-lg font-bold text-gray-500 mb-2">🟢 Personal Mod</h3>
+                            <p class="text-sm text-gray-500 mb-2">All uses exhausted</p>
+                        `;
+                    } else {
+                        const usesSpan = personalModCard.querySelector('.bg-green-900');
+                        if (usesSpan) {
+                            usesSpan.textContent = `Uses: ${this.abilities.personal_mod}/2`;
+                        }
+                    }
+                }
+            }
+            
+            updateMatchSummary() {
+                // Update banned maps list
+                const bannedContainer = document.getElementById('banned-maps-list');
+                if (bannedContainer) {
+                    bannedContainer.innerHTML = '';
+                    if (this.bannedMaps.length === 0) {
+                        bannedContainer.innerHTML = '<div class="text-gray-500">No maps banned yet</div>';
+                    } else {
+                        this.bannedMaps.forEach(map => {
+                            const div = document.createElement('div');
+                            div.className = 'bg-red-900 bg-opacity-50 p-3 rounded border border-red-600';
+                            div.innerHTML = `<span class="text-red-200">${map}</span>`;
+                            bannedContainer.appendChild(div);
+                        });
+                    }
+                }
+                
+                // Update picked maps list
+                const pickedContainer = document.getElementById('picked-maps-list');
+                if (pickedContainer) {
+                    pickedContainer.innerHTML = '';
+                    if (this.pickedMaps.length === 0) {
+                        pickedContainer.innerHTML = '<div class="text-gray-500">No maps picked yet</div>';
+                    } else {
+                        this.pickedMaps.forEach((pick, index) => {
+                            const div = document.createElement('div');
+                            div.className = 'bg-green-900 bg-opacity-50 p-3 rounded border border-green-600';
+                            div.innerHTML = `
+                                <span class="text-green-200">Map ${index + 1}: ${pick.map_id}</span>
+                                <span class="text-xs text-green-400 ml-2">(by ${pick.picked_by})</span>
+                            `;
+                            pickedContainer.appendChild(div);
+                        });
+                    }
+                }
+            }
+            
+            async performAction(actionType, targetMap, abilityType = null, modChoice = null) {
+                this.setLoading(true);
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('action_type', actionType);
+                    formData.append('target_map', targetMap);
+                    if (abilityType) formData.append('ability_type', abilityType);
+                    if (modChoice) formData.append('mod_choice', modChoice);
+
+                    const response = await fetch(`/player/match/${this.matchId}/action`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        await this.loadMatchState();
+                    } else {
+                        alert(result.error || 'Action failed');
+                    }
+                } catch (error) {
+                    console.error('Error performing action:', error);
+                    alert('Network error occurred');
+                } finally {
+                    this.setLoading(false);
+                }
+            }
+            
+            setLoading(loading) {
+                this.loading = loading;
+                const loadingOverlay = document.getElementById('loading-overlay');
+                if (loadingOverlay) {
+                    loadingOverlay.style.display = loading ? 'flex' : 'none';
+                }
+            }
+            
+            banMap(mapId) {
+                if (!this.isYourTurn || this.currentPhase !== 'ban') return;
+                if (this.bannedMaps.includes(mapId)) return;
+                
+                this.performAction('ban', mapId);
+            }
+            
+            pickMap(mapId) {
+                if (!this.isYourTurn || this.currentPhase !== 'pick') return;
+                if (this.bannedMaps.includes(mapId)) return;
+                if (this.pickedMaps.some(p => p.map_id === mapId)) return;
+                
+                this.performAction('pick', mapId);
+            }
+            
+            selectAbility(abilityType) {
+                if (!this.isYourTurn) return;
+                if (this.currentPhase === 'ban') return;
+                
+                if (abilityType === 'force_nomod' && !this.abilities.force_nomod) {
+                    this.selectedAbility = abilityType;
+                    alert('Select a map to apply Force NoMod');
+                } else if ((abilityType === 'force_mod' && !this.abilities.force_mod) || 
+                           (abilityType === 'personal_mod' && this.abilities.personal_mod < 2)) {
+                    this.selectedAbility = abilityType;
+                    this.showModModal = true;
+                    this.openModModal();
+                }
+            }
+            
+            openModModal() {
+                const modal = document.getElementById('mod-modal');
+                if (modal) {
+                    modal.style.display = 'flex';
+                }
+            }
+            
+            closeModModal() {
+                this.showModModal = false;
+                this.selectedAbility = null;
+                const modal = document.getElementById('mod-modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            }
+            
+            selectMod(mod) {
+                this.closeModModal();
+                alert('Select a map to apply this mod to');
+            }
+            
+            useAbilityOnMap(mapId, mod = null) {
+                if (!this.selectedAbility) return;
+                
+                this.performAction('ability', mapId, this.selectedAbility, mod);
+                this.selectedAbility = null;
+            }
+            
+            initializeMaps() {
+                const yourMapsContainer = document.getElementById('your-maps');
+                const opponentMapsContainer = document.getElementById('opponent-maps');
+                
+                // Add placeholder maps
+                for (let i = 1; i <= 10; i++) {
+                    if (yourMapsContainer) {
+                        const mapEl = document.createElement('div');
+                        mapEl.className = 'map-card map-your-pool p-3 cursor-pointer';
+                        mapEl.onclick = () => this.handleMapClick(`your-map-${i}`);
+                        mapEl.innerHTML = `
+                            <div class="font-semibold text-blue-300">Your Map ${i}</div>
+                            <div class="text-xs text-gray-400">Click to ban/pick</div>
+                        `;
+                        yourMapsContainer.appendChild(mapEl);
+                    }
+                    
+                    if (opponentMapsContainer) {
+                        const mapEl = document.createElement('div');
+                        mapEl.className = 'map-card map-opponent-pool p-3 cursor-pointer';
+                        mapEl.onclick = () => this.handleMapClick(`opp-map-${i}`);
+                        mapEl.innerHTML = `
+                            <div class="font-semibold text-yellow-300">Opponent Map ${i}</div>
+                            <div class="text-xs text-gray-400">Click to ban/pick</div>
+                        `;
+                        opponentMapsContainer.appendChild(mapEl);
+                    }
+                }
+            }
+            
+            handleMapClick(mapId) {
+                if (this.selectedAbility) {
+                    if (this.selectedAbility === 'force_mod' || this.selectedAbility === 'personal_mod') {
+                        const mod = prompt('Enter mod (HD, HR, DT, FL, EZ, HT):');
+                        if (mod) {
+                            this.useAbilityOnMap(mapId, mod.toUpperCase());
+                        }
+                    } else {
+                        this.useAbilityOnMap(mapId);
+                    }
+                } else if (this.currentPhase === 'ban') {
+                    this.banMap(mapId);
+                } else if (this.currentPhase === 'pick') {
+                    this.pickMap(mapId);
+                }
+            }
+            
+            setupModalEvents() {
+                // Modal background click to close
+                document.addEventListener('click', (e) => {
+                    const modal = e.target.closest('.fixed.inset-0');
+                    if (modal && e.target === modal) {
+                        this.closeModModal();
+                    }
+                });
+            }
+            
+            startPolling() {
+                setInterval(() => {
+                    this.loadMatchState();
+                }, 3000);
+            }
+        }
+        
+        // Initialize the interface when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            window.matchInterface = new MatchInterface();
+        });
+        
+        // Global functions for onclick handlers
+        function selectAbility(abilityType) {
+            if (window.matchInterface) {
+                window.matchInterface.selectAbility(abilityType);
+            }
+        }
+        
+        function selectMod(mod) {
+            if (window.matchInterface) {
+                window.matchInterface.selectMod(mod);
+            }
+        }
+        
+        function closeModModal() {
+            if (window.matchInterface) {
+                window.matchInterface.closeModModal();
+            }
+        }
+    </script>
+</body>
+</html>
