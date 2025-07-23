@@ -1,23 +1,8 @@
 {
   "afk_mode": false,
   "victory_screen_hidden": false,
-  "last_updated": "2025-07-23T15:29:59.345052",
+  "last_updated": "2025-07-23T16:35:31.379577",
   "events": [
-    {
-      "type": "hide_match_interface",
-      "data": {},
-      "timestamp": "2025-07-23T15:26:28.182691"
-    },
-    {
-      "type": "match_update",
-      "data": {},
-      "timestamp": "2025-07-23T15:26:37.140219"
-    },
-    {
-      "type": "match_update",
-      "data": {},
-      "timestamp": "2025-07-23T15:26:48.910741"
-    },
     {
       "type": "exit_afk",
       "data": {},
@@ -52,6 +37,21 @@
       "type": "show_match_interface",
       "data": {},
       "timestamp": "2025-07-23T15:29:59.345052"
+    },
+    {
+      "type": "show_match_interface",
+      "data": {},
+      "timestamp": "2025-07-23T16:34:06.218757"
+    },
+    {
+      "type": "show_match_interface",
+      "data": {},
+      "timestamp": "2025-07-23T16:35:13.456757"
+    },
+    {
+      "type": "show_match_interface",
+      "data": {},
+      "timestamp": "2025-07-23T16:35:31.379577"
     }
   ]
 }

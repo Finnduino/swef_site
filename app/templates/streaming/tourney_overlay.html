@@ -6,6 +6,7 @@
     <title>Tournament Overlay</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Fira+Code&family=Orbitron:wght@600&display=swap" rel="stylesheet">
     <style>
+        /* Base & Resets */
         * {
             margin: 0;
             padding: 0;
@@ -20,6 +21,115 @@
             font-size: 14px;
         }
 
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .text-uppercase {
+            text-transform: uppercase;
+        }
+
+        .letter-spacing-sm {
+            letter-spacing: 0.5px;
+        }
+
+        .letter-spacing-md {
+            letter-spacing: 1px;
+        }
+
+        .letter-spacing-lg {
+            letter-spacing: 2px;
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .font-jetbrains {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .gradient-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        }
+
+        .gradient-dark {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(20, 20, 30, 0.9));
+        }
+        
+        .gradient-dark-overlay {
+            background: linear-gradient(135deg, rgba(10, 10, 20, 0.95), rgba(20, 20, 40, 0.95));
+        }
+
+        .gradient-dark-alt {
+             background: linear-gradient(135deg, #0f0f23, #1a1a3a, #2d1b69);
+        }
+
+        .gradient-success {
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+        }
+
+        .gradient-danger {
+             background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .gradient-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        
+        .gradient-gold-text {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b, #d97706);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .bordered {
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .rounded-lg {
+            border-radius: 16px;
+        }
+        
+        .rounded-xl {
+            border-radius: 20px;
+        }
+
+        .shadow-lg {
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .backdrop-blur {
+            backdrop-filter: blur(10px);
+        }
+
+        /* Base Screen Styles */
+        .screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            overflow: hidden;
+        }
+
+        .screen-content {
+            text-align: center;
+            z-index: 1;
+        }
+
         /* Main Match HUD */
         .match-hud {
             position: fixed;
@@ -32,23 +142,14 @@
         }
 
         .hud-container {
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(20, 20, 30, 0.9));
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
             overflow: hidden;
         }
 
         .bracket-info {
-            background: linear-gradient(90deg, #6366f1, #8b5cf6);
             padding: 12px 40px;
             text-align: center;
-            font-family: 'Orbitron', sans-serif;
             font-weight: 600;
             font-size: 16px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
             width: 100%;
             box-sizing: border-box;
         }
@@ -108,8 +209,6 @@
             font-size: 11px;
             color: rgba(255, 255, 255, 0.7);
             font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .score-section {
@@ -121,7 +220,6 @@
         }
 
         .current-score {
-            font-family: 'JetBrains Mono', monospace;
             font-size: 28px;
             font-weight: 700;
             color: #ffffff;
@@ -174,8 +272,6 @@
         .score-label {
             font-size: 10px;
             color: rgba(255, 255, 255, 0.6);
-            text-transform: uppercase;
-            letter-spacing: 1px;
             margin-bottom: 4px;
         }
 
@@ -185,35 +281,41 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.98), rgba(20, 20, 30, 0.98));
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
             padding: 40px 60px;
             text-align: center;
-            backdrop-filter: blur(15px);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
             z-index: 1000;
             min-width: 500px;
             animation: victorySlideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        /* Match Victory Screen - Redesigned */
-        .match-victory {
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.98), rgba(20, 20, 30, 0.98));
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
-            min-width: 700px;
-            padding: 0;
-            overflow: hidden;
+        
+        .victory-screen.match-victory {
+             min-width: 700px;
+             padding: 0;
+             overflow: hidden;
         }
-
+        
+        .victory-title {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+        
         .victory-header {
-            background: linear-gradient(90deg, #22c55e, #16a34a);
             padding: 20px 40px;
             text-align: center;
             position: relative;
+        }
+        
+        .victory-header .victory-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: #ffffff;
+            background: none;
+            -webkit-background-clip: initial;
+            -webkit-text-fill-color: initial;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
         }
 
         .victory-header::before {
@@ -272,12 +374,9 @@
             font-size: 14px;
             color: rgba(255, 255, 255, 0.7);
             font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .victory-score-display {
-            font-family: 'JetBrains Mono', monospace;
             font-size: 32px;
             font-weight: 700;
             color: #22c55e;
@@ -305,30 +404,6 @@
             }
         }
 
-        .victory-title {
-            font-size: 32px;
-            font-weight: 800;
-            margin-bottom: 16px;
-            background: linear-gradient(135deg, #fbbf24, #f59e0b);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-        }
-
-        .victory-header .victory-title {
-            font-size: 28px;
-            font-weight: 800;
-            color: #ffffff;
-            background: none;
-            -webkit-background-clip: initial;
-            -webkit-text-fill-color: initial;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin: 0;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
-        }
-
         .victory-subtitle {
             font-size: 16px;
             color: rgba(255, 255, 255, 0.8);
@@ -339,24 +414,9 @@
         .victory-details {
             font-size: 14px;
             color: rgba(255, 255, 255, 0.6);
-            font-family: 'JetBrains Mono', monospace;
         }
 
         /* Welcome Screen */
-        .welcome-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(135deg, #0f0f23, #1a1a3a, #2d1b69);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 3000;
-            overflow: hidden;
-        }
-
         .welcome-screen::before {
             content: '';
             position: absolute;
@@ -377,8 +437,6 @@
         }
 
         .welcome-content {
-            text-align: center;
-            z-index: 1;
             animation: welcomeSlideIn 1.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -416,8 +474,6 @@
             font-weight: 600;
             color: rgba(255, 255, 255, 0.9);
             margin-bottom: 16px;
-            text-transform: uppercase;
-            letter-spacing: 3px;
             animation: welcomeGlide 2s ease-out 0.5s both;
         }
 
@@ -435,10 +491,6 @@
         .welcome-year {
             font-size: 48px;
             font-weight: 800;
-            background: linear-gradient(135deg, #fbbf24, #f59e0b, #d97706);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
             margin-bottom: 24px;
             animation: welcomeShimmer 2s ease-in-out 1s both;
         }
@@ -467,20 +519,6 @@
         }
 
         /* Outro Screen */
-        .outro-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(135deg, #0f0f23, #1a1a3a, #2d1b69);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 3000;
-            overflow: hidden;
-        }
-
         .outro-screen::before {
             content: '';
             position: absolute;
@@ -501,8 +539,6 @@
         }
 
         .outro-content {
-            text-align: center;
-            z-index: 1;
             animation: outroSlideIn 1.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -546,8 +582,6 @@
             font-weight: 700;
             color: rgba(255, 255, 255, 0.9);
             margin-bottom: 20px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
             animation: outroFadeIn 1.5s ease-out 0.5s both;
         }
 
@@ -619,27 +653,12 @@
 
         /* AFK Screen */
         .afk-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
             background: linear-gradient(135deg, #1e1b4b, #312e81, #1e40af);
-            display: flex;
-            align-items: center;
-            justify-content: center;
             z-index: 2000;
         }
 
         /* Match Interface Overlay */
         .match-interface-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(135deg, rgba(10, 10, 20, 0.95), rgba(20, 20, 40, 0.95));
-            backdrop-filter: blur(10px);
             z-index: 1500;
             padding: 20px;
             overflow-y: auto;
@@ -654,31 +673,26 @@
         }
 
         .interface-header {
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(20, 20, 30, 0.8));
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
             padding: 20px;
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            backdrop-filter: blur(5px);
         }
 
         .phase-indicator {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
             color: white;
             padding: 12px 24px;
             border-radius: 25px;
             font-weight: 700;
             font-size: 16px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        }
+
+        .phase-indicator.ban-phase {
             box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
         }
 
         .phase-indicator.pick-phase {
-            background: linear-gradient(135deg, #22c55e, #16a34a);
             box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
         }
 
@@ -688,7 +702,6 @@
         }
 
         .phase-indicator.play-starting {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
             box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
             animation: pulse 2s infinite;
         }
@@ -879,6 +892,7 @@
             border-radius: 12px;
             padding: 16px;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            max-height: 600px;
         }
 
         .picked-maps-header {
@@ -949,8 +963,6 @@
             font-weight: 600;
             color: rgba(255, 255, 255, 0.9);
             margin-bottom: 16px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
         }
 
         .next-match {
@@ -979,18 +991,37 @@
         }
 
         /* Responsive adjustments */
-        @media (max-width: 1280px) {
+        @media (max-width: 1920px) {
             .match-hud {
                 width: 95vw;
-                top: 20px;
+                top: 5px;
             }
             
+            .players-container {
+                padding: 8px 10px;
+                gap: 24px;
+            }
+            
+            .player {
+                min-width: 250px;
+                padding: 12px 16px;
+            }
+
+            .score-section {
+                min-width: 180px;
+            }
+
             .current-score {
-                font-size: 24px;
+                font-size: 36px;
             }
             
             .player-name {
-                font-size: 16px;
+                font-size: 32px;
+            }
+            
+            .player-avatar {
+                width: 40px;
+                height: 40px;
             }
             
             .victory-screen {
@@ -998,12 +1029,23 @@
                 padding: 40px 50px;
             }
             
-            .match-victory {
+            .victory-screen.match-victory {
                 min-width: 600px;
+            }
+            
+            .victory-content {
+                padding: 30px 20px;
             }
             
             .victory-player {
                 min-width: 350px;
+                flex-direction: column;
+                text-align: center;
+                padding: 20px;
+            }
+            
+            .victory-player-info {
+                text-align: center;
             }
             
             .victory-avatar {
@@ -1017,6 +1059,14 @@
             
             .victory-score-display {
                 font-size: 28px;
+            }
+            
+            .victory-header .victory-title {
+                font-size: 24px;
+            }
+            
+            .brb-title {
+                font-size: 36px;
             }
 
             .welcome-logo {
@@ -1038,110 +1088,6 @@
             .outro-subtitle {
                 font-size: 28px;
             }
-        }
-
-        @media (max-width: 768px) {
-            .match-hud {
-                width: 98vw;
-                top: 15px;
-            }
-            
-            .players-container {
-                padding: 16px 20px;
-                gap: 24px;
-            }
-            
-            .player {
-                min-width: 200px;
-                padding: 12px 16px;
-            }
-            
-            .score-section {
-                min-width: 180px;
-            }
-            
-            .current-score {
-                font-size: 20px;
-            }
-            
-            .player-name {
-                font-size: 14px;
-            }
-            
-            .player-avatar {
-                width: 40px;
-                height: 40px;
-            }
-            
-            .victory-screen {
-                min-width: 90vw;
-                padding: 30px 20px;
-            }
-            
-            .match-victory {
-                min-width: 90vw;
-            }
-            
-            .victory-content {
-                padding: 30px 20px;
-            }
-            
-            .victory-player {
-                min-width: auto;
-                flex-direction: column;
-                text-align: center;
-                padding: 20px;
-            }
-            
-            .victory-player-info {
-                text-align: center;
-            }
-            
-            .victory-avatar {
-                width: 60px;
-                height: 60px;
-            }
-            
-            .victory-player-name {
-                font-size: 18px;
-            }
-            
-            .victory-score-display {
-                font-size: 24px;
-            }
-            
-            .victory-header .victory-title {
-                font-size: 24px;
-            }
-            
-            .brb-title {
-                font-size: 36px;
-            }
-
-            .welcome-logo {
-                font-size: 48px;
-            }
-
-            .welcome-subtitle {
-                font-size: 20px;
-            }
-
-            .welcome-year {
-                font-size: 28px;
-            }
-
-            .outro-title {
-                font-size: 40px;
-            }
-
-            .outro-subtitle {
-                font-size: 24px;
-            }
-        }
-
-        /* Utility classes */
-        .hidden {
-            display: none !important;
         }
 
         .fade-in {
@@ -1172,7 +1118,6 @@
         }
 
         .current-map-container {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.95), rgba(139, 92, 246, 0.95));
             border: 3px solid rgba(255, 255, 255, 0.4);
             border-radius: 0;
             width: 100%;
@@ -1189,17 +1134,13 @@
         }
 
         .current-map-label {
-            font-family: 'Orbitron', sans-serif;
             font-size: 18px;
             font-weight: 600;
             color: rgba(255, 255, 255, 0.8);
-            text-transform: uppercase;
-            letter-spacing: 2px;
             margin-bottom: 10px;
         }
 
         .current-map-title {
-            font-family: 'Inter', sans-serif;
             font-size: 32px;
             font-weight: 800;
             color: white;
@@ -1209,7 +1150,6 @@
         }
 
         .current-map-artist {
-            font-family: 'Inter', sans-serif;
             font-size: 20px;
             font-weight: 500;
             color: rgba(255, 255, 255, 0.9);
@@ -1217,7 +1157,6 @@
         }
 
         .current-map-difficulty {
-            font-family: 'JetBrains Mono', monospace;
             font-size: 16px;
             font-weight: 600;
             color: rgba(255, 255, 255, 0.8);
@@ -1247,19 +1186,19 @@
 </head>
 <body>
     <!-- Welcome Screen -->
-    <div class="welcome-screen hidden" id="welcomeScreen">
-        <div class="welcome-content">
+    <div class="screen gradient-dark-alt welcome-screen hidden" id="welcomeScreen">
+        <div class="screen-content welcome-content">
             <div class="welcome-logo">SWEF</div>
-            <div class="welcome-subtitle">Sand World OSU Cup</div>
-            <div class="welcome-year">2025</div>
+            <div class="welcome-subtitle text-uppercase letter-spacing-lg">Sand World OSU Cup</div>
+            <div class="welcome-year gradient-gold-text">2025</div>
             <div class="welcome-message">Welcome to the ultimate rhythm tournament!</div>
         </div>
     </div>
 
     <!-- Main Match HUD -->
     <div class="match-hud" id="matchHud">
-        <div class="hud-container">
-            <div class="bracket-info" id="bracketInfo">
+        <div class="hud-container gradient-dark bordered rounded-lg backdrop-blur shadow-lg">
+            <div class="bracket-info font-orbitron text-uppercase letter-spacing-lg gradient-primary" id="bracketInfo">
                 SWEF CUP 2025 - Upper Bracket - Round 1
             </div>
             
@@ -1269,14 +1208,14 @@
                     <img class="player-avatar" id="p1Avatar" src="" alt="Player 1" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjQiIGN5PSIyNCIgcj0iMjQiIGZpbGw9IiMzNzM3MzciLz4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSIxMiIgeT0iMTIiPgo8cGF0aCBkPSJNMTIgMTJDMTQuNzYxNCAxMiAxNyA5Ljc2MTQyIDE3IDdDMTcgNC4yMzg1OCAxNC43NjE0IDIgMTIgMkM5LjIzODU4IDIgNyA0LjIzODU4IDcgN0M3IDkuNzYxNDIgOS4yMzg1OCAxMiAxMiAxMloiIGZpbGw9IndoaXRlIiBmaWxsLW9wYWNpdHk9IjAuNSIvPgo8cGF0aCBkPSJNMTIgMTRDOC4xMzQwMSAxNCA1IDE3LjEzNDEgNSAyMUg5SDE1SDE5QzE5IDE3LjEzNDEgMTUuODY2IDE0IDEyIDE0WiIgZmlsbD0id2hpdGUiIGZpbGwtb3BhY2l0eT0iMC41Ii8+Cjwvc3ZnPgo8L3N2Zz4K'">
                     <div class="player-info">
                         <div class="player-name" id="p1Name">Player 1</div>
-                        <div class="player-seed" id="p1Seed">Seed #1</div>
+                        <div class="player-seed text-uppercase letter-spacing-sm" id="p1Seed">Seed #1</div>
                     </div>
                 </div>
 
                 <!-- Score Section -->
                 <div class="score-section">
-                    <div class="score-label">Best of 7</div>
-                    <div class="current-score" id="currentScore">0 - 0</div>
+                    <div class="score-label text-uppercase letter-spacing-md">Best of 7</div>
+                    <div class="current-score font-jetbrains" id="currentScore">0 - 0</div>
                     <div class="score-tracker" id="scoreTracker">
                         <!-- Dots will be generated by JS -->
                     </div>
@@ -1286,63 +1225,63 @@
                 <div class="player" id="player2">
                     <div class="player-info" style="text-align: right;">
                         <div class="player-name" id="p2Name">Player 2</div>
-                        <div class="player-seed" id="p2Seed">Seed #2</div>
+                        <div class="player-seed text-uppercase letter-spacing-sm" id="p2Seed">Seed #2</div>
                     </div>
-                    <img class="player-avatar" id="p2Avatar" src="" alt="Player 2" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjQiIGN5PSIyNCIgcj0iMjQiIGZpbGw9IiMzNzM3MzciLz4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSIxMiIgeT0iMTIiPgo8cGF0aCBkPSJNMTIgMTJDMTQuNzYxNCAxMiAxNyA5Ljc2MTQyIDE3IDdDMTcgNC4yMzg1OCAxNC43NjE0IDIgMTIgMkM5LjIzODU4IDIgNyA0LjIzODU4IDcgN0M3IDkuNzYxNDIgOS4yMzg1OCAxMiAxMiAxMloiIGZpbGw9IndoaXRlIiBmaWxsLW9wYWNpdHk9IjAuNSIvPgo8cGF0aCBkPSJNMTIgMTRDOC4xMzQwMSAxNCA1IDE3LjEzNDEgNSAyMUg5SDE1SDE5QzE5IDE3LjEzNDEgMTUuODY2IDE0IDEyIDE0WiIgZmlsbD0id2hpdGUiIGZpbGwtb3BhY2l0eT0iMC41Ii8+Cjwvc3ZnPgo8L3N2Zz4K'">
+                    <img class="player-avatar" id="p2Avatar" src="" alt="Player 2" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjQiIGN5PSIyNCIgcj0iMjQiIGZpbGw9IiMzNzM3MzciLz4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSIxMiIgeT0iMTIiPgo8cGF0aCBkPSJNMTIgMTJDMTQuNzYxNCAxMiAxNyA5Ljc2MTQyIDE3IDdDMTcgNC4yMzg1OCAxNC43NjE0IDIgMTIgMkM5LjIzODU4IDIgNyA0LjIzODU4IDcgN0M3IDkuNzYxNDIgOS4yMzg1OCAxMiAxMiAxMloiIGZpbGw9IndoaXRlIiBmaWxsLW9wYWNpdHk9IjAuNSIvPgo8cGF0aCBkPSJNMTIgMTRDOC4xMzQwMSAxNCA1IDE3LjEzNDEgNSAyMUg5SDE1SDE5QzE5IDE3LjEzNDEgMTUuODY2IDE0IDEyIDE0WiIgZmlsbD0id2hpdGUiIGZpbGwtb3BhY2l0eT0iMC41Ii8+Cjwvc3ZnPgo8L3N2Zz4K'">
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Map Victory Screen -->
-    <div class="victory-screen hidden" id="mapVictory">
-        <div class="victory-title" id="mapWinner">Player 1 Wins!</div>
+    <div class="victory-screen gradient-dark bordered rounded-xl backdrop-blur shadow-lg hidden" id="mapVictory">
+        <div class="victory-title gradient-gold-text" id="mapWinner">Player 1 Wins!</div>
         <div class="victory-subtitle" id="mapDetails">Map Title - [Difficulty]</div>
-        <div class="victory-details" id="mapStats">Score: 1,234,567 | Accuracy: 98.5%</div>
+        <div class="victory-details font-jetbrains" id="mapStats">Score: 1,234,567 | Accuracy: 98.5%</div>
     </div>
 
     <!-- Match Victory Screen -->
-    <div class="victory-screen match-victory hidden" id="matchVictory">
-        <div class="victory-header">
-            <div class="victory-title" id="matchVictoryTitle">Match Complete!</div>
+    <div class="victory-screen match-victory gradient-dark bordered rounded-lg backdrop-blur shadow-lg hidden" id="matchVictory">
+        <div class="victory-header gradient-success">
+            <div class="victory-title text-uppercase letter-spacing-md" id="matchVictoryTitle">Match Complete!</div>
         </div>
         <div class="victory-content">
             <div class="victory-player" id="victoryPlayerInfo">
-                <img class="victory-avatar" id="victoryAvatar" src="" alt="Winner" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjQiIGN5PSIyNCIgcj0iMjQiIGZpbGw9IiMzNzM3MzciLz4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSIxMiIgeT0iMTIiPgo8cGF0aCBkPSJNMTIgMTJDMTQuNzYxNCAxMiAxNyA5Ljc2MTQyIDE3IDdDMTcgNC4yMzg1OCAxNC43NjE0IDIgMTIgMkM5LjIzODU4IDIgNyA0LjIzODU4IDcgN0M3IDkuNzYxNDIgOS4yMzg1OCAxMiAxMiAxMloiIGZpbGw9IndoaXRlIiBmaWxsLW9wYWNpdHk9IjAuNSIvPgo8cGF0aCBkPSJNMTIgMTRDOC4xMzQwMSAxNCA1IDE3LjEzNDEgNSAyMUg5SDE1SDE5QzE5IDE3LjEzNDEgMTUuODY2IDE0IDEyIDE0WiIgZmlsbD0id2hpdGUiIGZpbGwtb3BhY2l0eT0iMC41Ii8+Cjwvc3ZnPgo8L3N2Zz4K'">
+                <img class="victory-avatar" id="victoryAvatar" src="" alt="Winner" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjQiIGN5PSIyNCIgcj0iMjQiIGZpbGw9IiMzNzM3MzciLz4KPHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1zbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSIxMiIgeT0iMTIiPgo8cGF0aCBkPSJNMTIgMTJDMTQuNzYxNCAxMiAxNyA5Ljc2MTQyIDE3IDdDMTcgNC4yMzg1OCAxNC43NjE0IDIgMTIgMkM5LjIzODU4IDIgNyA0LjIzODU4IDcgN0M3IDkuNzYxNDIgOS4yMzg1OCAxMiAxMiAxMloiIGZpbGw9IndoaXRlIiBmaWxsLW9wYWNpdHk9IjAuNSIvPgo8cGF0aCBkPSJNMTIgMTRDOC4xMzQwMSAxNCA1IDE3LjEzNDEgNSAyMUg5SDE1SDE5QzE5IDE3LjEzNDEgMTUuODY2IDE0IDEyIDE0WiIgZmlsbD0id2hpdGUiIGZpbGwtb3BhY2l0eT0iMC41Ii8+Cjwvc3ZnPgo8L3N2Zz4K'">
                 <div class="victory-player-info">
-                    <div class="victory-player-name" id="matchWinner">Player 1 Wins!</div>
-                    <div class="victory-player-seed" id="winnerSeed">Seed #1</div>
+                    <div class="victory-player-name" id="matchWinnerName">Player 1 Wins!</div>
+                    <div class="victory-player-seed text-uppercase letter-spacing-sm" id="winnerSeed">Seed #1</div>
                 </div>
-                <div class="victory-score-display" id="finalScore">4-2</div>
+                <div class="victory-score-display font-jetbrains" id="finalScore">4-2</div>
             </div>
             <div class="victory-advancement" id="advancement">Advances to Round 2</div>
         </div>
     </div>
 
     <!-- Outro Screen -->
-    <div class="outro-screen hidden" id="outroScreen">
-        <div class="outro-content">
+    <div class="screen gradient-dark-alt outro-screen hidden" id="outroScreen">
+        <div class="screen-content outro-content">
             <div class="outro-title">Tournament Complete!</div>
-            <div class="outro-subtitle">Congratulations Champion!</div>
+            <div class="outro-subtitle text-uppercase letter-spacing-lg">Congratulations Champion!</div>
             <div class="outro-message">Thank you for watching the Sand World OSU Cup 2025</div>
             <div class="outro-thanks">See you next tournament!</div>
         </div>
     </div>
 
     <!-- AFK Screen -->
-    <div class="afk-screen hidden" id="afkScreen">
-        <div class="brb-content">
+    <div class="screen afk-screen hidden" id="afkScreen">
+        <div class="screen-content brb-content">
             <div class="brb-title">Be Right Back</div>
-            <div class="tournament-title">Sand World OSU Cup 2025</div>
+            <div class="tournament-title text-uppercase letter-spacing-lg">Sand World OSU Cup 2025</div>
             <div class="next-match" id="nextMatch">Loading tournament data...</div>
         </div>
     </div>
 
     <!-- Match Interface Overlay -->
-    <div class="match-interface-overlay hidden" id="matchInterfaceOverlay">
+    <div class="screen match-interface-overlay gradient-dark-overlay backdrop-blur hidden" id="matchInterfaceOverlay">
         <div class="interface-container">
-            <div class="interface-header">
-                <div class="phase-indicator" id="overlayPhaseIndicator">
+            <div class="interface-header gradient-dark bordered rounded-lg backdrop-blur">
+                <div class="phase-indicator text-uppercase letter-spacing-md" id="overlayPhaseIndicator">
                     🚫 Ban Phase
                 </div>
                 <div class="turn-indicator" id="overlayTurnIndicator">
@@ -1396,11 +1335,11 @@
 
     <!-- Current Map Display -->
     <div id="currentMapDisplay" class="current-map-display hidden">
-        <div id="currentMapContainer" class="current-map-container">
-            <div class="current-map-label">Now Playing</div>
+        <div id="currentMapContainer" class="current-map-container gradient-primary">
+            <div class="current-map-label font-orbitron text-uppercase letter-spacing-lg">Now Playing</div>
             <div id="currentMapTitle" class="current-map-title"></div>
             <div id="currentMapArtist" class="current-map-artist"></div>
-            <div id="currentMapDifficulty" class="current-map-difficulty"></div>
+            <div id="currentMapDifficulty" class="current-map-difficulty font-jetbrains"></div>
         </div>
     </div>
 
@@ -1767,7 +1706,7 @@
             console.log('Showing match victory:', { winner, finalScore, advancement });
             
             const screen = document.getElementById('matchVictory');
-            const winnerElement = document.getElementById('matchWinner');
+            const winnerElement = document.getElementById('matchWinnerName');
             const scoreElement = document.getElementById('finalScore');
             const advancementElement = document.getElementById('advancement');
             const avatarElement = document.getElementById('victoryAvatar');
@@ -1794,7 +1733,7 @@
             }
             
             // Clear any existing classes and force visibility
-            screen.className = 'victory-screen match-victory';
+            screen.className = 'victory-screen match-victory gradient-dark bordered rounded-lg backdrop-blur';
             screen.style.display = 'block';
             screen.style.opacity = '1';
             
@@ -2047,10 +1986,10 @@
                     mapContainer.className = 'current-map-container current-map-tiebreaker';
                     document.querySelector('.current-map-label').textContent = 'TIEBREAKER';
                 } else if (data.interface_locked === true) {
-                    mapContainer.className = 'current-map-container';
+                    mapContainer.className = 'current-map-container gradient-primary';
                     document.querySelector('.current-map-label').textContent = 'NOW PLAYING';
                 } else {
-                    mapContainer.className = 'current-map-container';
+                    mapContainer.className = 'current-map-container gradient-primary';
                     document.querySelector('.current-map-label').textContent = 'SELECTED';
                 }
                 
@@ -2158,17 +2097,17 @@
             const pickedCount = data.picked_maps?.length || 0;
             const isLocked = data.interface_locked;
             
-            indicator.className = 'phase-indicator';
+            indicator.className = 'phase-indicator text-uppercase letter-spacing-md';
             
             if (isLocked) {
                 indicator.textContent = `🎮 Play Starting Soon...`;
-                indicator.classList.add('play-starting');
+                indicator.classList.add('play-starting', 'gradient-warning');
             } else if (phase === 'ban') {
                 indicator.textContent = `🚫 Ban Phase (${bannedCount}/6)`;
-                indicator.classList.add('ban-phase');
+                indicator.classList.add('ban-phase', 'gradient-danger');
             } else if (phase === 'pick') {
                 indicator.textContent = `🎯 Pick Phase`;
-                indicator.classList.add('pick-phase');
+                indicator.classList.add('pick-phase', 'gradient-success');
             } else if (phase === 'play') {
                 indicator.textContent = `🎮 Play Phase`;
                 indicator.classList.add('play-phase');
@@ -2272,9 +2211,9 @@
                 }
                 
                 mapDiv.innerHTML = `
-                    <div class="overlay-map-title">${map.title || 'Unknown'}</div>
-                    <div class="overlay-map-artist">${map.artist || 'Unknown'}</div>
-                    <div class="overlay-map-diff">[${map.difficulty_name || map.version || 'Unknown'}]</div>
+                    <div class="map-title">${map.title || 'Unknown'}</div>
+                    <div class="map-artist">${map.artist || 'Unknown'}</div>
+                    <div class="map-difficulty">[${map.difficulty_name || map.version || 'Unknown'}]</div>
                 `;
                 
                 container.appendChild(mapDiv);

@@ -987,18 +987,21 @@
                     let borderColor = '';
                     let bgColor = '';
                     
+                    // Get display name for the map instead of using ID
+                    const mapDisplayName = action.map ? this.getMapDisplayName(action.map) : 'Unknown Map';
+                    
                     if (action.type === 'ban') {
                         borderColor = 'border-red-500';
                         bgColor = 'bg-red-900 bg-opacity-30';
-                        actionText = `🚫 ${action.player} banned ${action.map}`;
+                        actionText = `🚫 ${action.player} banned ${mapDisplayName}`;
                     } else if (action.type === 'pick') {
                         borderColor = 'border-green-500';
                         bgColor = 'bg-green-900 bg-opacity-30';
-                        actionText = `🎯 ${action.player} picked ${action.map}`;
+                        actionText = `🎯 ${action.player} picked ${mapDisplayName}`;
                     } else if (action.type === 'ability') {
                         borderColor = 'border-purple-500';
                         bgColor = 'bg-purple-900 bg-opacity-30';
-                        actionText = `⚡ ${action.player} used ${action.ability} on ${action.map}`;
+                        actionText = `⚡ ${action.player} used ${action.ability} on ${mapDisplayName}`;
                     } else if (action.type === 'system') {
                         borderColor = 'border-yellow-500';
                         bgColor = 'bg-yellow-900 bg-opacity-30';
@@ -1114,18 +1117,21 @@
                         let bgColor = '';
                         let actionText = '';
                         
+                        // Get display name for the map instead of using ID
+                        const mapDisplayName = action.map ? this.getMapDisplayName(action.map) : 'Unknown Map';
+                        
                         if (action.type === 'ban') {
                             borderColor = 'border-red-500';
                             bgColor = 'bg-red-900 bg-opacity-30';
-                            actionText = `🚫 ${action.player} banned ${action.map}`;
+                            actionText = `🚫 ${action.player} banned ${mapDisplayName}`;
                         } else if (action.type === 'pick') {
                             borderColor = 'border-green-500';
                             bgColor = 'bg-green-900 bg-opacity-30';
-                            actionText = `🎯 ${action.player} picked ${action.map}`;
+                            actionText = `🎯 ${action.player} picked ${mapDisplayName}`;
                         } else if (action.type === 'ability') {
                             borderColor = 'border-purple-500';
                             bgColor = 'bg-purple-900 bg-opacity-30';
-                            actionText = `⚡ ${action.player} used ${action.ability} on ${action.map}`;
+                            actionText = `⚡ ${action.player} used ${action.ability} on ${mapDisplayName}`;
                         }
                         
                         actionElement.className += ` ${borderColor} ${bgColor}`;
@@ -1443,12 +1449,24 @@
                 const playerMappoolDetails = {{ player_mappool_details | tojson | safe }};
                 const opponentMappoolDetails = {{ opponent_mappool_details | tojson | safe }};
                 const allMapDetails = [...playerMappoolDetails, ...opponentMappoolDetails];
-                const mapDetail = allMapDetails.find(m => m.id == mapId);
                 
-                if (mapDetail) {
-                    return mapDetail.title || `Map ${mapId}`;
+                // Extract numeric ID if mapId is in format "Map 123456"
+                let numericId = mapId;
+                if (typeof mapId === 'string' && mapId.startsWith('Map ')) {
+                    numericId = mapId.replace('Map ', '');
                 }
-                return `Map ${mapId}`;
+                
+                // Convert to number for comparison
+                numericId = parseInt(numericId);
+                
+                const mapDetail = allMapDetails.find(m => m.id === numericId);
+                
+                if (mapDetail && mapDetail.title) {
+                    // Return title with difficulty name in brackets
+                    const difficultyPart = mapDetail.difficulty_name ? ` [${mapDetail.difficulty_name}]` : '';
+                    return `${mapDetail.title}${difficultyPart}`;
+                }
+                return `Map ${numericId || mapId}`;
             }
             
             chooseAbilityFromModal(abilityType) {
@@ -1568,18 +1586,32 @@
                                 </div>
                                 <div class="text-yellow-400 font-bold text-xs">★${mapDetail.star_rating.toFixed(1)}</div>
                             </div>
-                            <div class="grid grid-cols-4 gap-1 text-xs text-gray-400 mb-1">
+                            <div class="grid grid-cols-3 gap-1 text-xs text-gray-400 mb-1">
                                 <div class="text-center">
-                                    <div class="text-white font-mono text-xs">${lengthStr}</div>
+                                    <div class="text-gray-500 text-xs">CS</div>
+                                    <div class="text-white font-mono text-xs">${mapDetail.cs ? mapDetail.cs.toFixed(1) : 'N/A'}</div>
                                 </div>
                                 <div class="text-center">
-                                    <div class="text-white font-mono text-xs">${Math.round(mapDetail.bpm)}</div>
-                                </div>
-                                <div class="text-center">
+                                    <div class="text-gray-500 text-xs">AR</div>
                                     <div class="text-white font-mono text-xs">${mapDetail.ar.toFixed(1)}</div>
                                 </div>
                                 <div class="text-center">
+                                    <div class="text-gray-500 text-xs">OD</div>
                                     <div class="text-white font-mono text-xs">${mapDetail.od.toFixed(1)}</div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-1 text-xs text-gray-400 mb-1">
+                                <div class="text-center">
+                                    <div class="text-gray-500 text-xs">HP</div>
+                                    <div class="text-white font-mono text-xs">${mapDetail.hp ? mapDetail.hp.toFixed(1) : 'N/A'}</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-gray-500 text-xs">BPM</div>
+                                    <div class="text-white font-mono text-xs">${Math.round(mapDetail.bpm)}</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-gray-500 text-xs">Length</div>
+                                    <div class="text-white font-mono text-xs">${lengthStr}</div>
                                 </div>
                             </div>
                         `;
@@ -1636,18 +1668,32 @@
                                 </div>
                                 <div class="text-yellow-400 font-bold text-xs">★${mapDetail.star_rating.toFixed(1)}</div>
                             </div>
-                            <div class="grid grid-cols-4 gap-1 text-xs text-gray-400 mb-1">
+                            <div class="grid grid-cols-3 gap-1 text-xs text-gray-400 mb-1">
                                 <div class="text-center">
-                                    <div class="text-white font-mono text-xs">${lengthStr}</div>
+                                    <div class="text-gray-500 text-xs">CS</div>
+                                    <div class="text-white font-mono text-xs">${mapDetail.cs ? mapDetail.cs.toFixed(1) : 'N/A'}</div>
                                 </div>
                                 <div class="text-center">
-                                    <div class="text-white font-mono text-xs">${Math.round(mapDetail.bpm)}</div>
-                                </div>
-                                <div class="text-center">
+                                    <div class="text-gray-500 text-xs">AR</div>
                                     <div class="text-white font-mono text-xs">${mapDetail.ar.toFixed(1)}</div>
                                 </div>
                                 <div class="text-center">
+                                    <div class="text-gray-500 text-xs">OD</div>
                                     <div class="text-white font-mono text-xs">${mapDetail.od.toFixed(1)}</div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-1 text-xs text-gray-400 mb-1">
+                                <div class="text-center">
+                                    <div class="text-gray-500 text-xs">HP</div>
+                                    <div class="text-white font-mono text-xs">${mapDetail.hp ? mapDetail.hp.toFixed(1) : 'N/A'}</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-gray-500 text-xs">BPM</div>
+                                    <div class="text-white font-mono text-xs">${Math.round(mapDetail.bpm)}</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-gray-500 text-xs">Length</div>
+                                    <div class="text-white font-mono text-xs">${lengthStr}</div>
                                 </div>
                             </div>
                         `;
