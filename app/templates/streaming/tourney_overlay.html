@@ -1349,6 +1349,9 @@
         let pollingInterval = null;
         let lastUpdateTime = '';
         
+        // Player flip state flag
+        let playersFlipped = false;
+        
         // Start polling for match data
         function startPolling() {
             console.log('Starting HTTP polling for match data...');
@@ -1398,15 +1401,6 @@
                 
                 if (hasChanged) {
                     lastUpdateTime = matchData.last_updated;
-                    
-                    // Store current state for next comparison
-                    window.lastMatchState = {
-                        score_p1: matchData.score_p1,
-                        score_p2: matchData.score_p2,
-                        player1_name: matchData.player1?.name,
-                        player2_name: matchData.player2?.name,
-                        status: matchData.status
-                    };
                     
                     if (matchData.match_found) {
                         updateOverlay(matchData);
@@ -1535,38 +1529,68 @@
 
         // Function to swap player UI elements (for admin controls)
         function flipPlayers() {
-            const p1NameEl = document.getElementById('p1Name');
-            const p2NameEl = document.getElementById('p2Name');
-            const p1Avatar = document.getElementById('p1Avatar');
-            const p2Avatar = document.getElementById('p2Avatar');
-            const p1SeedEl = document.getElementById('p1Seed');
-            const p2SeedEl = document.getElementById('p2Seed');
-            const player1El = document.getElementById('player1');
-            const player2El = document.getElementById('player2');
-            // Swap player names
-            [p1NameEl.textContent, p2NameEl.textContent] = [p2NameEl.textContent, p1NameEl.textContent];
-            // Swap avatars
-            [p1Avatar.src, p2Avatar.src] = [p2Avatar.src, p1Avatar.src];
-            // Swap seeds
-            [p1SeedEl.textContent, p2SeedEl.textContent] = [p2SeedEl.textContent, p1SeedEl.textContent];
-            // Swap winning highlight if present
-            const p1Win = player1El.classList.contains('winning');
-            const p2Win = player2El.classList.contains('winning');
-            if (p1Win !== p2Win) {
-                player1El.classList.toggle('winning');
-                player2El.classList.toggle('winning');
+            // Toggle the flip state
+            playersFlipped = !playersFlipped;
+            
+            // Force a refresh of the overlay with current data
+            if (window.lastMatchState && window.lastMatchState.player1_name) {
+                // Reconstruct match data from current state and refresh
+                const currentMatchData = {
+                    player1: { 
+                        name: window.lastMatchState.player1_name,
+                        avatar_url: window.lastMatchState.player1_avatar,
+                        seed: window.lastMatchState.player1_seed
+                    },
+                    player2: { 
+                        name: window.lastMatchState.player2_name,
+                        avatar_url: window.lastMatchState.player2_avatar,
+                        seed: window.lastMatchState.player2_seed
+                    },
+                    score_p1: window.lastMatchState.score_p1,
+                    score_p2: window.lastMatchState.score_p2,
+                    bracket: window.lastMatchState.bracket || 'Upper',
+                    round_index: window.lastMatchState.round_index || 0,
+                    status: window.lastMatchState.status || 'in_progress'
+                };
+                updateOverlay(currentMatchData);
             }
-            // Swap the score display and tracker
-            const scoreEl = document.getElementById('currentScore');
-            // parse "X - Y"
-            const [s1, s2] = scoreEl.textContent.split(' - ').map(n => parseInt(n, 10) || 0);
-            // rewrite text flipped
-            scoreEl.textContent = `${s2} - ${s1}`;
-            // rebuild dots flipped
-            updateScoreTracker(s2, s1);
+        }
+        
+        // Helper function to apply flip transformation to player data
+        function getDisplayPlayerData(matchData) {
+            if (playersFlipped) {
+                return {
+                    player1: matchData.player2,
+                    player2: matchData.player1,
+                    score_p1: matchData.score_p2,
+                    score_p2: matchData.score_p1,
+                    bracket: matchData.bracket,
+                    round_index: matchData.round_index,
+                    status: matchData.status
+                };
+            }
+            return matchData;
         }
         
         function updateOverlay(matchData) {
+            // Store complete match state for flip functionality
+            window.lastMatchState = {
+                score_p1: matchData.score_p1,
+                score_p2: matchData.score_p2,
+                player1_name: matchData.player1?.name,
+                player2_name: matchData.player2?.name,
+                player1_avatar: matchData.player1?.avatar_url,
+                player2_avatar: matchData.player2?.avatar_url,
+                player1_seed: matchData.player1?.seed,
+                player2_seed: matchData.player2?.seed,
+                bracket: matchData.bracket,
+                round_index: matchData.round_index,
+                status: matchData.status
+            };
+            
+            // Apply flip transformation if needed
+            const displayData = getDisplayPlayerData(matchData);
+            
             // Update player info with animations
             const p1Name = document.getElementById('p1Name');
             const p2Name = document.getElementById('p2Name');
@@ -1576,34 +1600,34 @@
             const p2Seed = document.getElementById('p2Seed');
             
             // Animate changes if different
-            if (p1Name.textContent !== matchData.player1.name) {
+            if (p1Name.textContent !== displayData.player1.name) {
                 p1Name.classList.add('slide-up');
-                p1Name.textContent = matchData.player1.name;
+                p1Name.textContent = displayData.player1.name;
                 setTimeout(() => p1Name.classList.remove('slide-up'), 500);
             }
             
-            if (p2Name.textContent !== matchData.player2.name) {
+            if (p2Name.textContent !== displayData.player2.name) {
                 p2Name.classList.add('slide-up');
-                p2Name.textContent = matchData.player2.name;
+                p2Name.textContent = displayData.player2.name;
                 setTimeout(() => p2Name.classList.remove('slide-up'), 500);
             }
             
-            p1Avatar.src = matchData.player1.avatar_url || '';
-            p2Avatar.src = matchData.player2.avatar_url || '';
-            p1Seed.textContent = `Seed #${matchData.player1.seed}`;
-            p2Seed.textContent = `Seed #${matchData.player2.seed}`;
+            p1Avatar.src = displayData.player1.avatar_url || '';
+            p2Avatar.src = displayData.player2.avatar_url || '';
+            p1Seed.textContent = `Seed #${displayData.player1.seed}`;
+            p2Seed.textContent = `Seed #${displayData.player2.seed}`;
             
             // Update bracket info
             document.getElementById('bracketInfo').textContent = 
-                `SWEF CUP 2025 - ${matchData.bracket} Bracket - Round ${matchData.round_index + 1}`;
+                `SWEF CUP 2025 - ${displayData.bracket} Bracket - Round ${displayData.round_index + 1}`;
             
             // Only update score tracker if scores actually changed
             const currentScore = document.getElementById('currentScore').textContent;
-            const newScore = `${matchData.score_p1} - ${matchData.score_p2}`;
+            const newScore = `${displayData.score_p1} - ${displayData.score_p2}`;
             
             if (currentScore !== newScore) {
                 // Scores changed - update tracker with animation
-                updateScoreTracker(matchData.score_p1, matchData.score_p2);
+                updateScoreTracker(displayData.score_p1, displayData.score_p2);
                 
                 // Update current score with animation
                 const scoreElement = document.getElementById('currentScore');
@@ -1619,16 +1643,16 @@
             player1El.classList.remove('winning');
             player2El.classList.remove('winning');
             
-            if (matchData.score_p1 > matchData.score_p2) {
+            if (displayData.score_p1 > displayData.score_p2) {
                 player1El.classList.add('winning');
-            } else if (matchData.score_p2 > matchData.score_p1) {
+            } else if (displayData.score_p2 > displayData.score_p1) {
                 player2El.classList.add('winning');
             }
             
-            // Update AFK screen next match info
+            // Update AFK screen next match info (use original data, not flipped)
             updateNextMatchInfo(matchData);
             
-            // Update current map display based on match data
+            // Update current map display based on match data (use original data)
             updateCurrentMapDisplay(matchData);
                 
             // Show the HUD if it was hidden
@@ -1712,7 +1736,7 @@
             const avatarElement = document.getElementById('victoryAvatar');
             const seedElement = document.getElementById('winnerSeed');
             
-            // Get current match data to find winner's info
+            // Get current displayed player data (respecting flip state)
             const p1Name = document.getElementById('p1Name').textContent;
             const p2Name = document.getElementById('p2Name').textContent;
             const p1Avatar = document.getElementById('p1Avatar').src;
@@ -1720,7 +1744,7 @@
             const p1Seed = document.getElementById('p1Seed').textContent;
             const p2Seed = document.getElementById('p2Seed').textContent;
             
-            // Determine winner's avatar and seed
+            // Determine winner's avatar and seed based on displayed names
             let winnerAvatar = '';
             let winnerSeedText = '';
             
@@ -1737,9 +1761,16 @@
             screen.style.display = 'block';
             screen.style.opacity = '1';
             
+            // Apply flip to final score if needed
+            let displayFinalScore = finalScore;
+            if (playersFlipped && finalScore.includes(' - ')) {
+                const [s1, s2] = finalScore.split(' - ');
+                displayFinalScore = `${s2} - ${s1}`;
+            }
+            
             // Update content
             winnerElement.textContent = `${winner} Wins!`;
-            scoreElement.textContent = finalScore;
+            scoreElement.textContent = displayFinalScore;
             advancementElement.textContent = advancement || '';
             avatarElement.src = winnerAvatar || '';
             seedElement.textContent = winnerSeedText || '';
