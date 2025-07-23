@@ -96,19 +96,36 @@ def osu_callback():
     session['avatar_url'] = user_json.get('avatar_url')
     
     data = get_tournament_data()
-    if not any(c.get('id') == user_id for c in data.get('competitors', [])):
-        new_competitor = {
+    
+    # Check if signups are locked
+    if data.get('signups_locked', False):
+        flash('Tournament signups are currently closed.', 'error')
+        return redirect(url_for('public.tournament'))
+    
+    # Check if user is already a competitor or has a pending signup
+    if any(c.get('id') == user_id for c in data.get('competitors', [])):
+        # User is already approved
+        pass
+    elif any(s.get('id') == user_id for s in data.get('pending_signups', [])):
+        # User already has pending signup
+        flash('Your signup is pending approval by tournament administrators.', 'info')
+        return redirect(url_for('public.tournament'))
+    else:
+        # Create new pending signup
+        new_signup = {
             'id': user_id,
             'name': user_json.get('username'),
             'pp': user_json.get('statistics', {}).get('pp', 0),
             'rank': user_json.get('statistics', {}).get('global_rank', 0),
-            'avatar_url': user_json.get('avatar_url')
+            'avatar_url': user_json.get('avatar_url'),
+            'signup_time': datetime.utcnow().isoformat()
         }
-        if 'competitors' not in data:
-            data['competitors'] = []
-        data['competitors'].append(new_competitor)
+        if 'pending_signups' not in data:
+            data['pending_signups'] = []
+        data['pending_signups'].append(new_signup)
         save_tournament_data(data)
-        generate_bracket()
+        flash('Your signup has been submitted and is pending approval by tournament administrators.', 'success')
+        return redirect(url_for('public.tournament'))
     
     # Check if user is a tournament participant and redirect accordingly
     if any(c.get('id') == user_id for c in data.get('competitors', [])):
@@ -335,3 +352,21 @@ def get_match_interface_state():
             'error': str(e),
             'match_found': False
         }), 500
+
+
+@public_bp.route('/api/user/<int:user_id>')
+def api_get_user(user_id):
+    """Simple API endpoint to get user information"""
+    try:
+        user = api.user(user_id)
+        return jsonify({
+            'id': user.id,
+            'username': user.username,
+            'avatar_url': user.avatar_url,
+            'country_code': user.country_code
+        })
+    except Exception as e:
+        return jsonify({
+            'error': 'User not found',
+            'id': user_id
+        }), 404

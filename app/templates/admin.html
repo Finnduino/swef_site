@@ -680,6 +680,95 @@
                 </div>
             </div>
         </div>
+        
+
+        <!-- Signup Management -->
+        <div class="bg-gray-800 p-6 rounded-lg mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-2xl text-green-500">Tournament Signups</h2>
+                
+                <!-- Signup Lock/Unlock Toggle -->
+                <form action="{{ url_for('admin.toggle_signups') }}" method="POST" class="inline">
+                    {% if data.get('signups_locked', False) %}
+                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2">
+                            🔒 Signups Locked - Click to Unlock
+                        </button>
+                    {% else %}
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2">
+                            🔓 Signups Open - Click to Lock
+                        </button>
+                    {% endif %}
+                </form>
+            </div>
+            
+            <!-- Pending Signups -->
+            {% if data.get('pending_signups') %}
+            <div class="mb-6">
+                <h3 class="text-lg text-yellow-400 mb-3">📋 Pending Approvals ({{ data.pending_signups|length }})</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for signup in data.pending_signups %}
+                    <div class="bg-gray-700 p-4 rounded-lg border border-yellow-500">
+                        <div class="flex items-center gap-3 mb-3">
+                            <img src="{{ signup.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}" 
+                                 class="w-12 h-12 rounded-full">
+                            <div>
+                                <div class="font-bold text-white">{{ signup.name }}</div>
+                                <div class="text-sm text-yellow-300">PP: {{ "%.0f"|format(signup.pp or 0) }}</div>
+                                <div class="text-xs text-gray-400">
+                                    Rank: #{{ "{:,}".format(signup.rank or 0) }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-xs text-gray-400 mb-3">
+                            Signup Time: {{ signup.signup_time[:19]|replace('T', ' ') if signup.signup_time else 'Unknown' }}
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <form action="{{ url_for('admin.approve_signup', user_id=signup.id) }}" method="POST" class="flex-1">
+                                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded text-sm font-bold">
+                                    ✅ Approve
+                                </button>
+                            </form>
+                            <form action="{{ url_for('admin.reject_signup', user_id=signup.id) }}" method="POST" class="flex-1"
+                                  onsubmit="return confirm('Are you sure you want to reject {{ signup.name }}\'s signup?');">
+                                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded text-sm font-bold">
+                                    ❌ Reject
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="mb-6">
+                <div class="bg-gray-700 p-4 rounded-lg text-center">
+                    <span class="text-gray-400">No pending signups</span>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div class="bg-blue-600 p-3 rounded">
+                    <div class="text-2xl font-bold text-white">{{ data.competitors|length }}</div>
+                    <div class="text-sm text-blue-200">Approved Players</div>
+                </div>
+                <div class="bg-yellow-600 p-3 rounded">
+                    <div class="text-2xl font-bold text-white">{{ data.get('pending_signups', [])|length }}</div>
+                    <div class="text-sm text-yellow-200">Pending Approval</div>
+                </div>
+                <div class="bg-purple-600 p-3 rounded">
+                    <div class="text-2xl font-bold text-white">{{ (data.competitors|length) + (data.get('pending_signups', [])|length) }}</div>
+                    <div class="text-sm text-purple-200">Total Signups</div>
+                </div>
+                <div class="bg-gray-600 p-3 rounded">
+                    <div class="text-2xl font-bold text-white">{{ 'LOCKED' if data.get('signups_locked', False) else 'OPEN' }}</div>
+                    <div class="text-sm text-gray-200">Signup Status</div>
+                </div>
+            </div>
+        </div>
 
         <!-- Competitors Management -->
         <div class="bg-gray-800 p-6 rounded-lg mb-8 dev-mode-content">
@@ -1030,6 +1119,119 @@
             </div>
             {% endif %}
         </div>
+        <!-- Admin Permission Management (Full Admin Only) -->
+        {% set admin_user_id = session.get('admin_user_id') %}
+        {% set is_main_admin = admin_user_id == config.ADMIN_OSU_ID if config else false %}
+        {% set is_full_admin = admin_user_id in data.get('full_admins', []) or is_main_admin %}
+        
+        {% if is_full_admin %}
+        <div class="dev-mode-content bg-gray-800 p-6 rounded-lg mb-8">
+            <h2 class="text-2xl text-red-500 mb-4">👑 Admin Permission Management</h2>
+            
+            <!-- Host Admins Section -->
+            <div class="mb-8">
+                <h3 class="text-lg text-blue-400 mb-3">🏠 Host Administrators</h3>
+                <p class="text-sm text-gray-300 mb-4">
+                    Host admins can access the admin panel and manage tournaments, but cannot access dev tools or manage other administrators.
+                </p>
+                
+                <!-- Current Host Admins -->
+                {% if data.get('host_admins') %}
+                <div class="mb-4">
+                    <h4 class="text-md text-blue-300 mb-2">Current Host Admins:</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {% for host_id in data.host_admins %}
+                        <div class="bg-gray-700 p-3 rounded flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-blue-300">🏠</span>
+                                <span class="text-white">Host ID: {{ host_id }}</span>
+                            </div>
+                            <form action="{{ url_for('admin.revoke_host_perms') }}" method="POST" class="inline"
+                                  onsubmit="return confirm('Revoke host permissions from this user?');">
+                                <input type="hidden" name="user_id" value="{{ host_id }}">
+                                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded text-xs">
+                                    Revoke
+                                </button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Add Host Admin Form -->
+                <form action="{{ url_for('admin.grant_host_perms') }}" method="POST" class="flex gap-2">
+                    <input type="number" name="user_id" placeholder="osu! User ID" 
+                           class="bg-gray-900 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        Grant Host Permissions
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Full Admins Section -->
+            <div class="mb-8">
+                <h3 class="text-lg text-red-400 mb-3">👑 Full Administrators</h3>
+                <p class="text-sm text-gray-300 mb-4">
+                    Full admins have complete access to all tournament features, including dev tools and user management.
+                </p>
+                
+                <!-- Current Full Admins -->
+                <div class="mb-4">
+                    <h4 class="text-md text-red-300 mb-2">Current Full Admins:</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <!-- Main Admin (Cannot be removed) -->
+                        {% if is_main_admin %}
+                        <div class="bg-gray-700 p-3 rounded flex items-center justify-between border border-yellow-500">
+                            <div class="flex items-center gap-2">
+                                <span class="text-yellow-400">⭐</span>
+                                <span class="text-white">{{ session.get('admin_username', 'Main Admin') }}</span>
+                                <span class="text-xs text-yellow-400">(MAIN)</span>
+                            </div>
+                            <span class="text-gray-400 text-xs">Cannot Remove</span>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Other Full Admins -->
+                        {% for admin_id in data.get('full_admins', []) %}
+                        <div class="bg-gray-700 p-3 rounded flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-red-400">👑</span>
+                                <span class="text-white">Admin ID: {{ admin_id }}</span>
+                            </div>
+                            <form action="{{ url_for('admin.revoke_admin_perms') }}" method="POST" class="inline"
+                                  onsubmit="return confirm('Revoke full admin permissions from this user?');">
+                                <input type="hidden" name="user_id" value="{{ admin_id }}">
+                                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded text-xs">
+                                    Revoke
+                                </button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Add Full Admin Form -->
+                <form action="{{ url_for('admin.grant_admin_perms') }}" method="POST" class="flex gap-2">
+                    <input type="number" name="user_id" placeholder="osu! User ID" 
+                           class="bg-gray-900 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                        Grant Full Admin Permissions
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Permission Level Info -->
+            <div class="bg-yellow-900 border border-yellow-600 p-4 rounded-lg">
+                <h4 class="text-yellow-400 font-bold mb-2">⚠️ Permission Levels Explained</h4>
+                <ul class="text-yellow-200 text-sm space-y-1">
+                    <li><strong>Host Admin:</strong> Can manage tournaments, matches, and participants. Cannot access dev tools or manage other admins.</li>
+                    <li><strong>Full Admin:</strong> Complete tournament control + dev tools + user management. Can promote/demote other admins.</li>
+                    <li><strong>Main Admin:</strong> The tournament creator with permanent full admin status. Cannot be demoted.</li>
+                </ul>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <script>

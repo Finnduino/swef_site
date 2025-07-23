@@ -286,10 +286,34 @@
         <a href="{{ url_for('public.tournament_details') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition transform hover:scale-105">
           📋 View Full Rules & Format
         </a>
+                <!-- Dynamic Signup Button -->
+        {% set user_id = session.get('user_id') %}
+        {% set is_competitor = user_id and (user_id in data.competitors|map(attribute='id')|list) %}
+        {% set has_pending_signup = user_id and (user_id in data.get('pending_signups', [])|map(attribute='id')|list) %}
+        {% set signups_locked = data.get('signups_locked', False) %}
         
+        {% if is_competitor %}
+          <!-- User is already approved -->
+          <div class="inline-block bg-green-600 text-white font-bold py-4 px-10 rounded-full shadow-lg flex items-center gap-3">
+            <span>✅ You're Registered!</span>
+          </div>
+        {% elif has_pending_signup %}
+          <!-- User has pending signup -->
+          <div class="inline-block bg-yellow-600 text-black font-bold py-4 px-10 rounded-full shadow-lg flex items-center gap-3">
+            <span>⏳ Approval Pending</span>
+          </div>
+        {% elif signups_locked %}
+          <!-- Signups are locked -->
+          <div class="inline-block bg-gray-600 text-gray-300 font-bold py-4 px-10 rounded-full shadow-lg flex items-center gap-3 cursor-not-allowed">
+            <span>🔒 Signups Closed</span>
+          </div>
+        {% else %}
+          <!-- Normal signup button -->
         <a href="{{ url_for('public.osu_login') }}" class="inline-block bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-10 rounded-full shadow-lg transition transform hover:scale-105">
           Sign Up with osu!
         </a>
+        {% endif %}
+
       </div>
     </div>
   </section>
@@ -658,7 +682,36 @@
   <!-- Competitor Showcase -->
   <section class="py-24 px-6 bg-section-dark">
     <div class="max-w-6xl mx-auto text-center">
-      <h2 class="text-3xl md:text-4xl font-bold text-yellow-400 mb-12">Registered Competitors</h2>
+      <h2 class="text-3xl md:text-4xl font-bold text-yellow-400 mb-6">Tournament Participants</h2>
+      
+      <!-- Signup Statistics -->
+      {% set pending_count = data.get('pending_signups', [])|length %}
+      {% set approved_count = data.competitors|length %}
+      {% set total_signups = approved_count + pending_count %}
+      
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 max-w-2xl mx-auto">
+        <div class="bg-green-600 p-3 rounded-lg">
+          <div class="text-2xl font-bold text-white">{{ approved_count }}</div>
+          <div class="text-sm text-green-200">Approved</div>
+        </div>
+        {% if pending_count > 0 %}
+        <div class="bg-yellow-600 p-3 rounded-lg">
+          <div class="text-2xl font-bold text-white">{{ pending_count }}</div>
+          <div class="text-sm text-yellow-200">Pending</div>
+        </div>
+        {% endif %}
+        <div class="bg-blue-600 p-3 rounded-lg">
+          <div class="text-2xl font-bold text-white">{{ total_signups }}</div>
+          <div class="text-sm text-blue-200">Total Signups</div>
+        </div>
+        <div class="bg-gray-600 p-3 rounded-lg">
+          <div class="text-2xl font-bold text-white">{{ 'CLOSED' if data.get('signups_locked', False) else 'OPEN' }}</div>
+          <div class="text-sm text-gray-200">Signups</div>
+        </div>
+      </div>
+      
+      <!-- Registered Competitors -->
+      <h3 class="text-2xl font-bold text-green-400 mb-6">Registered Competitors ({{ approved_count }})</h3>
       {# make sure total & eliminated_ids are in scope #}
       {% set total = data.competitors|length %}
       {% set eliminated_ids = data.eliminated|default([])|map(attribute='id')|list %}

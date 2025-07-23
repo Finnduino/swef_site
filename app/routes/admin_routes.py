@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, redirect, request, url_for, session, flash
 import requests
+from datetime import datetime
 from functools import wraps
 from config import OSU_CLIENT_ID, OSU_CLIENT_SECRET, ADMIN_REDIRECT_URI, AUTHORIZATION_URL, TOKEN_URL, OSU_API_BASE_URL, ADMIN_OSU_ID
 from ..data_manager import get_tournament_data, save_tournament_data
@@ -24,6 +25,53 @@ def admin_required(f):
     return decorated_function
 
 
+def host_required(f):
+    """Decorator for host-level permissions (can access admin panel but not dev tools)"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('is_admin'):
+            return redirect(url_for('public.index'))
+        
+        # Check if user has host or full admin permissions
+        admin_user_id = session.get('admin_user_id')
+        if not admin_user_id:
+            return redirect(url_for('public.index'))
+        
+        data = get_tournament_data()
+        is_host = admin_user_id in data.get('host_admins', [])
+        is_full_admin = admin_user_id in data.get('full_admins', []) or admin_user_id == ADMIN_OSU_ID
+        
+        if not (is_host or is_full_admin):
+            flash('You do not have sufficient permissions to access this page.', 'error')
+            return redirect(url_for('public.index'))
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def full_admin_required(f):
+    """Decorator for full admin permissions (access to dev tools and user management)"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('is_admin'):
+            return redirect(url_for('public.index'))
+        
+        # Check if user has full admin permissions
+        admin_user_id = session.get('admin_user_id')
+        if not admin_user_id:
+            return redirect(url_for('public.index'))
+        
+        data = get_tournament_data()
+        is_full_admin = admin_user_id in data.get('full_admins', []) or admin_user_id in ADMIN_OSU_ID
+        
+        if not is_full_admin:
+            flash('You need full administrator permissions to access this feature.', 'error')
+            return redirect(url_for('admin.admin_panel'))
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 @admin_bp.route('/login')
 def admin_login():
     params = {'client_id': OSU_CLIENT_ID, 'redirect_uri': ADMIN_REDIRECT_URI, 'response_type': 'code', 'scope': 'identify'}
@@ -40,12 +88,22 @@ def admin_callback():
     
     headers = {'Authorization': f'Bearer {access_token}'}
     me_response = requests.get(f'{OSU_API_BASE_URL}/me', headers=headers)
-    user_id = str(me_response.json().get('id'))
+    user_data = me_response.json()
+    user_id = user_data.get('id')
 
-    if user_id in ADMIN_OSU_ID:
+    # Check if user is main admin or has permissions
+    data = get_tournament_data()
+    is_main_admin = user_id in ADMIN_OSU_ID
+    is_full_admin = user_id in data.get('full_admins', [])
+    is_host_admin = user_id in data.get('host_admins', [])
+
+    if is_main_admin or is_full_admin or is_host_admin:
         session['is_admin'] = True
+        session['admin_user_id'] = user_id
+        session['admin_username'] = user_data.get('username')
         return redirect(url_for('admin.admin_panel'))
-    return "Access Denied.", 403
+    
+    return "Access Denied. You do not have administrator permissions for this tournament.", 403
 
 
 @admin_bp.route('/')
@@ -57,7 +115,7 @@ def admin_panel():
 
 # Competitor management routes
 @admin_bp.route('/add_competitor', methods=['POST'])
-@admin_required
+@host_required
 def add_competitor():
     username = request.form.get('username')
     if not username:
@@ -93,7 +151,7 @@ def add_competitor():
 
 
 @admin_bp.route('/remove/<int:user_id>', methods=['POST'])
-@admin_required
+@full_admin_required
 def remove_competitor(user_id):
     data = get_tournament_data()
     data['competitors'] = [c for c in data.get('competitors', []) if c.get('id') != user_id]
@@ -103,7 +161,7 @@ def remove_competitor(user_id):
 
 
 @admin_bp.route('/reset_competitors', methods=['POST'])
-@admin_required
+@full_admin_required
 def reset_competitors():
     data = get_tournament_data()
     data['competitors'] = []
@@ -114,7 +172,7 @@ def reset_competitors():
 
 
 @admin_bp.route('/reset_bracket', methods=['POST'])
-@admin_required
+@full_admin_required
 def reset_bracket():
     data = get_tournament_data()
     
@@ -183,7 +241,7 @@ def reset_match():
 
 
 @admin_bp.route('/set_match_room', methods=['POST'])
-@admin_required
+@host_required
 def set_match_room():
     match_id = request.form.get('match_id')
     mp_room_url = request.form.get('mp_room_url', '').strip()
@@ -309,7 +367,7 @@ def set_winner():
 
 
 @admin_bp.route('/refresh_match_scores', methods=['POST'])
-@admin_required
+@host_required
 def refresh_match_scores():
     match_id = request.form.get('match_id')
     
@@ -321,7 +379,7 @@ def refresh_match_scores():
 
 
 @admin_bp.route('/cache_all_match_details', methods=['POST'])
-@admin_required
+@host_required
 def cache_all_match_details():
     match_service = MatchService()
     result = match_service.cache_all_match_details()
@@ -334,7 +392,7 @@ def cache_all_match_details():
 
 # Seeding routes
 @admin_bp.route('/set_seed/<int:user_id>', methods=['POST'])
-@admin_required
+@host_required
 def set_seed(user_id):
     placement = request.form.get('placement')
     data = get_tournament_data()
@@ -364,7 +422,7 @@ def reset_seeding():
 
 
 @admin_bp.route('/start_seeding', methods=['POST'])
-@admin_required
+@host_required
 def start_seeding():
     seeding_room_url = request.form.get('seeding_room_url', '').strip()
     
@@ -376,7 +434,7 @@ def start_seeding():
 
 
 @admin_bp.route('/update_seeding_scores', methods=['POST'])
-@admin_required
+@host_required
 def update_seeding_scores():
     seeding_service = SeedingService()
     result = seeding_service.update_seeding_scores()
@@ -386,7 +444,7 @@ def update_seeding_scores():
 
 
 @admin_bp.route('/finalize_seeding', methods=['POST'])
-@admin_required
+@host_required
 def finalize_seeding():
     seeding_service = SeedingService()
     result = seeding_service.finalize_seeding()
@@ -397,7 +455,7 @@ def finalize_seeding():
 
 # Streaming routes
 @admin_bp.route('/set_stream', methods=['POST'])
-@admin_required
+@host_required
 def set_stream():
     twitch_channel = request.form.get('twitch_channel', '').strip()
     
@@ -409,7 +467,7 @@ def set_stream():
 
 
 @admin_bp.route('/set_seeding_playlist', methods=['POST'])
-@admin_required
+@host_required
 def set_seeding_playlist():
     """Set the seeding mappool playlist URL"""
     playlist_url = request.form.get('playlist_url', '').strip()
@@ -427,7 +485,7 @@ def set_seeding_playlist():
 
 
 @admin_bp.route('/toggle_stream', methods=['POST'])
-@admin_required
+@host_required
 def toggle_stream():
     streaming_service = StreamingService()
     result = streaming_service.toggle_stream()
@@ -437,7 +495,7 @@ def toggle_stream():
 
 
 @admin_bp.route('/clear_stream', methods=['POST'])
-@admin_required
+@host_required
 def clear_stream():
     streaming_service = StreamingService()
     result = streaming_service.clear_stream()
@@ -448,7 +506,7 @@ def clear_stream():
 
 # Overlay control routes
 @admin_bp.route('/overlay/toggle_afk', methods=['POST'])
-@admin_required
+@host_required
 def overlay_toggle_afk():
     """Toggle AFK screen on overlay"""
     from ..overlay_state import add_overlay_event
@@ -458,7 +516,7 @@ def overlay_toggle_afk():
 
 
 @admin_bp.route('/overlay/show_match_victory', methods=['POST'])
-@admin_required
+@host_required
 def overlay_show_match_victory():
     """Show match victory screen on overlay"""
     try:
@@ -537,7 +595,7 @@ def overlay_show_match_victory():
 
 
 @admin_bp.route('/overlay/show_map_victory', methods=['POST'])
-@admin_required
+@host_required
 def overlay_show_map_victory():
     """Show map victory screen on overlay"""
     winner = request.form.get('winner', 'Winner')
@@ -549,7 +607,7 @@ def overlay_show_map_victory():
 
 
 @admin_bp.route('/overlay/hide_victory', methods=['POST'])
-@admin_required
+@host_required
 def overlay_hide_victory():
     """Hide victory screens on overlay"""
     from ..overlay_state import add_overlay_event
@@ -559,7 +617,7 @@ def overlay_hide_victory():
 
 
 @admin_bp.route('/overlay/refresh_data', methods=['POST'])
-@admin_required
+@host_required
 def overlay_refresh_data():
     """Force refresh overlay data"""
     broadcast_match_update()
@@ -568,7 +626,7 @@ def overlay_refresh_data():
 
 
 @admin_bp.route('/overlay/flip_players', methods=['POST'])
-@admin_required
+@host_required
 def overlay_flip_players():
     """Flip player positions on overlay"""
     print('Admin triggered flip_players route')  # debug
@@ -579,7 +637,7 @@ def overlay_flip_players():
 
 
 @admin_bp.route('/overlay/show_welcome', methods=['POST'])
-@admin_required
+@host_required
 def overlay_show_welcome():
     """Show welcome screen on overlay"""
     from ..overlay_state import add_overlay_event
@@ -589,7 +647,7 @@ def overlay_show_welcome():
 
 
 @admin_bp.route('/overlay/show_outro', methods=['POST'])
-@admin_required
+@host_required
 def overlay_show_outro():
     """Show outro screen on overlay"""
     champion = request.form.get('champion', '')
@@ -605,7 +663,7 @@ def overlay_show_outro():
 
 
 @admin_bp.route('/overlay/hide_welcome', methods=['POST'])
-@admin_required
+@host_required
 def overlay_hide_welcome():
     """Hide welcome screen on overlay"""
     from ..overlay_state import add_overlay_event
@@ -615,7 +673,7 @@ def overlay_hide_welcome():
 
 
 @admin_bp.route('/overlay/hide_outro', methods=['POST'])
-@admin_required
+@host_required
 def overlay_hide_outro():
     """Hide outro screen on overlay"""
     from ..overlay_state import add_overlay_event
@@ -625,7 +683,7 @@ def overlay_hide_outro():
 
 
 @admin_bp.route('/overlay/show_match_interface', methods=['POST'])
-@admin_required
+@host_required
 def overlay_show_match_interface():
     """Show match interface overlay"""
     from ..overlay_state import add_overlay_event
@@ -635,7 +693,7 @@ def overlay_show_match_interface():
 
 
 @admin_bp.route('/overlay/hide_match_interface', methods=['POST'])
-@admin_required
+@host_required
 def overlay_hide_match_interface():
     """Hide match interface overlay"""
     from ..overlay_state import add_overlay_event
@@ -645,7 +703,7 @@ def overlay_hide_match_interface():
 
 
 @admin_bp.route('/set_tiebreaker_map', methods=['POST'])
-@admin_required
+@host_required
 def set_tiebreaker_map():
     """Set tiebreaker map for a 3-3 match"""
     match_id = request.form.get('match_id')
@@ -698,7 +756,7 @@ def set_tiebreaker_map():
 
 
 @admin_bp.route('/clear_tiebreaker_map', methods=['POST'])
-@admin_required
+@host_required
 def clear_tiebreaker_map():
     """Clear tiebreaker map for a match"""
     match_id = request.form.get('match_id')
@@ -749,7 +807,7 @@ def clear_tiebreaker_map():
 
 # Developer Authentication Endpoints
 @admin_bp.route('/dev_login_as_user', methods=['POST'])
-@admin_required
+@full_admin_required
 def dev_login_as_user():
     """Developer-only endpoint to log in as any user for testing purposes"""
     user_identifier = request.form.get('user_id', '').strip()
@@ -812,7 +870,7 @@ def dev_login_as_user():
 
 
 @admin_bp.route('/dev_logout', methods=['POST'])
-@admin_required
+@full_admin_required
 def dev_logout():
     """Developer logout endpoint"""
     username = session.get('username', 'Unknown')
@@ -825,4 +883,232 @@ def dev_logout():
     session.pop('is_dev_login', None)
     
     flash(f'Logged out from user session ({username}) - Admin session maintained', 'success')
+    return redirect(url_for('admin.admin_panel'))
+
+
+
+
+# Signup Management Routes
+@admin_bp.route('/approve_signup/<int:user_id>', methods=['POST'])
+@admin_required
+def approve_signup(user_id):
+    """Approve a pending signup"""
+    data = get_tournament_data()
+    
+    # Find the pending signup
+    pending_signup = None
+    for i, signup in enumerate(data.get('pending_signups', [])):
+        if signup.get('id') == user_id:
+            pending_signup = signup
+            data['pending_signups'].pop(i)
+            break
+    
+    if not pending_signup:
+        flash('Pending signup not found.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    # Check if user is already a competitor
+    if any(c.get('id') == user_id for c in data.get('competitors', [])):
+        flash('User is already a registered competitor.', 'info')
+        return redirect(url_for('admin.admin_panel'))
+    
+    # Move to competitors
+    if 'competitors' not in data:
+        data['competitors'] = []
+    
+    competitor = {
+        'id': pending_signup['id'],
+        'name': pending_signup['name'],
+        'pp': pending_signup['pp'],
+        'rank': pending_signup.get('rank', 0),
+        'avatar_url': pending_signup['avatar_url'],
+        'approved_time': datetime.utcnow().isoformat()
+    }
+    data['competitors'].append(competitor)
+    
+    save_tournament_data(data)
+    generate_bracket()
+    
+    flash(f'Successfully approved signup for {pending_signup["name"]}.', 'success')
+    return redirect(url_for('admin.admin_panel'))
+
+
+@admin_bp.route('/reject_signup/<int:user_id>', methods=['POST'])
+@admin_required
+def reject_signup(user_id):
+    """Reject a pending signup"""
+    data = get_tournament_data()
+    
+    # Find and remove the pending signup
+    signup_name = None
+    for i, signup in enumerate(data.get('pending_signups', [])):
+        if signup.get('id') == user_id:
+            signup_name = signup['name']
+            data['pending_signups'].pop(i)
+            break
+    
+    if not signup_name:
+        flash('Pending signup not found.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    save_tournament_data(data)
+    flash(f'Rejected signup for {signup_name}.', 'success')
+    return redirect(url_for('admin.admin_panel'))
+
+
+@admin_bp.route('/toggle_signups', methods=['POST'])
+@admin_required
+def toggle_signups():
+    """Toggle tournament signup lock status"""
+    data = get_tournament_data()
+    
+    current_status = data.get('signups_locked', False)
+    data['signups_locked'] = not current_status
+    
+    save_tournament_data(data)
+    
+    status_text = "locked" if data['signups_locked'] else "unlocked"
+    flash(f'Tournament signups are now {status_text}.', 'success')
+    return redirect(url_for('admin.admin_panel'))
+
+
+# Admin Permission Management Routes
+@admin_bp.route('/grant_host_perms', methods=['POST'])
+@admin_required
+def grant_host_perms():
+    """Grant host permissions to a user"""
+    user_id = request.form.get('user_id')
+    if not user_id:
+        flash('User ID is required.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    try:
+        user_id = int(user_id)
+        user = api.user(user_id)
+        
+        data = get_tournament_data()
+        if 'host_admins' not in data:
+            data['host_admins'] = []
+        
+        # Check if already a host admin
+        if user_id in data['host_admins']:
+            flash(f'{user.username} already has host permissions.', 'info')
+            return redirect(url_for('admin.admin_panel'))
+        
+        # Check if already a full admin
+        if 'full_admins' not in data:
+            data['full_admins'] = []
+        if user_id in data['full_admins']:
+            flash(f'{user.username} already has full admin permissions (higher than host).', 'info')
+            return redirect(url_for('admin.admin_panel'))
+        
+        data['host_admins'].append(user_id)
+        save_tournament_data(data)
+        
+        flash(f'Granted host permissions to {user.username}.', 'success')
+        
+    except Exception as e:
+        flash(f'Error granting host permissions: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.admin_panel'))
+
+
+@admin_bp.route('/revoke_host_perms', methods=['POST'])
+@admin_required
+def revoke_host_perms():
+    """Revoke host permissions from a user"""
+    user_id = request.form.get('user_id')
+    if not user_id:
+        flash('User ID is required.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    try:
+        user_id = int(user_id)
+        data = get_tournament_data()
+        
+        if user_id in data.get('host_admins', []):
+            data['host_admins'].remove(user_id)
+            save_tournament_data(data)
+            
+            user = api.user(user_id)
+            flash(f'Revoked host permissions from {user.username}.', 'success')
+        else:
+            flash('User does not have host permissions.', 'info')
+            
+    except Exception as e:
+        flash(f'Error revoking host permissions: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.admin_panel'))
+
+
+@admin_bp.route('/grant_admin_perms', methods=['POST'])
+@admin_required
+def grant_admin_perms():
+    """Grant full admin permissions to a user"""
+    user_id = request.form.get('user_id')
+    if not user_id:
+        flash('User ID is required.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    try:
+        user_id = int(user_id)
+        user = api.user(user_id)
+        
+        data = get_tournament_data()
+        if 'full_admins' not in data:
+            data['full_admins'] = []
+        
+        # Check if already a full admin
+        if user_id in data['full_admins']:
+            flash(f'{user.username} already has full admin permissions.', 'info')
+            return redirect(url_for('admin.admin_panel'))
+        
+        # Remove from host admins if present (upgrade)
+        if 'host_admins' not in data:
+            data['host_admins'] = []
+        if user_id in data['host_admins']:
+            data['host_admins'].remove(user_id)
+        
+        data['full_admins'].append(user_id)
+        save_tournament_data(data)
+        
+        flash(f'Granted full admin permissions to {user.username}.', 'success')
+        
+    except Exception as e:
+        flash(f'Error granting admin permissions: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.admin_panel'))
+
+
+@admin_bp.route('/revoke_admin_perms', methods=['POST'])
+@admin_required
+def revoke_admin_perms():
+    """Revoke full admin permissions from a user"""
+    user_id = request.form.get('user_id')
+    if not user_id:
+        flash('User ID is required.', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    try:
+        user_id = int(user_id)
+        
+        # Prevent revoking permissions from the main admin
+        if user_id in ADMIN_OSU_ID:
+            flash('Cannot revoke permissions from the main administrator.', 'error')
+            return redirect(url_for('admin.admin_panel'))
+        
+        data = get_tournament_data()
+        
+        if user_id in data.get('full_admins', []):
+            data['full_admins'].remove(user_id)
+            save_tournament_data(data)
+            
+            user = api.user(user_id)
+            flash(f'Revoked full admin permissions from {user.username}.', 'success')
+        else:
+            flash('User does not have full admin permissions.', 'info')
+            
+    except Exception as e:
+        flash(f'Error revoking admin permissions: {str(e)}', 'error')
+    
     return redirect(url_for('admin.admin_panel'))
