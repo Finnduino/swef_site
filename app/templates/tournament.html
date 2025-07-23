@@ -718,7 +718,7 @@
       <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
         {% for c in data.competitors %}
           {# if this competitor is eliminated, figure out its index in the eliminated_ids list #}
-          {% if c.id in eliminated_ids %}
+          {% if c.id and c.id != '' and c.id in eliminated_ids %}
             {% set idx = eliminated_ids.index(c.id) %}
             {% set place = total - idx %}
           {% else %}
@@ -726,11 +726,16 @@
           {% endif %}
 
           <div class="bg-gray-800 p-4 rounded-xl shadow-lg text-center
-                      {% if c.id in eliminated_ids %}opacity-50 line-through text-gray-500{% endif %}">
+                      {% if c.id and c.id != '' and c.id in eliminated_ids %}opacity-50 line-through text-gray-500{% endif %}">
+            {% if c.id and c.id != '' %}
             <a href="{{ url_for('public.user_profile', user_id=c.id) }}">
               <img src="{{ c.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}"
                    class="w-24 h-24 rounded-full mx-auto border-2 border-yellow-400">
             </a>
+            {% else %}
+              <img src="{{ c.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}"
+                   class="w-24 h-24 rounded-full mx-auto border-2 border-yellow-400">
+            {% endif %}
             <h3 class="text-xl font-semibold text-yellow-300 mt-4">{{ c.name }}</h3>
             <p class="text-sm text-gray-400 mt-1">Seed: {{ c.get('placement','—') }}</p>
             <p class="text-sm text-gray-400 mt-1">PP: {{ "%.0f"|format(c.pp or 0) }}</p>
@@ -807,8 +812,8 @@
       {% endmacro %}
 
       {% macro display_player(player, winner, match) %}
-        {% set is_winner = winner and player.id and winner.id == player.id %}
-        {% set is_eliminated = player.id and (player.id in eliminated_ids) %}
+        {% set is_winner = winner and player.id and player.id != '' and winner.id == player.id %}
+        {% set is_eliminated = player.id and player.id != '' and (player.id in eliminated_ids) %}
         {% set is_bye_match = match and (match.player1.name == 'BYE' or match.player2.name == 'BYE') %}
         <div class="player 
              {% if player.name == 'BYE' %}bye{% endif %} 
@@ -816,7 +821,7 @@
              {% if is_eliminated %}opacity-50 line-through text-gray-500{% endif %}">
           <div class="player-info">
             <span class="text-xs text-black-500 mr-2">#{{ player.get('placement','—') }}</span>
-            {% if player.name != 'BYE' and player.id %}
+            {% if player.name != 'BYE' and player.id and player.id != '' %}
             <a href="{{ url_for('public.user_profile', user_id=player.id) }}">
               <img src="{{ player.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}"
                    alt="{{ player.name }}'s avatar">
@@ -825,6 +830,10 @@
                class="{% if is_winner %}text-yellow-300 font-bold{% endif %}">
               {{ player.name }}
             </a>
+            {% elif player.name != 'BYE' %}
+            <img src="{{ player.avatar_url or 'https://osu.ppy.sh/images/layout/avatar-guest.png' }}"
+                 alt="{{ player.name }}'s avatar">
+            <span class="{% if is_winner %}text-yellow-300 font-bold{% endif %}">{{ player.name }}</span>
             {% else %}
             <span class="{% if is_winner %}text-yellow-300 font-bold{% endif %} text-gray-500 italic">{{ player.name }}</span>
             {% endif %}
@@ -843,7 +852,7 @@
             <!-- Placement for eliminated players -->
             {% set pplace = none %}
             {% for e in data.eliminated|default([]) %}
-              {% if e.id == player.id %}
+              {% if e.id and e.id != '' and player.id and player.id != '' and e.id == player.id %}
                 {% set pplace = total - loop.index0 %}
               {% endif %}
             {% endfor %}
