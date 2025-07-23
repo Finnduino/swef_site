@@ -213,26 +213,66 @@
   <!-- Tournament Info -->
   <section class="py-24 px-6 bg-section-dark">
     <div class="max-w-4xl mx-auto text-center">
-      <h1 class="text-4xl md:text-5xl font-bold text-yellow-400">Sand World Evil Financing<br>
-         OSU Cup 2025</h1>
-      <p class="mt-6 text-lg text-gray-300">
+      <h1 class="text-4xl md:text-5xl font-bold text-yellow-400 mb-6">Sand World Evil Financing<br>OSU Cup 2025</h1>
+      
+      <p class="text-xl text-gray-300 mb-4">
         Straight up clicking these circles evil mode.
-        <br />
-        <span class="italic text-yellow-300">May the most evil clicker win.</span>
+      </p>
+      <p class="text-lg text-yellow-300 italic mb-12">
+        May the most evil clicker win.
       </p>
 
-      <div class="mt-10 text-left text-gray-200 inline-block">
-        <h2 class="text-2xl text-yellow-300">📝 Tournament Info</h2>
-        <p class="mt-2">Date: 26.7.2025<br>Format: Double Elimination, Best of Seven<br>Details: Held in Lazer, BYO mappool (10 maps)<br>Prize Pool: 20€ Bar Edgar Gift Card</p>
+      <!-- Tournament Details Grid -->
+      <div class="grid md:grid-cols-2 gap-8 mb-12">
+        <!-- Date & Time -->
+        <div class="bg-gray-800 p-6 rounded-lg border border-gray-600">
+          <h3 class="text-xl font-bold text-yellow-300 mb-3 flex items-center justify-center">
+            📅 Date & Time
+          </h3>
+          <p class="text-gray-200">
+            <span id="tournament-date" class="font-mono">26.7.2025 12:00PM UTC</span>
+          </p>
+        </div>
+
+        <!-- Format & Rules -->
+        <div class="bg-gray-800 p-6 rounded-lg border border-gray-600">
+          <h3 class="text-xl font-bold text-yellow-300 mb-3 flex items-center justify-center">
+            🏆 Format
+          </h3>
+          <p class="text-gray-200">
+            Double Elimination<br>
+            Best of Seven (First to 4)
+          </p>
+        </div>
+
+        <!-- Game Details -->
+        <div class="bg-gray-800 p-6 rounded-lg border border-gray-600">
+          <h3 class="text-xl font-bold text-yellow-300 mb-3 flex items-center justify-center">
+            🎮 Game Details
+          </h3>
+          <p class="text-gray-200">
+            Held in osu!lazer<br>
+            BYO mappool (10 maps)
+          </p>
+        </div>
+
+        <!-- Prize Pool -->
+        <div class="bg-gray-800 p-6 rounded-lg border border-gray-600">
+          <h3 class="text-xl font-bold text-yellow-300 mb-3 flex items-center justify-center">
+            💰 Prize Pool
+          </h3>
+          <p class="text-gray-200">
+            20€ Bar Edgar Gift Card
+          </p>
+        </div>
       </div>
 
-      <div class="mt-8">
-        <a href="{{ url_for('public.tournament_details') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition transform hover:scale-105 mr-4">
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="{{ url_for('public.tournament_details') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition transform hover:scale-105">
           📋 View Full Rules & Format
         </a>
-      </div>
-
-      <div class="mt-6">
+        
         <a href="{{ url_for('public.osu_login') }}" class="inline-block bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-10 rounded-full shadow-lg transition transform hover:scale-105">
           Sign Up with osu!
         </a>
@@ -1183,6 +1223,33 @@
   </section>
 
   {% include 'footer.html' %}
+
+  <script>
+    // Convert tournament date to user's local timezone
+    document.addEventListener('DOMContentLoaded', function() {
+      // Tournament date in UTC: July 26, 2025 at 12:00 PM
+      const tournamentDateUTC = new Date('2025-07-26T12:00:00Z');
+      const dateElement = document.getElementById('tournament-date');
+      
+      if (dateElement) {
+        // Format the date in European format (dd/mm/yyyy) with user's local timezone
+        const options = {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZoneName: 'short'
+        };
+        
+        // Use European locale (en-GB) to ensure dd/mm/yyyy format
+        const localDateString = tournamentDateUTC.toLocaleString('en-GB', options);
+        
+        // Update the element with both UTC and local time
+        dateElement.innerHTML = `26.7.2025 12:00PM UTC<br><span class="text-yellow-400 text-sm">🕒 Your local time: ${localDateString}</span>`;
+      }
+    });
+  </script>
 
 </body>
 </html>
