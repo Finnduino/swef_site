@@ -80,6 +80,34 @@
             border-radius: 12px;
             border: 1px solid #4a5568;
         }
+        
+        .mappool-collapsed .map-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        
+        .mappool-collapsed .map-dot:hover {
+            transform: scale(1.2);
+        }
+        
+        .mappool-expanded {
+            display: block;
+        }
+        
+        .mappool-collapsed {
+            display: none;
+        }
+        
+        .mappool-toggle {
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .mappool-toggle.rotated {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body class="text-gray-100 min-h-screen">
@@ -188,6 +216,262 @@
                 </div>
             </div>
         </div>
+
+        <!-- Mappool Overview -->
+        {% if match.get('match_state') %}
+        <div class="osu-card p-8 mb-8">
+            <div class="flex items-center justify-between mb-8">
+                <h2 class="text-3xl font-bold text-yellow-400">Mappool Overview</h2>
+                <button onclick="toggleMappool()" class="mappool-toggle bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-full transition-all duration-300">
+                    <svg id="expand-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Create combined mappool grid (4x5) -->
+            {% set all_maps = [] %}
+            
+            <!-- Add Player 1 maps -->
+            {% if match.player1.get('mappool_details') %}
+                {% for map_detail in match.player1.mappool_details %}
+                    {% set _ = all_maps.append({
+                        'id': map_detail.id|string,
+                        'title': map_detail.title,
+                        'artist': map_detail.artist,
+                        'difficulty_name': map_detail.difficulty_name,
+                        'mapper': map_detail.mapper,
+                        'url': map_detail.url,
+                        'player': 'player1',
+                        'player_name': match.player1.name
+                    }) %}
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Add Player 2 maps -->
+            {% if match.player2.get('mappool_details') %}
+                {% for map_detail in match.player2.mappool_details %}
+                    {% set _ = all_maps.append({
+                        'id': map_detail.id|string,
+                        'title': map_detail.title,
+                        'artist': map_detail.artist,
+                        'difficulty_name': map_detail.difficulty_name,
+                        'mapper': map_detail.mapper,
+                        'url': map_detail.url,
+                        'player': 'player2',
+                        'player_name': match.player2.name
+                    }) %}
+                {% endfor %}
+            {% endif %}
+            
+            {% if all_maps %}
+            <!-- Collapsed View - Small Dots -->
+            <div id="mappool-collapsed" class="mappool-collapsed mb-8">
+                <div class="grid grid-cols-10 gap-2 justify-center max-w-md mx-auto">
+                    {% for map_info in all_maps %}
+                    {% set map_id = map_info.id %}
+                    {% set is_banned = map_id in match.match_state.banned_maps %}
+                    {% set is_picked = match.match_state.picked_maps|selectattr("map_id", "equalto", map_id)|list|length > 0 %}
+                    {% set picked_info = match.match_state.picked_maps|selectattr("map_id", "equalto", map_id)|first if is_picked else none %}
+                    {% set has_mod = map_id in match.match_state.map_mods %}
+                    {% set mod_info = match.match_state.map_mods[map_id] if has_mod else none %}
+                    
+                    <div class="relative group">
+                        <a href="{{ map_info.url }}" target="_blank" 
+                           class="map-dot {% if is_banned %}bg-red-600{% elif is_picked %}bg-green-600{% else %}bg-gray-500{% endif %} block relative"
+                           title="{{ map_info.title }} - {{ map_info.artist }} [{{ map_info.difficulty_name }}] by {{ map_info.mapper }}{% if is_banned %} (BANNED){% elif is_picked %} (PICKED by {{ 'P1' if picked_info.picked_by == 'player1' else 'P2' }}){% endif %}">
+                           
+                           <!-- Small ability indicator -->
+                           {% if has_mod %}
+                           <div class="absolute -top-1 -right-1 w-3 h-3 rounded-full {% if mod_info is string %}{% if mod_info.lower() == 'nomod' %}bg-red-400{% else %}bg-blue-400{% endif %}{% else %}bg-purple-400{% endif %} border border-white"></div>
+                           {% endif %}
+                           
+                           <!-- Small pick order indicator -->
+                           {% if is_picked and picked_info %}
+                           <div class="absolute -top-1 -left-1 w-3 h-3 bg-yellow-400 rounded-full border border-white flex items-center justify-center">
+                               <span class="text-black text-xs font-bold" style="font-size: 8px;">{{ picked_info.order }}</span>
+                           </div>
+                           {% endif %}
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Collapsed Summary -->
+                <div class="grid grid-cols-4 gap-2 mt-4 max-w-lg mx-auto">
+                    <div class="text-center">
+                        <div class="text-lg font-bold text-red-300">{{ match.match_state.banned_maps|length }}</div>
+                        <div class="text-xs text-red-400">Banned</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-lg font-bold text-green-300">{{ match.match_state.picked_maps|length }}</div>
+                        <div class="text-xs text-green-400">Picked</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-lg font-bold text-purple-300">{{ match.match_state.map_mods|length }}</div>
+                        <div class="text-xs text-purple-400">Abilities</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-lg font-bold text-blue-300">{{ (all_maps|length) - (match.match_state.banned_maps|length) - (match.match_state.picked_maps|length) }}</div>
+                        <div class="text-xs text-blue-400">Available</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Expanded View - Full Details -->
+            <div id="mappool-expanded" class="mappool-expanded">
+                <!-- 2x10 Grid of Maps -->
+                <div class="grid grid-cols-10 gap-2 mb-8">
+                    {% for map_info in all_maps %}
+                    {% set map_id = map_info.id %}
+                    {% set is_banned = map_id in match.match_state.banned_maps %}
+                    {% set is_picked = match.match_state.picked_maps|selectattr("map_id", "equalto", map_id)|list|length > 0 %}
+                    {% set picked_info = match.match_state.picked_maps|selectattr("map_id", "equalto", map_id)|first if is_picked else none %}
+                    {% set has_mod = map_id in match.match_state.map_mods %}
+                    {% set mod_info = match.match_state.map_mods[map_id] if has_mod else none %}
+                    
+                    <div class="relative group">
+                        <!-- Map Card -->
+                        <a href="{{ map_info.url }}" target="_blank" 
+                           class="block p-2 rounded-lg border-2 transition-all duration-300 hover:scale-105 {% if is_banned %}bg-gradient-to-br from-red-900 to-red-800 border-red-600 opacity-60{% elif is_picked %}bg-gradient-to-br from-green-900 to-green-800 border-green-600{% else %}bg-gradient-to-br from-gray-800 to-gray-700 border-gray-600 hover:border-yellow-400{% endif %}">
+                            
+                            <!-- Map Status Icon -->
+                            <div class="text-center mb-2">
+                                {% if is_banned %}
+                                <div class="text-xl mb-1">🚫</div>
+                                <div class="text-red-300 text-xs font-bold">BANNED</div>
+                                {% elif is_picked %}
+                                <div class="text-xl mb-1">✅</div>
+                                <div class="text-green-300 text-xs font-bold">PICKED</div>
+                                {% else %}
+                                <div class="text-xl mb-1">🎵</div>
+                                <div class="text-gray-400 text-xs font-bold">AVAILABLE</div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Map Info -->
+                            <div class="text-center">
+                                <div class="text-white font-bold text-xs mb-1 truncate" title="{{ map_info.title }}">
+                                    {{ map_info.title[:15] }}{{ '...' if map_info.title|length > 15 else '' }}
+                                </div>
+                                <div class="text-gray-300 text-xs mb-1 truncate" title="{{ map_info.artist }}">
+                                    {{ map_info.artist[:12] }}{{ '...' if map_info.artist|length > 12 else '' }}
+                                </div>
+                                <div class="text-gray-400 text-xs truncate" title="[{{ map_info.difficulty_name }}]">
+                                    [{{ map_info.difficulty_name[:10] }}{{ '...' if map_info.difficulty_name|length > 10 else '' }}]
+                                </div>
+                            </div>
+                            
+                            <!-- Ability Icons -->
+                            {% if has_mod %}
+                            <div class="absolute top-1 right-1">
+                                {% if mod_info is string %}
+                                    <!-- Force NoMod or Force Mod -->
+                                    {% if mod_info.lower() == 'nomod' %}
+                                    <div class="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold" title="Force NoMod">
+                                        NM
+                                    </div>
+                                    {% else %}
+                                    <div class="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold" title="Force {{ mod_info.upper() }}">
+                                        {{ mod_info.upper()[:2] }}
+                                    </div>
+                                    {% endif %}
+                                {% else %}
+                                    <!-- Personal Mod -->
+                                    <div class="w-4 h-4 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold" title="Personal {{ mod_info.mod.upper() }} ({{ 'P1' if mod_info.player == 'player1' else 'P2' }} only)">
+                                        {{ mod_info.mod.upper()[:2] }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Pick order indicator -->
+                            {% if is_picked and picked_info %}
+                            <div class="absolute top-1 left-1">
+                                <div class="w-4 h-4 bg-yellow-500 rounded-full flex items-center justify-center text-black text-xs font-bold" title="Pick order #{{ picked_info.order }}">
+                                    {{ picked_info.order }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </a>
+                        
+                        <!-- Hover Tooltip -->
+                        <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black bg-opacity-90 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 whitespace-nowrap">
+                            <div class="font-bold">{{ map_info.title }}</div>
+                            <div class="text-gray-300">{{ map_info.artist }} - [{{ map_info.difficulty_name }}]</div>
+                            <div class="text-gray-400">by {{ map_info.mapper }}</div>
+                            {% if has_mod %}
+                            <div class="text-yellow-300 mt-1">
+                                {% if mod_info is string %}
+                                    {% if mod_info.lower() == 'nomod' %}
+                                    🚫 Force NoMod Applied
+                                    {% else %}
+                                    ⚡ Force {{ mod_info.upper() }} Applied
+                                    {% endif %}
+                                {% else %}
+                                    🔮 Personal {{ mod_info.mod.upper() }} ({{ mod_info.player|title }} only)
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            {% if is_picked and picked_info %}
+                            <div class="text-green-300 mt-1">
+                                ✅ Picked by {{ match.player1.name if picked_info.picked_by == 'player1' else match.player2.name }} (Order #{{ picked_info.order }})
+                            </div>
+                            {% endif %}
+                            {% if is_banned %}
+                            <div class="text-red-300 mt-1">🚫 This map has been banned</div>
+                            {% endif %}
+                            <div class="text-gray-500 text-xs mt-1">Click to view on osu! website</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Summary Stats -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-red-900 bg-opacity-50 p-4 rounded-xl text-center border border-red-600">
+                        <div class="text-2xl font-bold text-white">{{ match.match_state.banned_maps|length }}</div>
+                        <div class="text-red-300 text-sm">Maps Banned</div>
+                    </div>
+                    <div class="bg-green-900 bg-opacity-50 p-4 rounded-xl text-center border border-green-600">
+                        <div class="text-2xl font-bold text-white">{{ match.match_state.picked_maps|length }}</div>
+                        <div class="text-green-300 text-sm">Maps Picked</div>
+                    </div>
+                    <div class="bg-purple-900 bg-opacity-50 p-4 rounded-xl text-center border border-purple-600">
+                        <div class="text-2xl font-bold text-white">{{ match.match_state.map_mods|length }}</div>
+                        <div class="text-purple-300 text-sm">Abilities Used</div>
+                    </div>
+                    <div class="bg-blue-900 bg-opacity-50 p-4 rounded-xl text-center border border-blue-600">
+                        <div class="text-2xl font-bold text-white">{{ (all_maps|length) - (match.match_state.banned_maps|length) - (match.match_state.picked_maps|length) }}</div>
+                        <div class="text-blue-300 text-sm">Maps Available</div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-8">
+                <p class="text-gray-400 text-lg">No mappool data available for this match</p>
+            </div>
+            {% endif %}
+            
+            <!-- Phase Status -->
+            <div class="text-center">
+                <div class="inline-block bg-gray-700 px-6 py-3 rounded-full">
+                    <span class="text-yellow-400 font-bold">Current Phase: </span>
+                    <span class="text-white">
+                        {% if match.match_state.phase == 'ban' %}
+                        Ban Phase ({{ match.match_state.banned_maps|length }}/6 bans)
+                        {% elif match.match_state.phase == 'pick' %}
+                        Pick Phase ({{ match.match_state.picked_maps|length }}/6 picks)
+                        {% elif match.match_state.phase == 'play' %}
+                        Playing
+                        {% else %}
+                        {{ match.match_state.phase|title }}
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Map Results -->
         {% if detailed_results %}
@@ -383,5 +667,40 @@
     </div>
 
     {% include 'footer.html' %}
+
+    <script>
+        function toggleMappool() {
+            const collapsed = document.getElementById('mappool-collapsed');
+            const expanded = document.getElementById('mappool-expanded');
+            const icon = document.getElementById('expand-icon');
+            const button = document.querySelector('.mappool-toggle');
+            
+            if (collapsed.style.display === 'none' || collapsed.style.display === '') {
+                // Show collapsed view
+                collapsed.style.display = 'block';
+                expanded.style.display = 'none';
+                button.classList.add('rotated');
+                // Change icon to up arrow
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>';
+            } else {
+                // Show expanded view
+                collapsed.style.display = 'none';
+                expanded.style.display = 'block';
+                button.classList.remove('rotated');
+                // Change icon to down arrow
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>';
+            }
+        }
+        
+        // Initialize in expanded state
+        document.addEventListener('DOMContentLoaded', function() {
+            const collapsed = document.getElementById('mappool-collapsed');
+            const expanded = document.getElementById('mappool-expanded');
+            if (collapsed && expanded) {
+                collapsed.style.display = 'none';
+                expanded.style.display = 'block';
+            }
+        });
+    </script>
 </body>
 </html>

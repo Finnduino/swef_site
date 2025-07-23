@@ -60,16 +60,25 @@
             border-radius: 12px;
             transition: all 0.3s ease;
             cursor: pointer;
+            position: relative;
         }
         
-        .ability-card:hover:not(.disabled) {
+        .ability-card:hover:not(.disabled):not(.ability-used) {
             transform: translateY(-2px);
             border-color: rgba(59, 130, 246, 0.6);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
         }
         
-        .ability-used {
+        .ability-card.ability-used {
             opacity: 0.5;
             cursor: not-allowed;
+            background: linear-gradient(135deg, rgba(75, 85, 99, 0.3), rgba(75, 85, 99, 0.1));
+            border-color: rgba(75, 85, 99, 0.5);
+        }
+        
+        .ability-card.ability-used:hover {
+            transform: none;
+            box-shadow: none;
         }
         
         .your-turn {
@@ -79,6 +88,19 @@
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
+        }
+        
+        .turn-notification-pulse {
+            animation: turnPulse 1s ease-in-out infinite;
+        }
+        
+        @keyframes turnPulse {
+            0%, 100% { 
+                transform: translateX(-50%) scale(1);
+            }
+            50% { 
+                transform: translateX(-50%) scale(1.05);
+            }
         }
         
         .phase-indicator {
@@ -133,7 +155,7 @@
                 </div>
                 
                 <!-- Opponent -->
-                <div class="text-center p-6 rounded-xl bg-gray-700">
+                <div class="text-center p-6 rounded-xl bg-gray-700" id="opponent-turn-card">
                     <img src="{{ match.player2.avatar_url if is_player1 else match.player1.avatar_url }}" 
                          class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-red-400">
                     <h3 class="text-xl font-bold text-red-400 mb-2">OPPONENT</h3>
@@ -149,22 +171,183 @@
 
         <!-- Phase Progress -->
         <div class="interface-card p-6 mb-8">
-            <h2 class="text-2xl font-bold text-yellow-400 mb-4">📋 Match Progress</h2>
-            <div class="flex items-center justify-between">
-                <div class="flex-1 text-center" id="ban-phase-indicator">
-                    <div class="text-2xl mb-2">🚫</div>
-                    <div class="text-sm">Ban Phase</div>
-                    <div class="text-xs text-gray-400">0/6 maps</div>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-yellow-400">📋 Match Progress</h2>
+                <button onclick="showHistoryModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold transition">
+                    📜 View History
+                </button>
+            </div>
+            
+            <!-- Current Turn Display -->
+            <div class="bg-gray-700 border-2 border-yellow-500 rounded-lg p-4 mb-6" id="current-turn-display">
+                <div class="text-center">
+                    <div class="text-lg font-bold text-yellow-400 mb-2" id="current-action-text">Waiting for match to start...</div>
+                    <div class="text-sm text-gray-300" id="current-instruction-text">Please wait</div>
                 </div>
-                <div class="flex-1 text-center" id="pick-phase-indicator">
-                    <div class="text-2xl mb-2">🎯</div>
-                    <div class="text-sm">Pick Phase</div>
-                    <div class="text-xs text-gray-400">0/6 maps</div>
+            </div>
+            
+            <!-- Match Structure Overview -->
+            <div class="flex justify-center items-center gap-2 mb-4">
+                <!-- Ban Phase Icons -->
+                <div class="flex items-center gap-1 bg-red-900 bg-opacity-50 px-3 py-2 rounded-lg">
+                    <span class="text-red-400 font-bold text-sm mr-2">BANS:</span>
+                    <div class="w-6 h-6 rounded-full bg-red-900 border border-red-500 flex items-center justify-center text-xs" id="ban-1">
+                        <span id="ban-1-icon">🚫</span>
+                    </div>
+                    <div class="w-6 h-6 rounded-full bg-red-900 border border-red-500 flex items-center justify-center text-xs" id="ban-2">
+                        <span id="ban-2-icon">🚫</span>
+                    </div>
+                    <div class="w-6 h-6 rounded-full bg-red-900 border border-red-500 flex items-center justify-center text-xs" id="ban-3">
+                        <span id="ban-3-icon">🚫</span>
+                    </div>
+                    <div class="w-6 h-6 rounded-full bg-red-900 border border-red-500 flex items-center justify-center text-xs" id="ban-4">
+                        <span id="ban-4-icon">🚫</span>
+                    </div>
+                    <div class="w-6 h-6 rounded-full bg-red-900 border border-red-500 flex items-center justify-center text-xs" id="ban-5">
+                        <span id="ban-5-icon">🚫</span>
+                    </div>
+                    <div class="w-6 h-6 rounded-full bg-red-900 border border-red-500 flex items-center justify-center text-xs" id="ban-6">
+                        <span id="ban-6-icon">🚫</span>
+                    </div>
                 </div>
-                <div class="flex-1 text-center" id="play-phase-indicator">
-                    <div class="text-2xl mb-2">🎮</div>
-                    <div class="text-sm">Play Phase</div>
-                    <div class="text-xs text-gray-400">Ready to fight!</div>
+                
+                <!-- Arrow -->
+                <div class="text-yellow-400 text-xl">→</div>
+                
+                <!-- Alternating Pick/Play Phase -->
+                <div class="flex items-center gap-1 bg-blue-900 bg-opacity-50 px-3 py-2 rounded-lg">
+                    <span class="text-green-400 font-bold text-sm mr-2">PICKS:</span>
+                    <div class="flex items-center gap-1">
+                        <!-- Round 1: Pick->Play -->
+                        <div class="flex items-center gap-0.5 bg-gray-800 px-1 py-0.5 rounded">
+                            <div class="w-4 h-4 rounded-full bg-green-900 border border-green-500 flex items-center justify-center text-xs" id="pick-1">
+                                <span id="pick-1-icon">🎯</span>
+                            </div>
+                            <div class="w-4 h-4 rounded-full bg-blue-900 border border-blue-500 flex items-center justify-center text-xs" id="play-1">
+                                <span id="play-1-icon">🎮</span>
+                            </div>
+                        </div>
+                        <!-- Round 2: Pick->Play -->
+                        <div class="flex items-center gap-0.5 bg-gray-800 px-1 py-0.5 rounded">
+                            <div class="w-4 h-4 rounded-full bg-green-900 border border-green-500 flex items-center justify-center text-xs" id="pick-2">
+                                <span id="pick-2-icon">🎯</span>
+                            </div>
+                            <div class="w-4 h-4 rounded-full bg-blue-900 border border-blue-500 flex items-center justify-center text-xs" id="play-2">
+                                <span id="play-2-icon">🎮</span>
+                            </div>
+                        </div>
+                        <!-- Round 3: Pick->Play -->
+                        <div class="flex items-center gap-0.5 bg-gray-800 px-1 py-0.5 rounded">
+                            <div class="w-4 h-4 rounded-full bg-green-900 border border-green-500 flex items-center justify-center text-xs" id="pick-3">
+                                <span id="pick-3-icon">🎯</span>
+                            </div>
+                            <div class="w-4 h-4 rounded-full bg-blue-900 border border-blue-500 flex items-center justify-center text-xs" id="play-3">
+                                <span id="play-3-icon">🎮</span>
+                            </div>
+                        </div>
+                        <!-- Round 4: Pick->Play -->
+                        <div class="flex items-center gap-0.5 bg-gray-800 px-1 py-0.5 rounded">
+                            <div class="w-4 h-4 rounded-full bg-green-900 border border-green-500 flex items-center justify-center text-xs" id="pick-4">
+                                <span id="pick-4-icon">🎯</span>
+                            </div>
+                            <div class="w-4 h-4 rounded-full bg-blue-900 border border-blue-500 flex items-center justify-center text-xs" id="play-4">
+                                <span id="play-4-icon">🎮</span>
+                            </div>
+                        </div>
+                        <!-- Round 5: Pick->Play -->
+                        <div class="flex items-center gap-0.5 bg-gray-800 px-1 py-0.5 rounded">
+                            <div class="w-4 h-4 rounded-full bg-green-900 border border-green-500 flex items-center justify-center text-xs" id="pick-5">
+                                <span id="pick-5-icon">🎯</span>
+                            </div>
+                            <div class="w-4 h-4 rounded-full bg-blue-900 border border-blue-500 flex items-center justify-center text-xs" id="play-5">
+                                <span id="play-5-icon">🎮</span>
+                            </div>
+                        </div>
+                        <!-- Round 6: Pick->Play -->
+                        <div class="flex items-center gap-0.5 bg-gray-800 px-1 py-0.5 rounded">
+                            <div class="w-4 h-4 rounded-full bg-green-900 border border-green-500 flex items-center justify-center text-xs" id="pick-6">
+                                <span id="pick-6-icon">🎯</span>
+                            </div>
+                            <div class="w-4 h-4 rounded-full bg-blue-900 border border-blue-500 flex items-center justify-center text-xs" id="play-6">
+                                <span id="play-6-icon">🎮</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Turn Order Display -->
+            <div class="bg-gray-800 rounded-lg p-4">
+                <h3 class="text-lg font-bold text-white mb-3">🔄 Turn Order</h3>
+                <div class="flex justify-center items-center gap-1 text-xs">
+                    <!-- Bans -->
+                    <div class="flex items-center gap-1">
+                        <div class="w-5 h-5 rounded bg-red-800 flex items-center justify-center text-xs" id="turn-order-1">
+                            <span id="turn-1-player" class="font-bold">1</span>
+                        </div>
+                        <div class="w-5 h-5 rounded bg-red-800 flex items-center justify-center text-xs" id="turn-order-2">
+                            <span id="turn-2-player" class="font-bold">2</span>
+                        </div>
+                        <div class="w-5 h-5 rounded bg-red-800 flex items-center justify-center text-xs" id="turn-order-3">
+                            <span id="turn-3-player" class="font-bold">1</span>
+                        </div>
+                        <div class="w-5 h-5 rounded bg-red-800 flex items-center justify-center text-xs" id="turn-order-4">
+                            <span id="turn-4-player" class="font-bold">2</span>
+                        </div>
+                        <div class="w-5 h-5 rounded bg-red-800 flex items-center justify-center text-xs" id="turn-order-5">
+                            <span id="turn-5-player" class="font-bold">1</span>
+                        </div>
+                        <div class="w-5 h-5 rounded bg-red-800 flex items-center justify-center text-xs" id="turn-order-6">
+                            <span id="turn-6-player" class="font-bold">2</span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-gray-500 mx-2">|</div>
+                    
+                    <!-- Picks -->
+                    <div class="flex items-center gap-1">
+                        <div class="w-5 h-5 rounded bg-green-800 flex items-center justify-center text-xs" id="turn-order-7">
+                            <span id="turn-7-player" class="font-bold">1</span>
+                        </div>
+                        <div class="w-5 h-5 rounded bg-blue-800 flex items-center justify-center text-xs" id="turn-order-8">
+                            <span id="turn-8-player" class="font-bold">⚔</span>
+                        </div>
+                        <div class="w-5 h-5 rounded bg-green-800 flex items-center justify-center text-xs" id="turn-order-9">
+                            <span id="turn-9-player" class="font-bold">2</span>
+                        </div>
+                        <div class="w-5 h-5 rounded bg-blue-800 flex items-center justify-center text-xs" id="turn-order-10">
+                            <span id="turn-10-player" class="font-bold">⚔</span>
+                        </div>
+                        <div class="w-5 h-5 rounded bg-green-800 flex items-center justify-center text-xs" id="turn-order-11">
+                            <span id="turn-11-player" class="font-bold">1</span>
+                        </div>
+                        <div class="w-5 h-5 rounded bg-blue-800 flex items-center justify-center text-xs" id="turn-order-12">
+                            <span id="turn-12-player" class="font-bold">⚔</span>
+                        </div>
+                        <div class="w-5 h-5 rounded bg-green-800 flex items-center justify-center text-xs" id="turn-order-13">
+                            <span id="turn-13-player" class="font-bold">2</span>
+                        </div>
+                        <div class="w-5 h-5 rounded bg-blue-800 flex items-center justify-center text-xs" id="turn-order-14">
+                            <span id="turn-14-player" class="font-bold">⚔</span>
+                        </div>
+                        <div class="w-5 h-5 rounded bg-green-800 flex items-center justify-center text-xs" id="turn-order-15">
+                            <span id="turn-15-player" class="font-bold">1</span>
+                        </div>
+                        <div class="w-5 h-5 rounded bg-blue-800 flex items-center justify-center text-xs" id="turn-order-16">
+                            <span id="turn-16-player" class="font-bold">⚔</span>
+                        </div>
+                        <div class="w-5 h-5 rounded bg-green-800 flex items-center justify-center text-xs" id="turn-order-17">
+                            <span id="turn-17-player" class="font-bold">2</span>
+                        </div>
+                        <div class="w-5 h-5 rounded bg-blue-800 flex items-center justify-center text-xs" id="turn-order-18">
+                            <span id="turn-18-player" class="font-bold">⚔</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-2 text-xs text-gray-400">
+                    <span class="text-red-400">Red = Bans</span> • 
+                    <span class="text-green-400">Green = Picks</span> • 
+                    <span class="text-blue-400">Blue = Play</span>
                 </div>
             </div>
         </div>
@@ -172,6 +355,12 @@
         <!-- Player Abilities -->
         <div class="interface-card p-6 mb-8">
             <h2 class="text-2xl font-bold text-yellow-400 mb-4">⚡ Your Abilities</h2>
+            <div class="bg-blue-900 bg-opacity-30 border border-blue-500 rounded-lg p-3 mb-4">
+                <p class="text-blue-200 text-sm">
+                    <strong>How to use:</strong> Click on an ability card to use it on the most recently picked map. 
+                    Abilities can be used during or after the pick phase. Some abilities require selecting a mod.
+                </p>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <!-- Force NoMod -->
                 <div class="ability-card p-4" onclick="selectAbility('force_nomod')" id="force-nomod-ability">
@@ -208,7 +397,7 @@
             <div class="interface-card p-6">
                 <h2 class="text-2xl font-bold text-blue-400 mb-4">🎵 Your Maps</h2>
                 {% if player_mappool %}
-                <div class="space-y-3" id="your-maps">
+                <div class="space-y-2" id="your-maps">
                     <!-- Maps will be loaded via JavaScript -->
                 </div>
                 <a href="{{ player_mappool }}" target="_blank" class="inline-block mt-4 text-blue-400 hover:text-blue-300">
@@ -225,7 +414,7 @@
             <div class="interface-card p-6">
                 <h2 class="text-2xl font-bold text-yellow-400 mb-4">🎵 Opponent's Maps</h2>
                 {% if opponent_mappool %}
-                <div class="space-y-3" id="opponent-maps">
+                <div class="space-y-2" id="opponent-maps">
                     <!-- Maps will be loaded via JavaScript -->
                 </div>
                 <a href="{{ opponent_mappool }}" target="_blank" class="inline-block mt-4 text-yellow-400 hover:text-yellow-300">
@@ -239,40 +428,73 @@
             </div>
         </div>
 
-        <!-- Actions Summary -->
+        <!-- Live Action Feed -->
         <div class="interface-card p-6 mt-8">
-            <h2 class="text-2xl font-bold text-yellow-400 mb-4">📊 Match Summary</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Banned Maps -->
-                <div>
-                    <h3 class="text-lg font-bold text-red-400 mb-3">🚫 Banned Maps</h3>
-                    <div class="space-y-2" id="banned-maps-list">
-                        <div class="text-gray-500">No maps banned yet</div>
-                    </div>
-                </div>
-                
-                <!-- Picked Maps -->
-                <div>
-                    <h3 class="text-lg font-bold text-green-400 mb-3">🎯 Picked Maps</h3>
-                    <div class="space-y-2" id="picked-maps-list">
-                        <div class="text-gray-500">No maps picked yet</div>
-                    </div>
-                </div>
+            <h2 class="text-2xl font-bold text-yellow-400 mb-4">📊 Live Action Feed</h2>
+            <div class="bg-gray-800 rounded-lg p-4 max-h-64 overflow-y-auto" id="action-feed">
+                <div class="text-gray-500 text-center py-4">Match hasn't started yet</div>
+            </div>
+        </div>
+
+        <!-- Picked Maps & Mods Display -->
+        <div class="interface-card p-6 mt-8" id="picked-maps-section" style="display: none;">
+            <h2 class="text-2xl font-bold text-yellow-400 mb-4">🎵 Final Mappool & Mods</h2>
+            <div id="picked-maps-display" class="space-y-3">
+                <!-- Picked maps will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Turn Notification Popup -->
+    <div class="fixed top-4 left-1/2 transform -translate-x-1/2 z-60" style="display: none;" id="turn-notification">
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-lg shadow-2xl border-2 border-white animate-pulse">
+            <div class="text-center">
+                <div class="text-2xl font-bold mb-1" id="turn-notification-title">🎯 YOUR TURN!</div>
+                <div class="text-sm" id="turn-notification-subtitle">Choose a map to ban</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action History Popup -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;" id="history-modal">
+        <div class="bg-gray-800 p-8 rounded-lg border-2 border-yellow-500 max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-bold text-yellow-400">📋 Match History</h3>
+                <button onclick="closeHistoryModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div id="action-history-content">
+                <!-- History will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Ability Choice Modal -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="display: none; z-index: 9999;" id="ability-choice-modal">
+        <div class="bg-gray-800 p-8 rounded-lg border-2 border-purple-500 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold text-purple-400 mb-4">⚡ Use an Ability?</h3>
+            <p class="text-gray-300 mb-6">You just picked a map. Do you want to use an ability for this round?</p>
+            
+            <div class="grid grid-cols-1 gap-3 mb-6" id="ability-choice-options">
+                <!-- Ability options will be populated here -->
+            </div>
+            
+            <div class="flex justify-between gap-3">
+                <button onclick="skipAbilityChoice()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition flex-1">
+                    Skip Ability
+                </button>
             </div>
         </div>
     </div>
 
     <!-- Mod Selection Modal -->
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;" id="mod-modal">
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="display: none; z-index: 9999;" id="mod-modal">
         <div class="bg-gray-800 p-8 rounded-lg border-2 border-purple-500 max-w-md w-full mx-4">
             <h3 class="text-2xl font-bold text-purple-400 mb-4">Select Mod</h3>
             <div class="grid grid-cols-2 gap-3 mb-6">
                 <button onclick="selectMod('HD')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition">HD</button>
                 <button onclick="selectMod('HR')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition">HR</button>
-                <button onclick="selectMod('DT')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition">DT</button>
                 <button onclick="selectMod('FL')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition">FL</button>
                 <button onclick="selectMod('EZ')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition">EZ</button>
-                <button onclick="selectMod('HT')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition">HT</button>
             </div>
             <div class="flex justify-end gap-3">
                 <button onclick="closeModModal()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition">Cancel</button>
@@ -285,6 +507,31 @@
         <div class="bg-gray-800 p-8 rounded-lg border-2 border-yellow-500">
             <div class="text-yellow-400 text-2xl font-bold mb-4 text-center">Processing...</div>
             <div class="w-16 h-16 border-4 border-yellow-400 border-dashed rounded-full animate-spin mx-auto"></div>
+        </div>
+    </div>
+
+    <!-- Force NoMod Counter Modal -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style="display: none; z-index: 9999;" id="force-nomod-counter-modal">
+        <div class="bg-gray-800 p-8 rounded-lg border-2 border-red-500 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold text-red-400 mb-4">⚡ Counter Opportunity!</h3>
+            <p class="text-gray-300 mb-4">Your opponent used <span class="text-green-400 font-bold">Personal Mod</span> on this map.</p>
+            <p class="text-gray-300 mb-6">You can counter with <span class="text-blue-400 font-bold">Force NoMod</span> to prevent their mod advantage!</p>
+            
+            <div class="bg-yellow-900 bg-opacity-50 rounded-lg p-4 mb-6 border border-yellow-600">
+                <p class="text-yellow-300 text-sm">
+                    <strong>Map:</strong> <span id="counter-map-name"></span><br>
+                    <strong>Opponent's Mod:</strong> <span id="counter-opponent-mod" class="text-green-400"></span>
+                </p>
+            </div>
+            
+            <div class="flex justify-between gap-3">
+                <button onclick="useForceNoModCounter()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition flex-1" id="use-force-nomod-btn">
+                    🔵 Use Force NoMod
+                </button>
+                <button onclick="skipForceNoModCounter()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition flex-1">
+                    Skip
+                </button>
+            </div>
         </div>
     </div>
 
@@ -303,18 +550,37 @@
                 this.currentTurn = 'player1';
                 this.bannedMaps = [];
                 this.pickedMaps = [];
+                this.actionHistory = [];
+                this.currentStep = 0; // Track current step in the match (0-17 for all steps)
                 this.abilities = {
                     force_nomod: false,
                     force_mod: false,
                     personal_mod: 0
                 };
                 this.mapMods = {};
+                this.pendingAbilityChoice = false; // Track if user needs to decide on ability after picking
+                this.pendingForceNoModCounter = false; // Track if opponent needs to respond to Personal Mod
+                this.pendingCounterData = null; // Store data for Force NoMod counter opportunity
+                this.currentMatchScore = 0; // Track total score for lock mechanism
+                this.lastKnownScore = 0; // Track score changes
+                
+                // Turn order will be dynamically generated based on who goes first
+                // Default order (will be updated when match state loads)
+                this.turnOrder = ['player1', 'player2', 'player1', 'player2', 'player1', 'player2', 
+                                 'player1', 'both', 'player2', 'both', 'player1', 'both', 
+                                 'player2', 'both', 'player1', 'both', 'player2', 'both'];
+                this.actionTypes = ['ban', 'ban', 'ban', 'ban', 'ban', 'ban', 
+                                   'pick', 'play', 'pick', 'play', 'pick', 'play',
+                                   'pick', 'play', 'pick', 'play', 'pick', 'play'];
                 
                 // Modal state
                 this.showModModal = false;
                 this.selectedAbility = null;
                 this.selectedMap = null;
-                this.availableMods = ['HD', 'HR', 'DT', 'FL', 'EZ', 'HT'];
+                this.availableMods = ['HD', 'HR', 'FL', 'EZ'];
+                
+                // Notification state
+                this.lastTurnNotified = null;
                 
                 this.init();
             }
@@ -326,9 +592,73 @@
                 this.setupModalEvents();
             }
             
+            generateTurnOrder(firstPlayer) {
+                // Generate the correct turn order based on who goes first
+                const secondPlayer = firstPlayer === 'player1' ? 'player2' : 'player1';
+                
+                // 6 alternating bans, then 6 rounds of alternating pick/play
+                this.turnOrder = [
+                    // Ban phase: first player starts, then alternates
+                    firstPlayer, secondPlayer, firstPlayer, secondPlayer, firstPlayer, secondPlayer,
+                    // Pick/play phases: first player starts, then alternates (with 'both' for play phases)
+                    firstPlayer, 'both', secondPlayer, 'both', firstPlayer, 'both',
+                    secondPlayer, 'both', firstPlayer, 'both', secondPlayer, 'both'
+                ];
+                
+                // Update the turn order display with the correct order
+                this.setupTurnOrderDisplay();
+            }
+            
             get isYourTurn() {
-                const playerKey = this.isPlayer1 ? 'player1' : 'player2';
-                return this.currentTurn === playerKey && this.currentPhase !== 'play';
+                if (this.pendingAbilityChoice) return true; // Always your choice to use ability after picking
+                if (this.pendingForceNoModCounter) return true; // Always your choice to counter Personal Mod
+                const currentTurnPlayer = this.turnOrder[this.currentStep];
+                const yourPlayerKey = this.isPlayer1 ? 'player1' : 'player2';
+                return currentTurnPlayer === yourPlayerKey && this.currentStep < 18; // Not past all steps
+            }
+            
+            get currentActionType() {
+                if (this.pendingAbilityChoice) return 'ability_choice';
+                if (this.pendingForceNoModCounter) return 'force_nomod_counter';
+                if (this.currentStep < 6) return 'ban';
+                
+                // For steps 6+, we have alternating pick/play cycles
+                const stepInCycle = (this.currentStep - 6) % 2;
+                if (stepInCycle === 0) return 'pick';
+                return 'play';
+            }
+            
+            get currentRound() {
+                if (this.currentStep < 6) return 0; // Ban phase
+                return Math.floor((this.currentStep - 6) / 2) + 1;
+            }
+            
+            setupTurnOrderDisplay() {
+                const player1Symbol = this.isPlayer1 ? '●' : '○';
+                const player2Symbol = this.isPlayer1 ? '○' : '●';
+                
+                // Update turn order display with symbols (18 total steps)
+                for (let i = 1; i <= 18; i++) {
+                    const playerElement = document.getElementById(`turn-${i}-player`);
+                    if (playerElement) {
+                        if (i <= 6) {
+                            // Ban phase: alternating P1, P2, P1, P2, P1, P2
+                            const isPlayer1Turn = (i % 2 === 1);
+                            playerElement.textContent = isPlayer1Turn ? player1Symbol : player2Symbol;
+                        } else {
+                            // Round phases: depends on the specific turn order
+                            const stepIndex = i - 1; // Convert to 0-based index
+                            const turnPlayer = this.turnOrder[stepIndex];
+                            if (turnPlayer === 'player1') {
+                                playerElement.textContent = player1Symbol;
+                            } else if (turnPlayer === 'player2') {
+                                playerElement.textContent = player2Symbol;
+                            } else {
+                                playerElement.textContent = '⚔'; // Both players (play phase)
+                            }
+                        }
+                    }
+                }
             }
             
             async loadMatchState() {
@@ -343,159 +673,477 @@
                         this.bannedMaps = state.banned_maps || [];
                         this.pickedMaps = state.picked_maps || [];
                         this.mapMods = state.map_mods || {};
+                        this.actionHistory = state.action_history || [];
+                        
+                        // Calculate current step based on actions taken
+                        // 6 bans + rounds with pick/play cycles (2 steps per round)
+                        this.currentStep = this.bannedMaps.length;
+                        if (this.pickedMaps.length > 0) {
+                            // Each round has pick + play steps (2 steps total)
+                            this.currentStep += this.pickedMaps.length * 2;
+                        }
+                        
+                        // Cap at maximum steps
+                        if (this.currentStep >= 18) {
+                            this.currentStep = 18; // All phases complete
+                        }
                         
                         const playerKey = this.isPlayer1 ? 'player1' : 'player2';
                         if (state.abilities_used && state.abilities_used[playerKey]) {
                             this.abilities = state.abilities_used[playerKey];
                         }
+
+                        // Check if opponent used Personal Mod and we need to offer Force NoMod counter
+                        if (state.pending_force_nomod_counter) {
+                            const counterData = state.pending_force_nomod_counter;
+                            const counterPlayerKey = this.isPlayer1 ? 'player1' : 'player2';
+                            if (counterData.target_player === counterPlayerKey && !this.abilities.force_nomod) {
+                                this.pendingForceNoModCounter = true;
+                                this.pendingCounterData = counterData;
+                                this.showForceNoModCounterModal();
+                            }
+                        } else {
+                            this.pendingForceNoModCounter = false;
+                            this.pendingCounterData = null;
+                        }
+                        
+                        // Generate the correct turn order based on who goes first
+                        const firstPlayer = state.first_player || 'player1';
+                        this.generateTurnOrder(firstPlayer);
+                    }
+                    
+                    // Update score tracking from match info
+                    if (data.match_info) {
+                        const newScore = (data.match_info.score_p1 || 0) + (data.match_info.score_p2 || 0);
+                        this.lastKnownScore = this.currentMatchScore;
+                        this.currentMatchScore = newScore;
                     }
                     
                     this.updateUI();
+                    this.checkForTurnNotification();
                 } catch (error) {
                     console.error('Error loading match state:', error);
                 }
             }
             
+            checkForTurnNotification() {
+                const currentTurnKey = `${this.currentStep}-${this.isYourTurn}`;
+                
+                if (this.lastTurnNotified !== currentTurnKey && this.isYourTurn) {
+                    this.showTurnNotification();
+                    this.lastTurnNotified = currentTurnKey;
+                }
+            }
+            
+            showTurnNotification() {
+                const notification = document.getElementById('turn-notification');
+                const title = document.getElementById('turn-notification-title');
+                const subtitle = document.getElementById('turn-notification-subtitle');
+                
+                const actionType = this.currentActionType;
+                const round = this.currentRound;
+                
+                if (actionType === 'ban') {
+                    title.textContent = '🚫 YOUR TURN TO BAN!';
+                    subtitle.textContent = `Choose a map to ban (Ban ${this.currentStep + 1}/6)`;
+                } else if (actionType === 'pick') {
+                    title.textContent = '🎯 YOUR TURN TO PICK!';
+                    subtitle.textContent = `Choose a map for Round ${round}`;
+                } else if (actionType === 'ability_choice') {
+                    title.textContent = '⚡ ABILITY CHOICE!';
+                    subtitle.textContent = `Do you want to use an ability for Round ${round}?`;
+                } else if (actionType === 'force_nomod_counter') {
+                    title.textContent = '🔴 COUNTER OPPORTUNITY!';
+                    subtitle.textContent = `Opponent used Personal Mod - Counter with Force NoMod?`;
+                } else if (actionType === 'play') {
+                    title.textContent = '🎮 READY TO PLAY!';
+                    subtitle.textContent = `Round ${round} is ready to begin`;
+                } else {
+                    title.textContent = '✅ MATCH COMPLETE!';
+                    subtitle.textContent = 'All rounds finished!';
+                }
+                
+                notification.style.display = 'block';
+                notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 z-60 turn-notification-pulse';
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 5000);
+            }
+            
             updateUI() {
                 this.updatePhaseIndicator();
                 this.updateTurnIndicators();
-                this.updateProgressCounts();
+                this.updateProgressDisplay();
                 this.updateAbilities();
-                this.updateMatchSummary();
+                this.updateActionFeed();
+                this.updateTurnOrderHighlight();
+                this.updateMapVisualStates();
+                this.updatePickedMapsDisplay();
+                this.updateInterfaceLock();
             }
             
             updatePhaseIndicator() {
                 const indicator = document.getElementById('phase-indicator');
-                if (this.currentPhase === 'ban') {
+                const currentActionText = document.getElementById('current-action-text');
+                const currentInstructionText = document.getElementById('current-instruction-text');
+                
+                // Check if interface is locked
+                const isLocked = this.shouldLockInterface();
+                
+                if (this.currentStep < 6) {
+                    // Ban phase
                     indicator.textContent = `🚫 Ban Phase (${this.bannedMaps.length}/6)`;
                     indicator.className = 'bg-red-600 text-white px-6 py-3 rounded-full font-bold text-lg';
-                } else if (this.currentPhase === 'pick') {
-                    indicator.textContent = `🎯 Pick Phase (${this.pickedMaps.length}/6)`;
+                    
+                    if (this.isYourTurn) {
+                        currentActionText.textContent = `🚫 YOUR TURN: Ban a map`;
+                        currentInstructionText.textContent = `Choose a map to ban (Ban ${this.currentStep + 1}/6)`;
+                    } else {
+                        const opponentName = this.isPlayer1 ? '{{ match.player2.name }}' : '{{ match.player1.name }}';
+                        currentActionText.textContent = `⏳ ${opponentName} is banning...`;
+                        currentInstructionText.textContent = `Waiting for opponent to ban (Ban ${this.currentStep + 1}/6)`;
+                    }
+                } else if (this.currentStep >= 18) {
+                    // Match completed
+                    indicator.textContent = '✅ Match Complete!';
                     indicator.className = 'bg-green-600 text-white px-6 py-3 rounded-full font-bold text-lg';
-                } else if (this.currentPhase === 'play') {
-                    indicator.textContent = '🎮 Ready to Play!';
-                    indicator.className = 'bg-blue-600 text-white px-6 py-3 rounded-full font-bold text-lg';
+                    currentActionText.textContent = '🏁 MATCH COMPLETED!';
+                    currentInstructionText.textContent = 'All rounds finished!';
+                } else if (isLocked) {
+                    // Interface is locked waiting for score
+                    indicator.textContent = '🔒 Waiting for Match Result';
+                    indicator.className = 'bg-orange-600 text-white px-6 py-3 rounded-full font-bold text-lg';
+                    currentActionText.textContent = '🔒 INTERFACE LOCKED';
+                    currentInstructionText.textContent = 'Waiting for the round result to be recorded by tournament staff';
+                } else {
+                    // Round phases
+                    const actionType = this.currentActionType;
+                    const round = this.currentRound;
+                    
+                    if (actionType === 'pick') {
+                        indicator.textContent = `🎯 Round ${round} - Pick Phase`;
+                        indicator.className = 'bg-green-600 text-white px-6 py-3 rounded-full font-bold text-lg';
+                        
+                        if (this.isYourTurn) {
+                            currentActionText.textContent = `🎯 YOUR TURN: Pick a map`;
+                            currentInstructionText.textContent = `Choose a map for Round ${round}`;
+                        } else {
+                            const opponentName = this.isPlayer1 ? '{{ match.player2.name }}' : '{{ match.player1.name }}';
+                            currentActionText.textContent = `⏳ ${opponentName} is picking...`;
+                            currentInstructionText.textContent = `Waiting for opponent to pick for Round ${round}`;
+                        }
+                    } else if (actionType === 'ability_choice') {
+                        indicator.textContent = `⚡ Round ${round} - Ability Choice`;
+                        indicator.className = 'bg-purple-600 text-white px-6 py-3 rounded-full font-bold text-lg';
+                        currentActionText.textContent = `⚡ YOUR CHOICE: Use an ability?`;
+                        currentInstructionText.textContent = `Decide if you want to use an ability for Round ${round}`;
+                    } else if (actionType === 'force_nomod_counter') {
+                        indicator.textContent = `🔴 Round ${round} - Counter Opportunity`;
+                        indicator.className = 'bg-red-600 text-white px-6 py-3 rounded-full font-bold text-lg';
+                        currentActionText.textContent = `🔴 COUNTER CHANCE: Force NoMod?`;
+                        currentInstructionText.textContent = `Opponent used Personal Mod - you can counter!`;
+                    } else if (actionType === 'play') {
+                        indicator.textContent = `🎮 Round ${round} - Play Phase`;
+                        indicator.className = 'bg-blue-600 text-white px-6 py-3 rounded-full font-bold text-lg';
+                        currentActionText.textContent = `🎮 ROUND ${round} READY!`;
+                        currentInstructionText.textContent = 'Both players ready to compete!';
+                    }
                 }
             }
             
             updateTurnIndicators() {
-                const yourTurnCard = document.querySelector('.text-center.p-6.rounded-xl');
-                const opponentCard = document.querySelectorAll('.text-center.p-6.rounded-xl')[2];
+                const yourTurnCard = document.getElementById('your-turn-card');
+                const yourTurnIndicator = document.getElementById('your-turn-indicator');
+                const opponentTurnIndicator = document.getElementById('opponent-turn-indicator');
                 
                 if (this.isYourTurn) {
-                    yourTurnCard.className = 'text-center p-6 rounded-xl bg-green-900 border-2 border-green-500';
+                    yourTurnCard.className = 'text-center p-6 rounded-xl bg-green-900 border-4 border-green-400 your-turn';
+                    yourTurnIndicator.style.display = 'block';
+                    opponentTurnIndicator.style.display = 'none';
                 } else {
                     yourTurnCard.className = 'text-center p-6 rounded-xl bg-gray-700';
+                    yourTurnIndicator.style.display = 'none';
+                    if (this.currentStep < 6) {
+                        opponentTurnIndicator.style.display = 'block';
+                    } else {
+                        opponentTurnIndicator.style.display = 'none';
+                    }
                 }
             }
             
-            updateProgressCounts() {
-                // Update banned maps count
-                const banPhaseCount = document.querySelector('#ban-phase-indicator .text-xs');
-                if (banPhaseCount) {
-                    banPhaseCount.textContent = `${this.bannedMaps.length}/6 maps`;
-                }
-                
-                // Update picked maps count  
-                const pickPhaseCount = document.querySelector('#pick-phase-indicator .text-xs');
-                if (pickPhaseCount) {
-                    pickPhaseCount.textContent = `${this.pickedMaps.length}/6 maps`;
-                }
-                
-                // Update phase highlighting
-                const banIndicator = document.getElementById('ban-phase-indicator');
-                const pickIndicator = document.getElementById('pick-phase-indicator');
-                const playIndicator = document.getElementById('play-phase-indicator');
-                
-                banIndicator.className = this.currentPhase === 'ban' 
-                    ? 'flex-1 text-center text-red-400 font-bold' 
-                    : 'flex-1 text-center';
-                
-                pickIndicator.className = this.currentPhase === 'pick' 
-                    ? 'flex-1 text-center text-green-400 font-bold' 
-                    : 'flex-1 text-center';
+            updateProgressDisplay() {
+                // Update ban phase icons (6 bans)
+                for (let i = 0; i < 6; i++) {
+                    const banElement = document.getElementById(`ban-${i + 1}`);
+                    const iconElement = document.getElementById(`ban-${i + 1}-icon`);
                     
-                playIndicator.className = this.currentPhase === 'play' 
-                    ? 'flex-1 text-center text-blue-400 font-bold' 
-                    : 'flex-1 text-center';
-            }
-            
-            updateAbilities() {
-                // Force NoMod
-                const forceNomodCard = document.querySelector('[onclick*="force_nomod"]');
-                if (forceNomodCard) {
-                    if (this.abilities.force_nomod) {
-                        forceNomodCard.className = 'ability-card p-4 ability-used';
-                        forceNomodCard.innerHTML = `
-                            <h3 class="text-lg font-bold text-gray-500 mb-2">🔵 Force NoMod</h3>
-                            <p class="text-sm text-gray-500 mb-2">Used ✓</p>
-                        `;
+                    if (i < this.bannedMaps.length) {
+                        banElement.className = 'w-6 h-6 rounded-full bg-red-600 border-2 border-red-400 flex items-center justify-center text-xs';
+                        iconElement.textContent = '✓';
+                    } else if (i === this.bannedMaps.length && this.currentStep === i) {
+                        banElement.className = 'w-6 h-6 rounded-full bg-red-500 border-2 border-yellow-400 flex items-center justify-center text-xs your-turn';
+                        iconElement.textContent = '⚡';
+                    } else {
+                        banElement.className = 'w-6 h-6 rounded-full bg-red-900 border border-red-500 flex items-center justify-center text-xs';
+                        iconElement.textContent = '🚫';
                     }
                 }
                 
-                // Force Mod  
-                const forceModCard = document.querySelector('[onclick*="force_mod"]');
-                if (forceModCard && this.abilities.force_mod) {
-                    forceModCard.className = 'ability-card p-4 ability-used';
-                    forceModCard.innerHTML = `
-                        <h3 class="text-lg font-bold text-gray-500 mb-2">🟣 Force Mod</h3>
-                        <p class="text-sm text-gray-500 mb-2">Used ✓</p>
-                    `;
+                // Update round phases (6 rounds of pick->play)
+                for (let round = 1; round <= 6; round++) {
+                    const pickElement = document.getElementById(`pick-${round}`);
+                    const pickIcon = document.getElementById(`pick-${round}-icon`);
+                    const playElement = document.getElementById(`play-${round}`);
+                    const playIcon = document.getElementById(`play-${round}-icon`);
+                    
+                    const pickStep = 6 + (round - 1) * 2; // Step where this round's pick happens
+                    const playStep = pickStep + 1; // Step where this round's play happens
+                    
+                    // Update pick status
+                    if (this.currentStep > pickStep) {
+                        pickElement.className = 'w-4 h-4 rounded-full bg-green-600 border-2 border-green-400 flex items-center justify-center text-xs';
+                        pickIcon.textContent = '✓';
+                    } else if (this.currentStep === pickStep) {
+                        pickElement.className = 'w-4 h-4 rounded-full bg-green-500 border-2 border-yellow-400 flex items-center justify-center text-xs your-turn';
+                        pickIcon.textContent = '⚡';
+                    } else {
+                        pickElement.className = 'w-4 h-4 rounded-full bg-green-900 border border-green-500 flex items-center justify-center text-xs';
+                        pickIcon.textContent = '🎯';
+                    }
+                    
+                    // Update play status
+                    if (this.currentStep > playStep) {
+                        playElement.className = 'w-4 h-4 rounded-full bg-blue-600 border-2 border-blue-400 flex items-center justify-center text-xs';
+                        playIcon.textContent = '✓';
+                    } else if (this.currentStep === playStep) {
+                        playElement.className = 'w-4 h-4 rounded-full bg-blue-500 border-2 border-yellow-400 flex items-center justify-center text-xs your-turn';
+                        playIcon.textContent = '⚡';
+                    } else {
+                        playElement.className = 'w-4 h-4 rounded-full bg-blue-900 border border-blue-500 flex items-center justify-center text-xs';
+                        playIcon.textContent = '🎮';
+                    }
+                }
+            }
+            
+            updateTurnOrderHighlight() {
+                // Reset all turn order elements (18 total: 6 bans + 12 round steps)
+                for (let i = 1; i <= 18; i++) {
+                    const element = document.getElementById(`turn-order-${i}`);
+                    if (element) {
+                        if (i <= 6) {
+                            // Ban phase
+                            element.className = 'w-5 h-5 rounded bg-red-800 flex items-center justify-center text-xs';
+                        } else {
+                            const stepInRound = (i - 7) % 2;
+                            if (stepInRound === 0) {
+                                // Pick step
+                                element.className = 'w-5 h-5 rounded bg-green-800 flex items-center justify-center text-xs';
+                            } else {
+                                // Play step
+                                element.className = 'w-5 h-5 rounded bg-blue-800 flex items-center justify-center text-xs';
+                            }
+                        }
+                    }
                 }
                 
-                // Personal Mod
-                const personalModCard = document.querySelector('[onclick*="personal_mod"]');
-                if (personalModCard) {
-                    if (this.abilities.personal_mod >= 2) {
-                        personalModCard.className = 'ability-card p-4 ability-used';
-                        personalModCard.innerHTML = `
-                            <h3 class="text-lg font-bold text-gray-500 mb-2">🟢 Personal Mod</h3>
-                            <p class="text-sm text-gray-500 mb-2">All uses exhausted</p>
-                        `;
-                    } else {
-                        const usesSpan = personalModCard.querySelector('.bg-green-900');
-                        if (usesSpan) {
-                            usesSpan.textContent = `Uses: ${this.abilities.personal_mod}/2`;
+                // Highlight current step
+                if (this.currentStep < 18) {
+                    const currentElement = document.getElementById(`turn-order-${this.currentStep + 1}`);
+                    if (currentElement) {
+                        if (this.currentStep < 6) {
+                            // Ban phase
+                            currentElement.className = 'w-5 h-5 rounded bg-red-500 border-2 border-yellow-400 flex items-center justify-center text-xs';
+                        } else {
+                            const stepInRound = (this.currentStep - 6) % 2;
+                            if (stepInRound === 0) {
+                                // Pick step
+                                currentElement.className = 'w-5 h-5 rounded bg-green-500 border-2 border-yellow-400 flex items-center justify-center text-xs';
+                            } else {
+                                // Play step
+                                currentElement.className = 'w-5 h-5 rounded bg-blue-500 border-2 border-yellow-400 flex items-center justify-center text-xs';
+                            }
                         }
                     }
                 }
             }
             
-            updateMatchSummary() {
-                // Update banned maps list
-                const bannedContainer = document.getElementById('banned-maps-list');
-                if (bannedContainer) {
-                    bannedContainer.innerHTML = '';
-                    if (this.bannedMaps.length === 0) {
-                        bannedContainer.innerHTML = '<div class="text-gray-500">No maps banned yet</div>';
+            updateActionFeed() {
+                const feed = document.getElementById('action-feed');
+                if (!feed) return;
+                
+                if (this.actionHistory.length === 0) {
+                    feed.innerHTML = '<div class="text-gray-500 text-center py-4">Match hasn\'t started yet</div>';
+                    return;
+                }
+                
+                feed.innerHTML = '';
+                this.actionHistory.slice(-10).reverse().forEach((action, index) => {
+                    const actionElement = document.createElement('div');
+                    actionElement.className = 'mb-3 p-3 rounded-lg border-l-4';
+                    
+                    let actionText = '';
+                    let borderColor = '';
+                    let bgColor = '';
+                    
+                    if (action.type === 'ban') {
+                        borderColor = 'border-red-500';
+                        bgColor = 'bg-red-900 bg-opacity-30';
+                        actionText = `🚫 ${action.player} banned ${action.map}`;
+                    } else if (action.type === 'pick') {
+                        borderColor = 'border-green-500';
+                        bgColor = 'bg-green-900 bg-opacity-30';
+                        actionText = `🎯 ${action.player} picked ${action.map}`;
+                    } else if (action.type === 'ability') {
+                        borderColor = 'border-purple-500';
+                        bgColor = 'bg-purple-900 bg-opacity-30';
+                        actionText = `⚡ ${action.player} used ${action.ability} on ${action.map}`;
+                    } else if (action.type === 'system') {
+                        borderColor = 'border-yellow-500';
+                        bgColor = 'bg-yellow-900 bg-opacity-30';
+                        actionText = `🎲 ${action.message}`;
+                    }
+                    
+                    actionElement.className += ` ${borderColor} ${bgColor}`;
+                    actionElement.innerHTML = `
+                        <div class="text-white font-semibold">${actionText}</div>
+                        <div class="text-xs text-gray-400">${action.timestamp || 'Just now'}</div>
+                    `;
+                    
+                    feed.appendChild(actionElement);
+                });
+            }
+            
+            updateAbilities() {
+                // Force NoMod
+                const forceNomodCard = document.getElementById('force-nomod-ability');
+                if (forceNomodCard) {
+                    if (this.abilities.force_nomod) {
+                        forceNomodCard.className = 'ability-card p-4 ability-used';
+                        forceNomodCard.onclick = null; // Remove click handler
+                        forceNomodCard.innerHTML = `
+                            <h3 class="text-lg font-bold text-gray-500 mb-2">🔵 Force NoMod</h3>
+                            <p class="text-sm text-gray-500 mb-2">Used ✓</p>
+                            <div class="text-xs text-gray-500">
+                                <span class="bg-gray-800 px-2 py-1 rounded">Single Use - Exhausted</span>
+                            </div>
+                        `;
                     } else {
-                        this.bannedMaps.forEach(map => {
-                            const div = document.createElement('div');
-                            div.className = 'bg-red-900 bg-opacity-50 p-3 rounded border border-red-600';
-                            div.innerHTML = `<span class="text-red-200">${map}</span>`;
-                            bannedContainer.appendChild(div);
-                        });
+                        // Reset to available state
+                        forceNomodCard.className = 'ability-card p-4';
+                        forceNomodCard.onclick = () => selectAbility('force_nomod');
+                        forceNomodCard.innerHTML = `
+                            <h3 class="text-lg font-bold text-blue-400 mb-2">🔵 Force NoMod</h3>
+                            <p class="text-sm text-gray-300 mb-2">Force both players to play with no mods</p>
+                            <div class="text-xs text-gray-400">
+                                <span class="bg-blue-900 px-2 py-1 rounded">Single Use</span>
+                            </div>
+                        `;
                     }
                 }
                 
-                // Update picked maps list
-                const pickedContainer = document.getElementById('picked-maps-list');
-                if (pickedContainer) {
-                    pickedContainer.innerHTML = '';
-                    if (this.pickedMaps.length === 0) {
-                        pickedContainer.innerHTML = '<div class="text-gray-500">No maps picked yet</div>';
+                // Force Mod  
+                const forceModCard = document.getElementById('force-mod-ability');
+                if (forceModCard) {
+                    if (this.abilities.force_mod) {
+                        forceModCard.className = 'ability-card p-4 ability-used';
+                        forceModCard.onclick = null; // Remove click handler
+                        forceModCard.innerHTML = `
+                            <h3 class="text-lg font-bold text-gray-500 mb-2">🟣 Force Mod</h3>
+                            <p class="text-sm text-gray-500 mb-2">Used ✓</p>
+                            <div class="text-xs text-gray-500">
+                                <span class="bg-gray-800 px-2 py-1 rounded">Single Use - Exhausted</span>
+                            </div>
+                        `;
                     } else {
-                        this.pickedMaps.forEach((pick, index) => {
-                            const div = document.createElement('div');
-                            div.className = 'bg-green-900 bg-opacity-50 p-3 rounded border border-green-600';
-                            div.innerHTML = `
-                                <span class="text-green-200">Map ${index + 1}: ${pick.map_id}</span>
-                                <span class="text-xs text-green-400 ml-2">(by ${pick.picked_by})</span>
-                            `;
-                            pickedContainer.appendChild(div);
-                        });
+                        // Reset to available state
+                        forceModCard.className = 'ability-card p-4';
+                        forceModCard.onclick = () => selectAbility('force_mod');
+                        forceModCard.innerHTML = `
+                            <h3 class="text-lg font-bold text-purple-400 mb-2">🟣 Force Mod</h3>
+                            <p class="text-sm text-gray-300 mb-2">Force both players to use a specific mod</p>
+                            <div class="text-xs text-gray-400">
+                                <span class="bg-purple-900 px-2 py-1 rounded">Single Use</span>
+                            </div>
+                        `;
                     }
                 }
+                
+                // Personal Mod
+                const personalModCard = document.getElementById('personal-mod-ability');
+                if (personalModCard) {
+                    if (this.abilities.personal_mod >= 2) {
+                        personalModCard.className = 'ability-card p-4 ability-used';
+                        personalModCard.onclick = null; // Remove click handler
+                        personalModCard.innerHTML = `
+                            <h3 class="text-lg font-bold text-gray-500 mb-2">🟢 Personal Mod</h3>
+                            <p class="text-sm text-gray-500 mb-2">All uses exhausted</p>
+                            <div class="text-xs text-gray-500">
+                                <span class="bg-gray-800 px-2 py-1 rounded">Uses: 2/2 - Exhausted</span>
+                            </div>
+                        `;
+                    } else {
+                        // Reset to available state and update usage count
+                        personalModCard.className = 'ability-card p-4';
+                        personalModCard.onclick = () => selectAbility('personal_mod');
+                        personalModCard.innerHTML = `
+                            <h3 class="text-lg font-bold text-green-400 mb-2">🟢 Personal Mod</h3>
+                            <p class="text-sm text-gray-300 mb-2">Use a mod while opponent plays NoMod</p>
+                            <div class="text-xs text-gray-400">
+                                <span class="bg-green-900 px-2 py-1 rounded">Uses: ${this.abilities.personal_mod}/2</span>
+                            </div>
+                        `;
+                    }
+                }
+            }
+            
+            showHistoryModal() {
+                const modal = document.getElementById('history-modal');
+                const content = document.getElementById('action-history-content');
+                
+                if (this.actionHistory.length === 0) {
+                    content.innerHTML = '<div class="text-gray-500 text-center py-8">No actions taken yet</div>';
+                } else {
+                    content.innerHTML = '';
+                    this.actionHistory.forEach((action, index) => {
+                        const actionElement = document.createElement('div');
+                        actionElement.className = 'mb-4 p-4 rounded-lg border-l-4';
+                        
+                        let borderColor = '';
+                        let bgColor = '';
+                        let actionText = '';
+                        
+                        if (action.type === 'ban') {
+                            borderColor = 'border-red-500';
+                            bgColor = 'bg-red-900 bg-opacity-30';
+                            actionText = `🚫 ${action.player} banned ${action.map}`;
+                        } else if (action.type === 'pick') {
+                            borderColor = 'border-green-500';
+                            bgColor = 'bg-green-900 bg-opacity-30';
+                            actionText = `🎯 ${action.player} picked ${action.map}`;
+                        } else if (action.type === 'ability') {
+                            borderColor = 'border-purple-500';
+                            bgColor = 'bg-purple-900 bg-opacity-30';
+                            actionText = `⚡ ${action.player} used ${action.ability} on ${action.map}`;
+                        }
+                        
+                        actionElement.className += ` ${borderColor} ${bgColor}`;
+                        actionElement.innerHTML = `
+                            <div class="text-white font-semibold text-lg">${actionText}</div>
+                            <div class="text-sm text-gray-400 mt-1">${action.timestamp || `Action ${index + 1}`}</div>
+                        `;
+                        
+                        content.appendChild(actionElement);
+                    });
+                }
+                
+                modal.style.display = 'flex';
+            }
+            
+            closeHistoryModal() {
+                const modal = document.getElementById('history-modal');
+                modal.style.display = 'none';
             }
             
             async performAction(actionType, targetMap, abilityType = null, modChoice = null) {
@@ -508,24 +1156,85 @@
                     if (abilityType) formData.append('ability_type', abilityType);
                     if (modChoice) formData.append('mod_choice', modChoice);
 
+                    console.log('Sending action:', {actionType, targetMap, abilityType, modChoice});
+
                     const response = await fetch(`/player/match/${this.matchId}/action`, {
                         method: 'POST',
                         body: formData
                     });
 
                     const result = await response.json();
+                    console.log('Action response:', result);
                     
                     if (result.success) {
                         await this.loadMatchState();
+                        
+                        // Show success feedback for abilities
+                        if (actionType === 'ability') {
+                            const abilityName = abilityType.replace('_', ' ').toUpperCase();
+                            const mapName = this.getMapDisplayName(targetMap);
+                            let message = `${abilityName} used on ${mapName}`;
+                            if (modChoice) {
+                                message += ` with ${modChoice.toUpperCase()}`;
+                            }
+                            this.showSuccessMessage(message);
+                        }
                     } else {
-                        alert(result.error || 'Action failed');
+                        console.error('Action failed:', result);
+                        this.showErrorMessage(result.error || 'Action failed');
                     }
                 } catch (error) {
                     console.error('Error performing action:', error);
-                    alert('Network error occurred');
+                    this.showErrorMessage('Network error occurred. Please try again.');
                 } finally {
                     this.setLoading(false);
                 }
+            }
+            
+            showSuccessMessage(message) {
+                // Create a temporary success notification
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-20 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-0 transition-all duration-300';
+                notification.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="text-lg mr-2">✅</span>
+                        <span>${message}</span>
+                    </div>
+                `;
+                document.body.appendChild(notification);
+                
+                // Auto-remove after 3 seconds
+                setTimeout(() => {
+                    notification.style.transform = 'translateX(100%)';
+                    setTimeout(() => {
+                        if (document.body.contains(notification)) {
+                            document.body.removeChild(notification);
+                        }
+                    }, 300);
+                }, 3000);
+            }
+            
+            showErrorMessage(message) {
+                // Create a temporary error notification
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-20 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform translate-x-0 transition-all duration-300';
+                notification.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="text-lg mr-2">❌</span>
+                        <span>${message}</span>
+                    </div>
+                `;
+                document.body.appendChild(notification);
+                
+                // Auto-remove after 5 seconds
+                setTimeout(() => {
+                    notification.style.transform = 'translateX(100%)';
+                    setTimeout(() => {
+                        if (document.body.contains(notification)) {
+                            document.body.removeChild(notification);
+                        }
+                    }, 300);
+                }, 5000);
             }
             
             setLoading(loading) {
@@ -537,45 +1246,269 @@
             }
             
             banMap(mapId) {
-                if (!this.isYourTurn || this.currentPhase !== 'ban') return;
+                if (!this.isYourTurn || this.currentActionType !== 'ban') return;
                 if (this.bannedMaps.includes(mapId)) return;
                 
                 this.performAction('ban', mapId);
             }
             
             pickMap(mapId) {
-                if (!this.isYourTurn || this.currentPhase !== 'pick') return;
+                console.log('pickMap called with mapId:', mapId);
+                console.log('isYourTurn:', this.isYourTurn);
+                console.log('currentActionType:', this.currentActionType);
+                
+                if (!this.isYourTurn || this.currentActionType !== 'pick') return;
                 if (this.bannedMaps.includes(mapId)) return;
                 if (this.pickedMaps.some(p => p.map_id === mapId)) return;
                 
-                this.performAction('pick', mapId);
+                console.log('Performing pick action...');
+                
+                // Perform the pick action
+                this.performAction('pick', mapId).then(() => {
+                    console.log('Pick action completed, setting up ability choice...');
+                    
+                    // DON'T update UI immediately - let user choose abilities first
+                    // The lock will be applied after ability choice is made or skipped
+                    
+                    // Show ability choice dialog immediately
+                    setTimeout(() => {
+                        this.pendingAbilityChoice = true;
+                        this.showAbilityChoiceDialog();
+                        // Only update UI after ability dialog is shown
+                        this.updateUI();
+                    }, 300);
+                }).catch(error => {
+                    console.error('Pick action failed:', error);
+                    // Even if pick fails, still show ability choice dialog if it was supposed to be your turn
+                    if (this.isYourTurn && this.currentActionType === 'pick') {
+                        console.log('Pick failed but still showing ability choice as fallback');
+                        setTimeout(() => {
+                            this.pendingAbilityChoice = true;
+                            this.showAbilityChoiceDialog();
+                            this.updateUI();
+                        }, 300);
+                    }
+                });
             }
             
-            selectAbility(abilityType) {
-                if (!this.isYourTurn) return;
-                if (this.currentPhase === 'ban') return;
+            showAbilityChoiceDialog() {
+                console.log('Showing ability choice dialog');
+                const modal = document.getElementById('ability-choice-modal');
+                const optionsContainer = document.getElementById('ability-choice-options');
                 
-                if (abilityType === 'force_nomod' && !this.abilities.force_nomod) {
-                    this.selectedAbility = abilityType;
-                    alert('Select a map to apply Force NoMod');
-                } else if ((abilityType === 'force_mod' && !this.abilities.force_mod) || 
-                           (abilityType === 'personal_mod' && this.abilities.personal_mod < 2)) {
-                    this.selectedAbility = abilityType;
-                    this.showModModal = true;
-                    this.openModModal();
+                if (!modal) {
+                    console.error('Ability choice modal not found!');
+                    return;
+                }
+                
+                console.log('Current abilities state:', this.abilities);
+                
+                // Clear existing options
+                optionsContainer.innerHTML = '';
+                
+                // Add available abilities
+                const abilities = [];
+                if (!this.abilities.force_nomod) {
+                    abilities.push({
+                        type: 'force_nomod',
+                        name: 'Force NoMod',
+                        description: 'Force both players to play with no mods',
+                        color: 'blue'
+                    });
+                }
+                if (!this.abilities.force_mod) {
+                    abilities.push({
+                        type: 'force_mod',
+                        name: 'Force Mod',
+                        description: 'Force both players to use a specific mod',
+                        color: 'purple'
+                    });
+                }
+                if (this.abilities.personal_mod < 2) {
+                    abilities.push({
+                        type: 'personal_mod',
+                        name: 'Personal Mod',
+                        description: 'Use a mod while opponent plays NoMod',
+                        color: 'green'
+                    });
+                }
+                
+                console.log('Available abilities:', abilities);
+                
+                abilities.forEach(ability => {
+                    const button = document.createElement('button');
+                    let buttonClass = '';
+                    if (ability.color === 'blue') {
+                        buttonClass = 'bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition';
+                    } else if (ability.color === 'purple') {
+                        buttonClass = 'bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded transition';
+                    } else if (ability.color === 'green') {
+                        buttonClass = 'bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition';
+                    }
+                    button.className = buttonClass;
+                    button.innerHTML = `
+                        <div class="text-left">
+                            <div class="font-bold">${ability.name}</div>
+                            <div class="text-xs opacity-80">${ability.description}</div>
+                        </div>
+                    `;
+                    button.onclick = () => this.chooseAbilityFromModal(ability.type);
+                    optionsContainer.appendChild(button);
+                });
+                
+                if (abilities.length === 0) {
+                    optionsContainer.innerHTML = '<div class="text-gray-400 text-center py-4">No abilities available</div>';
+                    console.log('No abilities available to show');
+                }
+                
+                console.log('Displaying modal...');
+                modal.style.display = 'flex';
+                modal.style.zIndex = '9999';
+                modal.style.position = 'fixed';
+                modal.style.top = '0';
+                modal.style.left = '0';
+                modal.style.right = '0';
+                modal.style.bottom = '0';
+                console.log('Modal display set to flex with enhanced positioning');
+                
+                // Force a repaint
+                modal.offsetHeight;
+            }
+            
+            canUseAbility(abilityType) {
+                // Check if the ability is still available
+                if (abilityType === 'force_nomod') {
+                    return !this.abilities.force_nomod;
+                } else if (abilityType === 'force_mod') {
+                    return !this.abilities.force_mod;
+                } else if (abilityType === 'personal_mod') {
+                    return this.abilities.personal_mod < 2;
+                }
+                return false;
+            }
+            
+            useAbilityDirectly(abilityType, mod = null) {
+                console.log('useAbilityDirectly called with:', abilityType, mod);
+                
+                // For abilities, we need to select which map to apply them to
+                if (this.pickedMaps.length === 0) {
+                    this.showErrorMessage('You need to pick a map first before using abilities.');
+                    return;
+                }
+                
+                // If there's only one picked map, use it
+                if (this.pickedMaps.length === 1) {
+                    const targetMap = this.pickedMaps[0];
+                    console.log('Using ability on only picked map:', targetMap);
+                    this.performAction('ability', targetMap.map_id, abilityType, mod);
+                    return;
+                }
+                
+                // Multiple maps available - show selection dialog
+                this.showMapSelectionForAbility(abilityType, mod);
+            }
+            
+            showMapSelectionForAbility(abilityType, mod = null) {
+                // Create a simple map selection dialog
+                const mapOptions = this.pickedMaps.map((pickedMap, index) => {
+                    const mapName = this.getMapDisplayName(pickedMap.map_id);
+                    return `${index + 1}. ${mapName} (Round ${index + 1})`;
+                }).join('\n');
+                
+                const abilityName = abilityType.replace('_', ' ').toUpperCase();
+                let modText = mod ? ` with ${mod.toUpperCase()}` : '';
+                
+                const choice = prompt(
+                    `Select a map to use ${abilityName}${modText} on:\n\n${mapOptions}\n\nEnter the number (1-${this.pickedMaps.length}):`,
+                    '1'
+                );
+                
+                if (choice === null) {
+                    // User cancelled
+                    return;
+                }
+                
+                const mapIndex = parseInt(choice) - 1;
+                if (mapIndex >= 0 && mapIndex < this.pickedMaps.length) {
+                    const targetMap = this.pickedMaps[mapIndex];
+                    console.log('Using ability on selected map:', targetMap);
+                    this.performAction('ability', targetMap.map_id, abilityType, mod);
+                } else {
+                    this.showErrorMessage('Invalid map selection. Please try again.');
                 }
             }
             
+            getMapDisplayName(mapId) {
+                // Try to find the actual map name from the mappool details
+                const playerMappoolDetails = {{ player_mappool_details | tojson | safe }};
+                const opponentMappoolDetails = {{ opponent_mappool_details | tojson | safe }};
+                const allMapDetails = [...playerMappoolDetails, ...opponentMappoolDetails];
+                const mapDetail = allMapDetails.find(m => m.id == mapId);
+                
+                if (mapDetail) {
+                    return mapDetail.title || `Map ${mapId}`;
+                }
+                return `Map ${mapId}`;
+            }
+            
+            chooseAbilityFromModal(abilityType) {
+                console.log('chooseAbilityFromModal called with:', abilityType);
+                const modal = document.getElementById('ability-choice-modal');
+                modal.style.display = 'none';
+                
+                if (abilityType === 'force_mod' || abilityType === 'personal_mod') {
+                    this.selectedAbility = abilityType;
+                    console.log('selectedAbility set to:', this.selectedAbility);
+                    this.openModModal();
+                } else {
+                    this.useAbility(abilityType);
+                }
+            }
+            
+            closeAbilityChoiceModal() {
+                const modal = document.getElementById('ability-choice-modal');
+                modal.style.display = 'none';
+                this.skipAbility(); // This will clear pendingAbilityChoice and show lock
+            }
+            
+            useAbility(abilityType, mod = null) {
+                console.log('useAbility called with:', abilityType, mod);
+                // Get the last picked map
+                const lastPickedMap = this.pickedMaps[this.pickedMaps.length - 1];
+                console.log('Last picked map:', lastPickedMap);
+                if (lastPickedMap) {
+                    console.log('Calling performAction with: ability,', lastPickedMap.map_id, abilityType, mod);
+                    this.performAction('ability', lastPickedMap.map_id, abilityType, mod).then(() => {
+                        // After ability is used, clear pending choice and update UI to show lock
+                        this.pendingAbilityChoice = false;
+                        this.updateUI(); // This will now show the lock since pendingAbilityChoice is false
+                    });
+                } else {
+                    console.log('No last picked map found!');
+                    this.pendingAbilityChoice = false;
+                    this.updateUI();
+                }
+            }
+            
+            skipAbility() {
+                // When skipping ability, clear pending choice and update UI to show lock
+                this.pendingAbilityChoice = false;
+                this.updateUI(); // This will now show the lock since pendingAbilityChoice is false
+            }
+            
             openModModal() {
+                console.log('openModModal called, selectedAbility:', this.selectedAbility);
                 const modal = document.getElementById('mod-modal');
                 if (modal) {
+                    console.log('Mod modal found, displaying');
                     modal.style.display = 'flex';
+                } else {
+                    console.error('Mod modal not found!');
                 }
             }
             
             closeModModal() {
                 this.showModModal = false;
-                this.selectedAbility = null;
                 const modal = document.getElementById('mod-modal');
                 if (modal) {
                     modal.style.display = 'none';
@@ -583,62 +1516,226 @@
             }
             
             selectMod(mod) {
-                this.closeModModal();
-                alert('Select a map to apply this mod to');
-            }
-            
-            useAbilityOnMap(mapId, mod = null) {
-                if (!this.selectedAbility) return;
+                console.log('selectMod called with:', mod, 'selectedAbility:', this.selectedAbility);
+                console.log('pendingAbilityChoice:', this.pendingAbilityChoice);
+                console.log('pickedMaps length:', this.pickedMaps.length);
                 
-                this.performAction('ability', mapId, this.selectedAbility, mod);
-                this.selectedAbility = null;
+                this.closeModModal();
+                if (this.selectedAbility) {
+                    console.log('Calling useAbility with:', this.selectedAbility, mod);
+                    // Check if this is from the post-pick ability choice or direct usage
+                    if (this.pendingAbilityChoice) {
+                        console.log('Using ability via post-pick flow');
+                        this.useAbility(this.selectedAbility, mod);
+                    } else {
+                        console.log('Using ability via direct flow');
+                        this.useAbilityDirectly(this.selectedAbility, mod);
+                    }
+                    this.selectedAbility = null;
+                } else {
+                    console.log('ERROR: No selectedAbility - skipping useAbility call');
+                    this.showErrorMessage('No ability selected. Please try again.');
+                    // Still clear pending state and show lock
+                    this.pendingAbilityChoice = false;
+                    this.updateUI();
+                }
             }
             
             initializeMaps() {
                 const yourMapsContainer = document.getElementById('your-maps');
                 const opponentMapsContainer = document.getElementById('opponent-maps');
                 
-                // Add placeholder maps
-                for (let i = 1; i <= 10; i++) {
-                    if (yourMapsContainer) {
+                // Get mappool data from template 
+                const playerMappoolDetails = {{ player_mappool_details | tojson | safe }};
+                const opponentMappoolDetails = {{ opponent_mappool_details | tojson | safe }};
+                
+                // Add your maps
+                if (yourMapsContainer && playerMappoolDetails.length > 0) {
+                    yourMapsContainer.innerHTML = ''; // Clear existing content
+                    playerMappoolDetails.forEach((mapDetail, index) => {
                         const mapEl = document.createElement('div');
-                        mapEl.className = 'map-card map-your-pool p-3 cursor-pointer';
-                        mapEl.onclick = () => this.handleMapClick(`your-map-${i}`);
+                        mapEl.className = 'map-card map-your-pool p-2 cursor-pointer';
+                        mapEl.id = `your-map-${mapDetail.id}`;
+                        mapEl.onclick = () => this.handleMapClick(mapDetail.id);
+                        
+                        const lengthStr = `${Math.floor(mapDetail.length / 60)}:${String(mapDetail.length % 60).padStart(2, '0')}`;
+                        
                         mapEl.innerHTML = `
-                            <div class="font-semibold text-blue-300">Your Map ${i}</div>
-                            <div class="text-xs text-gray-400">Click to ban/pick</div>
+                            <div class="flex justify-between items-start mb-1">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-blue-300 text-xs">${mapDetail.title}</div>
+                                    <div class="text-xs text-gray-400">${mapDetail.difficulty_name}</div>
+                                </div>
+                                <div class="text-yellow-400 font-bold text-xs">★${mapDetail.star_rating.toFixed(1)}</div>
+                            </div>
+                            <div class="grid grid-cols-4 gap-1 text-xs text-gray-400 mb-1">
+                                <div class="text-center">
+                                    <div class="text-white font-mono text-xs">${lengthStr}</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-white font-mono text-xs">${Math.round(mapDetail.bpm)}</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-white font-mono text-xs">${mapDetail.ar.toFixed(1)}</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-white font-mono text-xs">${mapDetail.od.toFixed(1)}</div>
+                                </div>
+                            </div>
                         `;
                         yourMapsContainer.appendChild(mapEl);
+                    });
+                } else if (yourMapsContainer) {
+                    // Fallback to old system
+                    const playerMappoolIds = {{ player_mappool_ids | safe }};
+                    if (playerMappoolIds.length > 0) {
+                        yourMapsContainer.innerHTML = '';
+                        playerMappoolIds.forEach((beatmapId, index) => {
+                            const mapEl = document.createElement('div');
+                            mapEl.className = 'map-card map-your-pool p-3 cursor-pointer';
+                            mapEl.id = `your-map-${beatmapId}`;
+                            mapEl.onclick = () => this.handleMapClick(beatmapId);
+                            mapEl.innerHTML = `
+                                <div class="font-semibold text-blue-300">Your Map ${index + 1}</div>
+                                <div class="text-xs text-gray-400">ID: ${beatmapId}</div>
+                                <div class="text-xs text-gray-400">Click to ban/pick</div>
+                            `;
+                            yourMapsContainer.appendChild(mapEl);
+                        });
+                    } else {
+                        // Add placeholder maps if no data available
+                        for (let i = 1; i <= 10; i++) {
+                            const mapEl = document.createElement('div');
+                            mapEl.className = 'map-card map-your-pool p-3 cursor-pointer';
+                            mapEl.onclick = () => this.handleMapClick(`your-map-${i}`);
+                            mapEl.innerHTML = `
+                                <div class="font-semibold text-blue-300">Your Map ${i}</div>
+                                <div class="text-xs text-gray-400">Click to ban/pick</div>
+                            `;
+                            yourMapsContainer.appendChild(mapEl);
+                        }
                     }
-                    
-                    if (opponentMapsContainer) {
+                }
+                
+                // Add opponent maps
+                if (opponentMapsContainer && opponentMappoolDetails.length > 0) {
+                    opponentMapsContainer.innerHTML = ''; // Clear existing content
+                    opponentMappoolDetails.forEach((mapDetail, index) => {
                         const mapEl = document.createElement('div');
-                        mapEl.className = 'map-card map-opponent-pool p-3 cursor-pointer';
-                        mapEl.onclick = () => this.handleMapClick(`opp-map-${i}`);
+                        mapEl.className = 'map-card map-opponent-pool p-2 cursor-pointer';
+                        mapEl.id = `opp-map-${mapDetail.id}`;
+                        mapEl.onclick = () => this.handleMapClick(mapDetail.id);
+                        
+                        const lengthStr = `${Math.floor(mapDetail.length / 60)}:${String(mapDetail.length % 60).padStart(2, '0')}`;
+                        
                         mapEl.innerHTML = `
-                            <div class="font-semibold text-yellow-300">Opponent Map ${i}</div>
-                            <div class="text-xs text-gray-400">Click to ban/pick</div>
+                            <div class="flex justify-between items-start mb-1">
+                                <div class="flex-1">
+                                    <div class="font-semibold text-yellow-300 text-xs">${mapDetail.title}</div>
+                                    <div class="text-xs text-yellow-200">${mapDetail.difficulty_name}</div>
+                                </div>
+                                <div class="text-yellow-400 font-bold text-xs">★${mapDetail.star_rating.toFixed(1)}</div>
+                            </div>
+                            <div class="grid grid-cols-4 gap-1 text-xs text-gray-400 mb-1">
+                                <div class="text-center">
+                                    <div class="text-white font-mono text-xs">${lengthStr}</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-white font-mono text-xs">${Math.round(mapDetail.bpm)}</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-white font-mono text-xs">${mapDetail.ar.toFixed(1)}</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-white font-mono text-xs">${mapDetail.od.toFixed(1)}</div>
+                                </div>
+                            </div>
                         `;
                         opponentMapsContainer.appendChild(mapEl);
+                    });
+                } else if (opponentMapsContainer) {
+                    // Fallback to old system
+                    const opponentMappoolIds = {{ opponent_mappool_ids | safe }};
+                    if (opponentMappoolIds.length > 0) {
+                        opponentMapsContainer.innerHTML = '';
+                        opponentMappoolIds.forEach((beatmapId, index) => {
+                            const mapEl = document.createElement('div');
+                            mapEl.className = 'map-card map-opponent-pool p-3 cursor-pointer';
+                            mapEl.id = `opp-map-${beatmapId}`;
+                            mapEl.onclick = () => this.handleMapClick(beatmapId);
+                            mapEl.innerHTML = `
+                                <div class="font-semibold text-yellow-300">Opponent Map ${index + 1}</div>
+                                <div class="text-xs text-gray-400">ID: ${beatmapId}</div>
+                                <div class="text-xs text-gray-400">Click to ban/pick</div>
+                            `;
+                            opponentMapsContainer.appendChild(mapEl);
+                        });
+                    } else {
+                        // Add placeholder maps if no data available
+                        for (let i = 1; i <= 10; i++) {
+                            const mapEl = document.createElement('div');
+                            mapEl.className = 'map-card map-opponent-pool p-3 cursor-pointer';
+                            mapEl.onclick = () => this.handleMapClick(`opp-map-${i}`);
+                            mapEl.innerHTML = `
+                                <div class="font-semibold text-yellow-300">Opponent Map ${i}</div>
+                                <div class="text-xs text-gray-400">Click to ban/pick</div>
+                            `;
+                            opponentMapsContainer.appendChild(mapEl);
+                        }
                     }
                 }
             }
             
             handleMapClick(mapId) {
-                if (this.selectedAbility) {
-                    if (this.selectedAbility === 'force_mod' || this.selectedAbility === 'personal_mod') {
-                        const mod = prompt('Enter mod (HD, HR, DT, FL, EZ, HT):');
-                        if (mod) {
-                            this.useAbilityOnMap(mapId, mod.toUpperCase());
-                        }
-                    } else {
-                        this.useAbilityOnMap(mapId);
-                    }
-                } else if (this.currentPhase === 'ban') {
+                // Update map visual states
+                this.updateMapVisualStates();
+                
+                const actionType = this.currentActionType;
+                
+                if (actionType === 'ban') {
                     this.banMap(mapId);
-                } else if (this.currentPhase === 'pick') {
+                } else if (actionType === 'pick') {
                     this.pickMap(mapId);
+                } else if (actionType === 'ability_choice') {
+                    alert('Use the ability choice dialog to select your ability first, or click "Skip Ability" to continue without using an ability.');
+                } else if (actionType === 'force_nomod_counter') {
+                    alert('Use the Force NoMod counter dialog to respond to your opponent\'s Personal Mod, or click "Skip" to allow their mod.');
+                } else if (actionType === 'play') {
+                    alert('This round is ready to play! No more actions needed.');
+                } else {
+                    alert('It\'s not your turn or no action is available.');
                 }
+            }
+            
+            updateMapVisualStates() {
+                // Update all map cards to show their current state
+                const allMaps = document.querySelectorAll('.map-card');
+                allMaps.forEach(mapElement => {
+                    const mapId = mapElement.id.replace('your-map-', '').replace('opp-map-', '');
+                    
+                    // Reset classes
+                    mapElement.classList.remove('map-banned', 'map-picked', 'disabled');
+                    
+                    // Check if banned
+                    if (this.bannedMaps.includes(mapId)) {
+                        mapElement.classList.add('map-banned', 'disabled');
+                    }
+                    
+                    // Check if picked
+                    else if (this.pickedMaps.some(p => p.map_id === mapId)) {
+                        mapElement.classList.add('map-picked');
+                    }
+                    
+                    // Disable if not your turn
+                    else if (!this.isYourTurn) {
+                        mapElement.classList.add('disabled');
+                        mapElement.style.opacity = '0.6';
+                        mapElement.style.cursor = 'not-allowed';
+                    } else {
+                        mapElement.style.opacity = '1';
+                        mapElement.style.cursor = 'pointer';
+                    }
+                });
             }
             
             setupModalEvents() {
@@ -646,7 +1743,309 @@
                 document.addEventListener('click', (e) => {
                     const modal = e.target.closest('.fixed.inset-0');
                     if (modal && e.target === modal) {
-                        this.closeModModal();
+                        if (modal.id === 'mod-modal') {
+                            this.closeModModal();
+                        } else if (modal.id === 'ability-choice-modal') {
+                            this.closeAbilityChoiceModal();
+                        } else if (modal.id === 'force-nomod-counter-modal') {
+                            this.closeForceNoModCounterModal();
+                        }
+                    }
+                });
+            }
+
+            showForceNoModCounterModal() {
+                if (!this.pendingCounterData || this.abilities.force_nomod) return;
+
+                const modal = document.getElementById('force-nomod-counter-modal');
+                const mapNameEl = document.getElementById('counter-map-name');
+                const opponentModEl = document.getElementById('counter-opponent-mod');
+                const useBtn = document.getElementById('use-force-nomod-btn');
+
+                // Set the map name and opponent's mod
+                mapNameEl.textContent = this.pendingCounterData.map_name || 'Selected Map';
+                opponentModEl.textContent = this.pendingCounterData.opponent_mod || 'Unknown Mod';
+
+                // Disable button if Force NoMod already used
+                if (this.abilities.force_nomod) {
+                    useBtn.disabled = true;
+                    useBtn.textContent = 'Force NoMod Already Used';
+                    useBtn.className = 'bg-gray-600 text-white font-bold py-2 px-4 rounded cursor-not-allowed flex-1';
+                }
+
+                modal.style.display = 'flex';
+            }
+
+            closeForceNoModCounterModal() {
+                const modal = document.getElementById('force-nomod-counter-modal');
+                modal.style.display = 'none';
+            }
+
+            async useForceNoModCounter() {
+                if (!this.pendingCounterData || this.abilities.force_nomod) return;
+
+                try {
+                    this.setLoading(true);
+                    
+                    const formData = new FormData();
+                    formData.append('action_type', 'force_nomod_counter');
+                    formData.append('target_map', this.pendingCounterData.map_id);
+
+                    const response = await fetch(`/player/match/${this.matchId}/action`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        this.closeForceNoModCounterModal();
+                        this.pendingForceNoModCounter = false;
+                        this.pendingCounterData = null;
+                        await this.loadMatchState();
+                    } else {
+                        alert(result.error || 'Failed to use Force NoMod counter');
+                    }
+                } catch (error) {
+                    console.error('Error using Force NoMod counter:', error);
+                    alert('Network error occurred');
+                } finally {
+                    this.setLoading(false);
+                }
+            }
+
+            skipForceNoModCounter() {
+                this.performSkipForceNoModCounter();
+            }
+
+            async performSkipForceNoModCounter() {
+                if (!this.pendingCounterData) return;
+
+                try {
+                    this.setLoading(true);
+                    
+                    const formData = new FormData();
+                    formData.append('action_type', 'skip_force_nomod_counter');
+                    formData.append('target_map', this.pendingCounterData.map_id);
+
+                    const response = await fetch(`/player/match/${this.matchId}/action`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        this.closeForceNoModCounterModal();
+                        this.pendingForceNoModCounter = false;
+                        this.pendingCounterData = null;
+                        await this.loadMatchState();
+                    } else {
+                        alert(result.error || 'Failed to skip Force NoMod counter');
+                    }
+                } catch (error) {
+                    console.error('Error skipping Force NoMod counter:', error);
+                    alert('Network error occurred');
+                } finally {
+                    this.setLoading(false);
+                }
+            }
+
+            updatePickedMapsDisplay() {
+                const section = document.getElementById('picked-maps-section');
+                const display = document.getElementById('picked-maps-display');
+
+                if (this.pickedMaps.length === 0) {
+                    section.style.display = 'none';
+                    return;
+                }
+
+                section.style.display = 'block';
+                display.innerHTML = '';
+
+                this.pickedMaps.forEach((pickedMap, index) => {
+                    const mapElement = document.createElement('div');
+                    mapElement.className = 'bg-gray-800 rounded-lg p-4 border-l-4 border-green-500';
+
+                    // Get map details if available
+                    const playerMappoolDetails = {{ player_mappool_details | tojson | safe }};
+                    const opponentMappoolDetails = {{ opponent_mappool_details | tojson | safe }};
+                    const allMapDetails = [...playerMappoolDetails, ...opponentMappoolDetails];
+                    const mapDetail = allMapDetails.find(m => m.id == pickedMap.map_id);
+
+                    // Determine mod display
+                    let modDisplay = '';
+                    let modClass = 'text-gray-400';
+                    const mapMod = this.mapMods[pickedMap.map_id];
+
+                    if (mapMod === 'nomod') {
+                        modDisplay = 'NoMod (Forced)';
+                        modClass = 'text-blue-400';
+                    } else if (typeof mapMod === 'string') {
+                        modDisplay = `${mapMod.toUpperCase()} (Both Players)`;
+                        modClass = 'text-purple-400';
+                    } else if (typeof mapMod === 'object' && mapMod.type === 'personal') {
+                        const isYourMod = mapMod.player === (this.isPlayer1 ? 'player1' : 'player2');
+                        if (isYourMod) {
+                            modDisplay = `${mapMod.mod.toUpperCase()} (You Only)`;
+                            modClass = 'text-green-400';
+                        } else {
+                            modDisplay = `${mapMod.mod.toUpperCase()} (Opponent Only)`;
+                            modClass = 'text-yellow-400';
+                        }
+                    } else {
+                        modDisplay = 'NoMod (Default)';
+                        modClass = 'text-gray-400';
+                    }
+
+                    // Create map display
+                    let mapInfo = '';
+                    if (mapDetail) {
+                        const lengthStr = `${Math.floor(mapDetail.length / 60)}:${String(mapDetail.length % 60).padStart(2, '0')}`;
+                        mapInfo = `
+                            <div class="mb-2">
+                                <div class="font-bold text-white">${mapDetail.title}</div>
+                                <div class="text-sm text-gray-400">${mapDetail.difficulty_name} • ★${mapDetail.star_rating.toFixed(1)}</div>
+                            </div>
+                            <div class="grid grid-cols-4 gap-4 text-xs text-gray-400 mb-2">
+                                <div><span class="text-gray-500">Length:</span> ${lengthStr}</div>
+                                <div><span class="text-gray-500">BPM:</span> ${Math.round(mapDetail.bpm)}</div>
+                                <div><span class="text-gray-500">AR:</span> ${mapDetail.ar.toFixed(1)}</div>
+                                <div><span class="text-gray-500">OD:</span> ${mapDetail.od.toFixed(1)}</div>
+                            </div>
+                        `;
+                    } else {
+                        mapInfo = `
+                            <div class="mb-2">
+                                <div class="font-bold text-white">Map ${index + 1}</div>
+                                <div class="text-sm text-gray-400">ID: ${pickedMap.map_id}</div>
+                            </div>
+                        `;
+                    }
+
+                    mapElement.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                ${mapInfo}
+                                <div class="text-sm">
+                                    <span class="text-gray-500">Picked by:</span> 
+                                    <span class="text-green-400 font-semibold">${pickedMap.picked_by === 'player1' ? '{{ match.player1.name }}' : '{{ match.player2.name }}'}</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-lg font-bold ${modClass}">
+                                    ${modDisplay}
+                                </div>
+                                <div class="text-xs text-gray-500">Round ${index + 1}</div>
+                            </div>
+                        </div>
+                    `;
+
+                    display.appendChild(mapElement);
+                });
+            }
+
+            updateInterfaceLock() {
+                // Check if interface should be locked
+                const isInterfaceLocked = this.shouldLockInterface();
+                
+                // Update lock status display
+                const lockStatus = document.getElementById('lock-status');
+                if (!lockStatus) {
+                    // Create lock status element if it doesn't exist
+                    const statusElement = document.createElement('div');
+                    statusElement.id = 'lock-status';
+                    statusElement.className = 'fixed top-16 left-1/2 transform -translate-x-1/2 z-50';
+                    document.body.appendChild(statusElement);
+                }
+                
+                const lockElement = document.getElementById('lock-status');
+                
+                if (isInterfaceLocked) {
+                    lockElement.innerHTML = `
+                        <div class="bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg border-2 border-red-400">
+                            <div class="flex items-center justify-center">
+                                <span class="text-xl mr-2">🔒</span>
+                                <div class="text-center">
+                                    <div class="font-bold">INTERFACE LOCKED</div>
+                                    <div class="text-sm">Waiting for match result to be recorded</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    lockElement.style.display = 'block';
+                    
+                    // Disable all map interactions
+                    this.disableMapInteractions();
+                } else {
+                    lockElement.style.display = 'none';
+                    // Re-enable map interactions if it's the player's turn
+                    this.enableMapInteractions();
+                }
+            }
+
+            shouldLockInterface() {
+                // Don't lock while player is choosing abilities after their pick
+                if (this.pendingAbilityChoice) return false;
+                
+                // Interface should be locked after EACH individual pick until a point is scored
+                
+                // No lock during ban phase
+                if (this.currentStep < 6) return false;
+                
+                // After bans are complete: lock after EVERY pick until a point is scored
+                if (this.pickedMaps.length > 0) {
+                    // Rule: After each pick, need a corresponding point scored
+                    // Each pick should result in one point being awarded
+                    if (this.currentMatchScore < this.pickedMaps.length) {
+                        return true; // Lock - waiting for point to be scored for this pick
+                    }
+                }
+                
+                return false;
+            }
+
+            disableMapInteractions() {
+                const allMaps = document.querySelectorAll('.map-card');
+                allMaps.forEach(mapElement => {
+                    mapElement.classList.add('disabled');
+                    mapElement.style.opacity = '0.4';
+                    mapElement.style.cursor = 'not-allowed';
+                    mapElement.style.pointerEvents = 'none';
+                });
+                
+                // Disable ability cards
+                const abilityCards = document.querySelectorAll('.ability-card');
+                abilityCards.forEach(card => {
+                    if (!card.classList.contains('ability-used')) {
+                        card.classList.add('disabled');
+                        card.style.opacity = '0.4';
+                        card.style.cursor = 'not-allowed';
+                        card.style.pointerEvents = 'none';
+                    }
+                });
+            }
+
+            enableMapInteractions() {
+                const allMaps = document.querySelectorAll('.map-card');
+                allMaps.forEach(mapElement => {
+                    if (!mapElement.classList.contains('map-banned') && 
+                        !mapElement.classList.contains('map-picked')) {
+                        mapElement.classList.remove('disabled');
+                        mapElement.style.opacity = '1';
+                        mapElement.style.cursor = 'pointer';
+                        mapElement.style.pointerEvents = 'auto';
+                    }
+                });
+                
+                // Re-enable ability cards
+                const abilityCards = document.querySelectorAll('.ability-card');
+                abilityCards.forEach(card => {
+                    if (!card.classList.contains('ability-used')) {
+                        card.classList.remove('disabled');
+                        card.style.opacity = '1';
+                        card.style.cursor = 'pointer';
+                        card.style.pointerEvents = 'auto';
                     }
                 });
             }
@@ -665,8 +2064,38 @@
         
         // Global functions for onclick handlers
         function selectAbility(abilityType) {
+            console.log('Global selectAbility called with:', abilityType);
             if (window.matchInterface) {
-                window.matchInterface.selectAbility(abilityType);
+                console.log('MatchInterface exists, checking ability availability');
+                
+                // Check if abilities can be used right now
+                if (!window.matchInterface.canUseAbility(abilityType)) {
+                    console.log('Ability cannot be used:', abilityType);
+                    alert('This ability cannot be used right now. Either you have already used it, or it is not available.');
+                    return;
+                }
+                console.log('Ability can be used:', abilityType);
+                
+                // Check if there are picked maps to target
+                if (window.matchInterface.pickedMaps.length === 0) {
+                    console.log('No picked maps available');
+                    alert('You need to pick a map first before using abilities.');
+                    return;
+                }
+                console.log('Picked maps available:', window.matchInterface.pickedMaps.length);
+                
+                // Handle mod selection for abilities that require it
+                if (abilityType === 'force_mod' || abilityType === 'personal_mod') {
+                    console.log('Ability requires mod selection, setting selectedAbility and opening modal');
+                    window.matchInterface.selectedAbility = abilityType;
+                    window.matchInterface.openModModal();
+                } else {
+                    console.log('Ability does not require mod selection, using directly');
+                    // Direct use for abilities that don't need mod selection
+                    window.matchInterface.useAbilityDirectly(abilityType);
+                }
+            } else {
+                console.error('MatchInterface not available!');
             }
         }
         
@@ -681,6 +2110,37 @@
                 window.matchInterface.closeModModal();
             }
         }
+        
+        function showHistoryModal() {
+            if (window.matchInterface) {
+                window.matchInterface.showHistoryModal();
+            }
+        }
+        
+        function closeHistoryModal() {
+            if (window.matchInterface) {
+                window.matchInterface.closeHistoryModal();
+            }
+        }
+        
+        function skipAbilityChoice() {
+            if (window.matchInterface) {
+                window.matchInterface.closeAbilityChoiceModal();
+            }
+        }
+
+        function useForceNoModCounter() {
+            if (window.matchInterface) {
+                window.matchInterface.useForceNoModCounter();
+            }
+        }
+
+        function skipForceNoModCounter() {
+            if (window.matchInterface) {
+                window.matchInterface.skipForceNoModCounter();
+            }
+        }
     </script>
 </body>
 </html>
+

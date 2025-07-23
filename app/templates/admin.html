@@ -241,7 +241,7 @@
             <!-- Welcome/Outro Screen Controls -->
             <div class="border-t border-gray-600 pt-4">
                 <h3 class="text-lg text-blue-400 mb-3">✨ Special Screens</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                     <!-- Welcome Screen -->
                     <form action="{{ url_for('admin.overlay_show_welcome') }}" method="POST" class="inline">
                         <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition-colors">
@@ -252,6 +252,19 @@
                     <form action="{{ url_for('admin.overlay_hide_welcome') }}" method="POST" class="inline">
                         <button type="submit" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors">
                             ❌ Hide Welcome
+                        </button>
+                    </form>
+                    
+                    <!-- Match Interface -->
+                    <form action="{{ url_for('admin.overlay_show_match_interface') }}" method="POST" class="inline">
+                        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                            🎯 Show Match Interface
+                        </button>
+                    </form>
+                    
+                    <form action="{{ url_for('admin.overlay_hide_match_interface') }}" method="POST" class="inline">
+                        <button type="submit" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                            ❌ Hide Match Interface
                         </button>
                     </form>
                     
@@ -452,6 +465,46 @@
                                 🔄 Refresh Scores from osu!
                             </button>
                         </form>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Tiebreaker Management (3-3 matches) -->
+                    {% if ns.current_match.get('score_p1', 0) == 3 and ns.current_match.get('score_p2', 0) == 3 %}
+                    <div class="bg-yellow-900 border border-yellow-600 p-4 rounded">
+                        <h4 class="text-md font-bold text-yellow-400 mb-3">⚡ Tiebreaker Match (3-3)</h4>
+                        <p class="text-sm text-yellow-200 mb-3">
+                            This match is tied 3-3. Set the tiebreaker map that will determine the winner.
+                        </p>
+                        
+                        {% if ns.current_match.get('tiebreaker_map_url') %}
+                        <div class="mb-3 p-2 bg-yellow-800 rounded">
+                            <p class="text-sm text-yellow-100 mb-2">Current Tiebreaker Map:</p>
+                            <a href="{{ ns.current_match.tiebreaker_map_url }}" target="_blank" 
+                               class="text-yellow-300 hover:text-yellow-200 font-mono text-sm break-all">
+                                {{ ns.current_match.tiebreaker_map_url }}
+                            </a>
+                        </div>
+                        {% endif %}
+                        
+                        <form action="{{ url_for('admin.set_tiebreaker_map') }}" method="POST" class="flex gap-2">
+                            <input type="hidden" name="match_id" value="{{ ns.current_match.id }}">
+                            <input type="url" name="tiebreaker_map_url" 
+                                   placeholder="https://osu.ppy.sh/beatmapsets/123456#osu/789012" 
+                                   value="{{ ns.current_match.get('tiebreaker_map_url', '') }}"
+                                   class="flex-1 bg-gray-900 border border-yellow-600 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                            <button type="submit" class="bg-yellow-600 hover:bg-yellow-700 text-black font-bold px-4 py-2 rounded text-sm">
+                                ⚡ Set Tiebreaker
+                            </button>
+                        </form>
+                        
+                        {% if ns.current_match.get('tiebreaker_map_url') %}
+                        <form action="{{ url_for('admin.clear_tiebreaker_map') }}" method="POST" class="inline mt-2">
+                            <input type="hidden" name="match_id" value="{{ ns.current_match.id }}">
+                            <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
+                                Clear Tiebreaker
+                            </button>
+                        </form>
+                        {% endif %}
                     </div>
                     {% endif %}
                     

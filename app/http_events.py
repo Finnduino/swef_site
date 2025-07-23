@@ -47,6 +47,26 @@ def get_current_match_data():
                     break
         
         if current_match:
+            # Find current/last picked map for display
+            current_map = None
+            match_state = current_match.get('match_state', {})
+            picked_maps = match_state.get('picked_maps', [])
+            
+            if picked_maps:
+                # Get the last picked map details
+                last_picked = picked_maps[-1]
+                map_id = last_picked.get('map_id')
+                
+                # Find the map details from player mappools
+                player1_mappool = current_match.get('player1', {}).get('mappool_details', [])
+                player2_mappool = current_match.get('player2', {}).get('mappool_details', [])
+                combined_mappool = player1_mappool + player2_mappool
+                
+                for map_details in combined_mappool:
+                    if str(map_details.get('id')) == str(map_id):
+                        current_map = map_details
+                        break
+            
             return {
                 'match_found': True,
                 'player1': current_match.get('player1', {}),
@@ -55,7 +75,13 @@ def get_current_match_data():
                 'score_p2': current_match.get('score_p2', 0),
                 'status': current_match.get('status', 'unknown'),
                 'bracket': bracket_type,
-                'round_index': round_index
+                'round_index': round_index,
+                'tiebreaker_map_url': current_match.get('tiebreaker_map_url'),
+                'is_tiebreaker': current_match.get('score_p1', 0) == 3 and current_match.get('score_p2', 0) == 3,
+                'current_map': current_map,
+                'picked_maps': picked_maps,
+                'phase': match_state.get('phase', 'waiting'),
+                'interface_locked': len(picked_maps) > 0 and (current_match.get('score_p1', 0) + current_match.get('score_p2', 0)) < len(picked_maps)
             }
         
         return {

@@ -70,6 +70,10 @@ class MatchService:
         if not match:
             return {'message': 'Match not found.', 'type': 'error'}
         
+        # Store previous scores to detect changes
+        prev_score_p1 = match.get('score_p1', 0)
+        prev_score_p2 = match.get('score_p2', 0)
+        
         match['score_p1'] = score_p1
         match['score_p2'] = score_p2
         
@@ -80,6 +84,25 @@ class MatchService:
                 return {'message': 'Invalid multiplayer room URL format.', 'type': 'error'}
         else:
             match['mp_room_url'] = None
+        
+        # Handle turn order changes when score is updated
+        if 'match_state' in match and (score_p1 != prev_score_p1 or score_p2 != prev_score_p2):
+            match_state = match['match_state']
+            
+            # If a point was scored and we have picked maps
+            picks_made = len(match_state.get('picked_maps', []))
+            if picks_made >= 1:
+                # Determine who lost the last round and should pick first next
+                if score_p1 > prev_score_p1:
+                    # Player 1 won, so Player 2 should pick first next round
+                    match_state['current_turn'] = 'player2'
+                elif score_p2 > prev_score_p2:
+                    # Player 2 won, so Player 1 should pick first next round  
+                    match_state['current_turn'] = 'player1'
+                
+                # Ensure we're in pick phase if the match isn't completed
+                if score_p1 < 4 and score_p2 < 4:
+                    match_state['phase'] = 'pick'
         
         # Determine winner and status
         if score_p1 == 4:
@@ -95,6 +118,7 @@ class MatchService:
             else:
                 match['status'] = match.get('status', 'next_up')
         
+        save_tournament_data(data)
         advance_round_if_ready(data)
         return {'message': 'Match score updated successfully.', 'type': 'success'}
     

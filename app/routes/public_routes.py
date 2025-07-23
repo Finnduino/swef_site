@@ -206,3 +206,99 @@ def get_overlay_events():
             'error': str(e),
             'events': []
         }), 500
+
+@public_bp.route('/api/match-interface-state')
+def get_match_interface_state():
+    """Get current match interface state for streaming overlay"""
+    try:
+        from ..http_events import get_current_match_data
+        match_data = get_current_match_data()
+        
+        if not match_data.get('match_found'):
+            return jsonify({
+                'match_found': False,
+                'message': 'No active match found'
+            })
+        
+        # Get the full tournament data to access match_state
+        data = get_tournament_data()
+        current_match = None
+        
+        # Find the current match in the bracket structure
+        if 'grand_finals' in data.get('brackets', {}):
+            match = data['brackets']['grand_finals']
+            if match and match.get('status') in ['in_progress', 'next_up']:
+                current_match = match
+        
+        if not current_match and 'upper' in data.get('brackets', {}):
+            for round_matches in data['brackets']['upper']:
+                for match in round_matches:
+                    if match and match.get('status') in ['in_progress', 'next_up']:
+                        current_match = match
+                        break
+                if current_match:
+                    break
+        
+        if not current_match and 'lower' in data.get('brackets', {}):
+            for round_matches in data['brackets']['lower']:
+                for match in round_matches:
+                    if match and match.get('status') in ['in_progress', 'next_up']:
+                        current_match = match
+                        break
+                if current_match:
+                    break
+        
+        if not current_match:
+            return jsonify({
+                'match_found': False,
+                'message': 'Current match not found in brackets'
+            })
+        
+        # Extract match interface data
+        match_state = current_match.get('match_state', {})
+        
+        # Get mappool details from both players
+        player1_mappool = current_match.get('player1', {}).get('mappool_details', [])
+        player2_mappool = current_match.get('player2', {}).get('mappool_details', [])
+        combined_mappool = player1_mappool + player2_mappool
+        
+        # Calculate interface lock status
+        picked_maps = match_state.get('picked_maps', [])
+        current_score = current_match.get('score_p1', 0) + current_match.get('score_p2', 0)
+        is_interface_locked = len(picked_maps) > 0 and current_score < len(picked_maps)
+        
+        # Debug logging
+        print(f"Match interface API debug:")
+        print(f"  Current match ID: {current_match.get('id', 'no-id')}")
+        print(f"  Player1 mappool count: {len(player1_mappool)}")
+        print(f"  Player2 mappool count: {len(player2_mappool)}")
+        print(f"  Combined mappool count: {len(combined_mappool)}")
+        print(f"  Picked maps count: {len(picked_maps)}")
+        print(f"  Current score total: {current_score}")
+        print(f"  Interface locked: {is_interface_locked}")
+        
+        return jsonify({
+            'match_found': True,
+            'player1': current_match.get('player1', {}),
+            'player2': current_match.get('player2', {}),
+            'score_p1': current_match.get('score_p1', 0),
+            'score_p2': current_match.get('score_p2', 0),
+            'phase': match_state.get('phase', 'waiting'),
+            'current_turn': match_state.get('current_turn', ''),
+            'first_player': match_state.get('first_player', ''),
+            'banned_maps': match_state.get('banned_maps', []),
+            'picked_maps': picked_maps,
+            'abilities_used': match_state.get('abilities_used', {}),
+            'mappool': combined_mappool,
+            'action_log': match_state.get('action_log', []),
+            'interface_locked': is_interface_locked,
+            'tiebreaker_map_url': current_match.get('tiebreaker_map_url'),
+            'is_tiebreaker': current_match.get('score_p1', 0) == 3 and current_match.get('score_p2', 0) == 3,
+            'timestamp': data.get('last_updated', '')
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'match_found': False
+        }), 500

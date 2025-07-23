@@ -624,6 +624,129 @@ def overlay_hide_outro():
     return redirect(url_for('admin.admin_panel'))
 
 
+@admin_bp.route('/overlay/show_match_interface', methods=['POST'])
+@admin_required
+def overlay_show_match_interface():
+    """Show match interface overlay"""
+    from ..overlay_state import add_overlay_event
+    add_overlay_event('show_match_interface')
+    flash('Match interface overlay shown', 'success')
+    return redirect(url_for('admin.admin_panel'))
+
+
+@admin_bp.route('/overlay/hide_match_interface', methods=['POST'])
+@admin_required
+def overlay_hide_match_interface():
+    """Hide match interface overlay"""
+    from ..overlay_state import add_overlay_event
+    add_overlay_event('hide_match_interface')
+    flash('Match interface overlay hidden', 'success')
+    return redirect(url_for('admin.admin_panel'))
+
+
+@admin_bp.route('/set_tiebreaker_map', methods=['POST'])
+@admin_required
+def set_tiebreaker_map():
+    """Set tiebreaker map for a 3-3 match"""
+    match_id = request.form.get('match_id')
+    tiebreaker_map_url = request.form.get('tiebreaker_map_url', '').strip()
+    
+    if not match_id:
+        flash('Match ID is required', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    try:
+        data = get_tournament_data()
+        match_found = False
+        
+        # Find the match in all brackets
+        for bracket_type in ['upper', 'lower', 'grand_finals']:
+            if bracket_type in data.get('brackets', {}):
+                if bracket_type == 'grand_finals':
+                    match = data['brackets'][bracket_type]
+                    if isinstance(match, dict) and match.get('id') == match_id:
+                        # Verify it's actually 3-3
+                        if match.get('score_p1', 0) == 3 and match.get('score_p2', 0) == 3:
+                            match['tiebreaker_map_url'] = tiebreaker_map_url
+                            match_found = True
+                            break
+                else:
+                    for round_matches in data['brackets'][bracket_type]:
+                        for match in round_matches:
+                            if match and match.get('id') == match_id:
+                                # Verify it's actually 3-3
+                                if match.get('score_p1', 0) == 3 and match.get('score_p2', 0) == 3:
+                                    match['tiebreaker_map_url'] = tiebreaker_map_url
+                                    match_found = True
+                                    break
+                        if match_found:
+                            break
+                if match_found:
+                    break
+        
+        if match_found:
+            save_tournament_data(data)
+            broadcast_match_update()
+            flash(f'Tiebreaker map set for match {match_id}', 'success')
+        else:
+            flash('Match not found or not in 3-3 state', 'error')
+            
+    except Exception as e:
+        flash(f'Error setting tiebreaker map: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.admin_panel'))
+
+
+@admin_bp.route('/clear_tiebreaker_map', methods=['POST'])
+@admin_required
+def clear_tiebreaker_map():
+    """Clear tiebreaker map for a match"""
+    match_id = request.form.get('match_id')
+    
+    if not match_id:
+        flash('Match ID is required', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    try:
+        data = get_tournament_data()
+        match_found = False
+        
+        # Find the match in all brackets
+        for bracket_type in ['upper', 'lower', 'grand_finals']:
+            if bracket_type in data.get('brackets', {}):
+                if bracket_type == 'grand_finals':
+                    match = data['brackets'][bracket_type]
+                    if isinstance(match, dict) and match.get('id') == match_id:
+                        if 'tiebreaker_map_url' in match:
+                            del match['tiebreaker_map_url']
+                        match_found = True
+                        break
+                else:
+                    for round_matches in data['brackets'][bracket_type]:
+                        for match in round_matches:
+                            if match and match.get('id') == match_id:
+                                if 'tiebreaker_map_url' in match:
+                                    del match['tiebreaker_map_url']
+                                match_found = True
+                                break
+                        if match_found:
+                            break
+                if match_found:
+                    break
+        
+        if match_found:
+            save_tournament_data(data)
+            broadcast_match_update()
+            flash(f'Tiebreaker map cleared for match {match_id}', 'success')
+        else:
+            flash('Match not found', 'error')
+            
+    except Exception as e:
+        flash(f'Error clearing tiebreaker map: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.admin_panel'))
+
+
 # Developer Authentication Endpoints
 @admin_bp.route('/dev_login_as_user', methods=['POST'])
 @admin_required

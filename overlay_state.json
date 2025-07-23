@@ -1,57 +1,57 @@
 {
   "afk_mode": false,
   "victory_screen_hidden": false,
-  "last_updated": "2025-07-22T19:12:01.275769",
+  "last_updated": "2025-07-23T15:29:59.345052",
   "events": [
     {
-      "type": "hide_victory_screens",
+      "type": "hide_match_interface",
       "data": {},
-      "timestamp": "2025-07-22T18:57:58.511628"
-    },
-    {
-      "type": "hide_victory_screens",
-      "data": {},
-      "timestamp": "2025-07-22T18:58:04.925339"
-    },
-    {
-      "type": "toggle_afk",
-      "data": {},
-      "timestamp": "2025-07-22T18:58:10.777733"
+      "timestamp": "2025-07-23T15:26:28.182691"
     },
     {
       "type": "match_update",
       "data": {},
-      "timestamp": "2025-07-22T19:09:38.223745"
+      "timestamp": "2025-07-23T15:26:37.140219"
+    },
+    {
+      "type": "match_update",
+      "data": {},
+      "timestamp": "2025-07-23T15:26:48.910741"
     },
     {
       "type": "exit_afk",
       "data": {},
-      "timestamp": "2025-07-22T19:09:38.230243"
+      "timestamp": "2025-07-23T15:26:48.917240"
     },
     {
-      "type": "flip_players",
+      "type": "match_update",
       "data": {},
-      "timestamp": "2025-07-22T19:09:42.507409"
+      "timestamp": "2025-07-23T15:29:13.236350"
     },
     {
-      "type": "flip_players",
+      "type": "exit_afk",
       "data": {},
-      "timestamp": "2025-07-22T19:11:40.955988"
+      "timestamp": "2025-07-23T15:29:13.244351"
     },
     {
-      "type": "flip_players",
+      "type": "match_update",
       "data": {},
-      "timestamp": "2025-07-22T19:11:47.328937"
+      "timestamp": "2025-07-23T15:29:33.735673"
     },
     {
-      "type": "flip_players",
+      "type": "show_match_interface",
       "data": {},
-      "timestamp": "2025-07-22T19:11:52.738798"
+      "timestamp": "2025-07-23T15:29:45.925124"
     },
     {
-      "type": "flip_players",
+      "type": "hide_match_interface",
       "data": {},
-      "timestamp": "2025-07-22T19:12:01.275769"
+      "timestamp": "2025-07-23T15:29:50.394216"
+    },
+    {
+      "type": "show_match_interface",
+      "data": {},
+      "timestamp": "2025-07-23T15:29:59.345052"
     }
   ]
 }

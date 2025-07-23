@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tournament Overlay</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Fira+Code&family=Orbitron:wght@600&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -42,12 +42,15 @@
 
         .bracket-info {
             background: linear-gradient(90deg, #6366f1, #8b5cf6);
-            padding: 8px 20px;
+            padding: 12px 40px;
             text-align: center;
+            font-family: 'Orbitron', sans-serif;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 16px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .players-container {
@@ -123,7 +126,7 @@
             font-weight: 700;
             color: #ffffff;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-            letter-spacing: 2px;
+            letter-spacing: 8px;
         }
 
         .score-tracker {
@@ -628,6 +631,299 @@
             z-index: 2000;
         }
 
+        /* Match Interface Overlay */
+        .match-interface-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, rgba(10, 10, 20, 0.95), rgba(20, 20, 40, 0.95));
+            backdrop-filter: blur(10px);
+            z-index: 1500;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .interface-container {
+            max-width: 1800px;
+            margin: 0 auto;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .interface-header {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(20, 20, 30, 0.8));
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .phase-indicator {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        .phase-indicator.pick-phase {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+        }
+
+        .phase-indicator.play-phase {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .phase-indicator.play-starting {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        .turn-indicator {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 10px 20px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .mappool-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mappool-grid {
+            display: grid;
+            grid-template-columns: 1fr 400px 1fr;
+            gap: 20px;
+            height: 100%;
+        }
+
+        .player-mappool {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+        }
+
+        .mappool-header {
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+            text-align: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .maps-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .overlay-map-card {
+            background: linear-gradient(135deg, rgba(45, 55, 72, 0.8), rgba(26, 32, 44, 0.8));
+            border: 2px solid rgba(74, 85, 104, 0.6);
+            border-radius: 12px;
+            padding: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+            min-height: 80px;
+        }
+
+        .overlay-map-card.banned {
+            background: linear-gradient(135deg, rgba(127, 29, 29, 0.8), rgba(153, 27, 27, 0.8));
+            border-color: rgba(239, 68, 68, 0.6);
+            opacity: 0.6;
+        }
+
+        .overlay-map-card.banned::after {
+            content: "🚫";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            z-index: 1;
+        }
+
+        .overlay-map-card.picked {
+            background: linear-gradient(135deg, rgba(6, 95, 70, 0.8), rgba(4, 120, 87, 0.8));
+            border-color: rgba(16, 185, 129, 0.6);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+        }
+
+        .overlay-map-card.picked::after {
+            content: "✓";
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .map-title {
+            color: white;
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+
+        .map-difficulty {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 11px;
+            margin-bottom: 6px;
+        }
+
+        .map-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .map-star {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+
+        .action-feed-section {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
+        }
+
+        .action-feed-header {
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .action-feed {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            max-height: 200px;
+        }
+
+        .action-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 4px solid transparent;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .action-item.ban {
+            border-left-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .action-item.pick {
+            border-left-color: #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .action-item.ability {
+            border-left-color: #a855f7;
+            background: rgba(168, 85, 247, 0.1);
+        }
+
+        .action-item.system {
+            border-left-color: #6b7280;
+            background: rgba(107, 114, 128, 0.1);
+        }
+
+        .picked-maps-section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .picked-maps-header {
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .picked-maps-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .picked-map-item {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 8px;
+            padding: 8px 10px;
+            color: white;
+            font-size: 12px;
+        }
+
+        .picked-map-round {
+            color: rgba(34, 197, 94, 0.8);
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .picked-map-name {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .picked-map-picker {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 11px;
+        }
+
         .brb-content {
             text-align: center;
             animation: float 3s ease-in-out infinite;
@@ -856,6 +1152,97 @@
             from { opacity: 0; }
             to { opacity: 1; }
         }
+
+        /* Current Map Display */
+        .current-map-display {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100vw;
+            height: 15vh;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.8) 60%, transparent 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 100;
+            margin: 0;
+            padding: 0;
+        }
+
+        .current-map-container {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.95), rgba(139, 92, 246, 0.95));
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            border-radius: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+            margin: 0;
+            padding: 40px 60px;
+        }
+
+        .current-map-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .current-map-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+            margin-bottom: 8px;
+            line-height: 1.1;
+        }
+
+        .current-map-artist {
+            font-family: 'Inter', sans-serif;
+            font-size: 20px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 15px;
+        }
+
+        .current-map-difficulty {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 16px;
+            border-radius: 25px;
+            display: inline-block;
+        }
+
+        .current-map-tiebreaker {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.95)) !important;
+            border: 3px solid rgba(252, 211, 77, 0.6) !important;
+        }
+
+        .current-map-tiebreaker .current-map-label {
+            color: rgba(254, 243, 199, 0.9);
+        }
+
+        .current-map-tiebreaker .current-map-label::before {
+            content: "⚡ ";
+        }
+
+        .current-map-tiebreaker .current-map-label::after {
+            content: " ⚡";
+        }
     </style>
 </head>
 <body>
@@ -873,7 +1260,7 @@
     <div class="match-hud" id="matchHud">
         <div class="hud-container">
             <div class="bracket-info" id="bracketInfo">
-                Upper Bracket - Round 1
+                SWEF CUP 2025 - Upper Bracket - Round 1
             </div>
             
             <div class="players-container">
@@ -948,6 +1335,72 @@
             <div class="brb-title">Be Right Back</div>
             <div class="tournament-title">Sand World OSU Cup 2025</div>
             <div class="next-match" id="nextMatch">Loading tournament data...</div>
+        </div>
+    </div>
+
+    <!-- Match Interface Overlay -->
+    <div class="match-interface-overlay hidden" id="matchInterfaceOverlay">
+        <div class="interface-container">
+            <div class="interface-header">
+                <div class="phase-indicator" id="overlayPhaseIndicator">
+                    🚫 Ban Phase
+                </div>
+                <div class="turn-indicator" id="overlayTurnIndicator">
+                    Player 1's Turn
+                </div>
+            </div>
+            
+            <div class="mappool-section">
+                <div class="mappool-grid">
+                    <!-- Player 1 Maps -->
+                    <div class="player-mappool">
+                        <div class="mappool-header">
+                            <span id="overlayP1Name">Player 1</span> Maps
+                        </div>
+                        <div class="maps-grid" id="overlayP1Maps">
+                            <!-- Maps will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Center Action Feed -->
+                    <div class="action-feed-section">
+                        <div class="action-feed-header">Match Progress</div>
+                        <div class="action-feed" id="overlayActionFeed">
+                            <div class="action-item system">
+                                🎲 Match starting soon...
+                            </div>
+                        </div>
+                        
+                        <!-- Picked Maps Display -->
+                        <div class="picked-maps-section" id="overlayPickedMaps">
+                            <div class="picked-maps-header">Picked Maps</div>
+                            <div class="picked-maps-list" id="overlayPickedMapsList">
+                                <!-- Picked maps will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Player 2 Maps -->
+                    <div class="player-mappool">
+                        <div class="mappool-header">
+                            <span id="overlayP2Name">Player 2</span> Maps
+                        </div>
+                        <div class="maps-grid" id="overlayP2Maps">
+                            <!-- Maps will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Map Display -->
+    <div id="currentMapDisplay" class="current-map-display hidden">
+        <div id="currentMapContainer" class="current-map-container">
+            <div class="current-map-label">Now Playing</div>
+            <div id="currentMapTitle" class="current-map-title"></div>
+            <div id="currentMapArtist" class="current-map-artist"></div>
+            <div id="currentMapDifficulty" class="current-map-difficulty"></div>
         </div>
     </div>
 
@@ -1089,6 +1542,12 @@
                     case 'hide_outro':
                         hideOutroScreen();
                         break;
+                    case 'show_match_interface':
+                        showMatchInterface();
+                        break;
+                    case 'hide_match_interface':
+                        hideMatchInterface();
+                        break;
                     case 'map_victory':
                         if (event.data) {
                             showMapVictory(event.data.winner, event.data.map_info);
@@ -1197,7 +1656,7 @@
             
             // Update bracket info
             document.getElementById('bracketInfo').textContent = 
-                `${matchData.bracket} Bracket - Round ${matchData.round_index + 1}`;
+                `SWEF CUP 2025 - ${matchData.bracket} Bracket - Round ${matchData.round_index + 1}`;
             
             // Only update score tracker if scores actually changed
             const currentScore = document.getElementById('currentScore').textContent;
@@ -1229,6 +1688,9 @@
             
             // Update AFK screen next match info
             updateNextMatchInfo(matchData);
+            
+            // Update current map display based on match data
+            updateCurrentMapDisplay(matchData);
                 
             // Show the HUD if it was hidden
             document.getElementById('matchHud').classList.remove('hidden');
@@ -1456,6 +1918,441 @@
         function hideVictoryScreens() {
             document.getElementById('mapVictory').classList.add('hidden');
             document.getElementById('matchVictory').classList.add('hidden');
+        }
+
+        function showMatchInterface() {
+            const interfaceOverlay = document.getElementById('matchInterfaceOverlay');
+            const matchHud = document.getElementById('matchHud');
+            const afkScreen = document.getElementById('afkScreen');
+            
+            // Hide other screens
+            hideVictoryScreens();
+            afkScreen.classList.add('hidden');
+            matchHud.classList.add('hidden');
+            
+            // Show interface overlay
+            interfaceOverlay.classList.remove('hidden');
+            
+            // Start polling for match interface data
+            startMatchInterfacePolling();
+            
+            console.log('Match interface overlay shown');
+        }
+
+        function hideMatchInterface() {
+            const interfaceOverlay = document.getElementById('matchInterfaceOverlay');
+            const matchHud = document.getElementById('matchHud');
+            
+            interfaceOverlay.classList.add('hidden');
+            matchHud.classList.remove('hidden');
+            
+            // Stop polling for match interface data
+            stopMatchInterfacePolling();
+            
+            console.log('Match interface overlay hidden');
+        }
+
+        let matchInterfacePolling = null;
+        let interfaceLockTimer = null;
+        let wasInterfaceLocked = false;
+
+        function startMatchInterfacePolling() {
+            if (matchInterfacePolling) return;
+            
+            // Poll immediately
+            pollMatchInterfaceData();
+            
+            // Then poll every 2 seconds for more responsive updates
+            matchInterfacePolling = setInterval(pollMatchInterfaceData, 2000);
+        }
+
+        function stopMatchInterfacePolling() {
+            if (matchInterfacePolling) {
+                clearInterval(matchInterfacePolling);
+                matchInterfacePolling = null;
+            }
+            
+            // Clear any pending lock timer
+            if (interfaceLockTimer) {
+                clearTimeout(interfaceLockTimer);
+                interfaceLockTimer = null;
+            }
+        }
+
+        async function pollMatchInterfaceData() {
+            try {
+                // Poll match interface state directly
+                const response = await fetch('/api/match-interface-state');
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                if (!data.match_found) return;
+                
+                updateMatchInterface(data);
+                
+            } catch (error) {
+                console.error('Match interface polling error:', error);
+            }
+        }
+
+        let currentlySelectedMap = null;
+        let currentMapDisplayVisible = false;
+
+        function updateCurrentMapDisplay(data) {
+            const mapDisplay = document.getElementById('currentMapDisplay');
+            const mapContainer = document.getElementById('currentMapContainer');
+            const mapTitle = document.getElementById('currentMapTitle');
+            const mapArtist = document.getElementById('currentMapArtist');
+            const mapDifficulty = document.getElementById('currentMapDifficulty');
+            
+            console.log('updateCurrentMapDisplay called with:', {
+                has_current_map: !!data.current_map,
+                current_map: data.current_map,
+                is_tiebreaker: data.is_tiebreaker,
+                tiebreaker_url: data.tiebreaker_map_url,
+                interface_locked: data.interface_locked,
+                phase: data.phase
+            });
+            
+            // Check if there's a current map being played
+            let selectedMap = null;
+            let isTiebreaker = false;
+            let shouldShow = false;
+            
+            // Check for tiebreaker first
+            if (data.is_tiebreaker && data.tiebreaker_map_url) {
+                selectedMap = {
+                    title: "Tiebreaker Map",
+                    artist: "Custom Selection", 
+                    version: "Tiebreaker",
+                    beatmap_url: data.tiebreaker_map_url
+                };
+                isTiebreaker = true;
+                shouldShow = true; // Always show tiebreaker
+            } else if (data.current_map) {
+                // Use the current map from the API
+                selectedMap = data.current_map;
+                // Show if interface is locked (map is being played) or we have picked maps
+                shouldShow = data.interface_locked === true || (data.picked_maps && data.picked_maps.length > 0);
+            }
+            
+            if (selectedMap && shouldShow && (selectedMap !== currentlySelectedMap || shouldShow !== window.lastShouldShow)) {
+                // Show the map display
+                mapTitle.textContent = selectedMap.title || 'Unknown Title';
+                mapArtist.textContent = selectedMap.artist || 'Unknown Artist';
+                mapDifficulty.textContent = selectedMap.version || selectedMap.difficulty_name || 'Unknown Difficulty';
+                
+                // Update container styling for tiebreaker
+                if (isTiebreaker) {
+                    mapContainer.className = 'current-map-container current-map-tiebreaker';
+                    document.querySelector('.current-map-label').textContent = 'TIEBREAKER';
+                } else if (data.interface_locked === true) {
+                    mapContainer.className = 'current-map-container';
+                    document.querySelector('.current-map-label').textContent = 'NOW PLAYING';
+                } else {
+                    mapContainer.className = 'current-map-container';
+                    document.querySelector('.current-map-label').textContent = 'SELECTED';
+                }
+                
+                mapDisplay.classList.remove('hidden');
+                currentMapDisplayVisible = true;
+                currentlySelectedMap = selectedMap;
+                window.lastShouldShow = shouldShow;
+                
+                console.log('Showing current map display:', {
+                    title: selectedMap.title,
+                    artist: selectedMap.artist,
+                    difficulty: selectedMap.version || selectedMap.difficulty_name,
+                    isTiebreaker: isTiebreaker,
+                    shouldShow: shouldShow,
+                    interface_locked: data.interface_locked
+                });
+                
+            } else if ((!selectedMap || !shouldShow) && currentMapDisplayVisible) {
+                // Hide the map display when no map is selected or shouldn't show
+                mapDisplay.classList.add('hidden');
+                currentMapDisplayVisible = false;
+                currentlySelectedMap = null;
+                window.lastShouldShow = false;
+                console.log('Hiding current map display - no current map or should not show');
+            }
+        }
+
+        function updateMatchInterface(data) {
+            console.log('Match interface update received:', {
+                match_found: data.match_found,
+                phase: data.phase,
+                current_turn: data.current_turn,
+                mappool_length: data.mappool?.length || 0,
+                banned_count: data.banned_maps?.length || 0,
+                picked_count: data.picked_maps?.length || 0,
+                interface_locked: data.interface_locked
+            });
+            
+            // Handle interface lock state changes
+            handleInterfaceLockState(data.interface_locked);
+            
+            // Update current map display
+            updateCurrentMapDisplay(data);
+            
+            // Update player names
+            document.getElementById('overlayP1Name').textContent = data.player1?.name || 'Player 1';
+            document.getElementById('overlayP2Name').textContent = data.player2?.name || 'Player 2';
+            
+            // Update phase indicator
+            updatePhaseIndicator(data);
+            
+            // Update turn indicator
+            updateTurnIndicator(data);
+            
+            // Update mappool display
+            updateMappoolDisplay(data);
+            
+            // Update picked maps display
+            updatePickedMapsDisplay(data);
+            
+            // Update action feed
+            updateActionFeed(data);
+            
+            // Update ability status
+            updateAbilityStatus(data);
+        }
+
+        function handleInterfaceLockState(isCurrentlyLocked) {
+            // Check if interface lock state changed
+            if (isCurrentlyLocked && !wasInterfaceLocked) {
+                // Interface just became locked - start 5 second timer
+                console.log('Interface became locked - starting 5 second minimize timer');
+                
+                // Clear any existing timer
+                if (interfaceLockTimer) {
+                    clearTimeout(interfaceLockTimer);
+                }
+                
+                // Set new timer to minimize overlay after 5 seconds
+                interfaceLockTimer = setTimeout(() => {
+                    console.log('5 seconds elapsed - minimizing match interface overlay');
+                    hideMatchInterface();
+                }, 5000);
+                
+            } else if (!isCurrentlyLocked && wasInterfaceLocked) {
+                // Interface unlocked - cancel the minimize timer
+                console.log('Interface unlocked - cancelling minimize timer');
+                if (interfaceLockTimer) {
+                    clearTimeout(interfaceLockTimer);
+                    interfaceLockTimer = null;
+                }
+            }
+            
+            // Update state for next comparison
+            wasInterfaceLocked = isCurrentlyLocked;
+        }
+
+        function updatePhaseIndicator(data) {
+            const indicator = document.getElementById('overlayPhaseIndicator');
+            
+            if (!data.phase) return;
+            
+            const phase = data.phase;
+            const bannedCount = data.banned_maps?.length || 0;
+            const pickedCount = data.picked_maps?.length || 0;
+            const isLocked = data.interface_locked;
+            
+            indicator.className = 'phase-indicator';
+            
+            if (isLocked) {
+                indicator.textContent = `🎮 Play Starting Soon...`;
+                indicator.classList.add('play-starting');
+            } else if (phase === 'ban') {
+                indicator.textContent = `🚫 Ban Phase (${bannedCount}/6)`;
+                indicator.classList.add('ban-phase');
+            } else if (phase === 'pick') {
+                indicator.textContent = `🎯 Pick Phase`;
+                indicator.classList.add('pick-phase');
+            } else if (phase === 'play') {
+                indicator.textContent = `🎮 Play Phase`;
+                indicator.classList.add('play-phase');
+            }
+        }
+
+        function updateTurnIndicator(data) {
+            const indicator = document.getElementById('overlayTurnIndicator');
+            
+            if (!data.current_turn) return;
+            
+            const currentTurn = data.current_turn;
+            const phase = data.phase || 'ban';
+            
+            let playerName = 'Unknown Player';
+            if (currentTurn === 'player1') {
+                playerName = data.player1?.name || 'Player 1';
+            } else if (currentTurn === 'player2') {
+                playerName = data.player2?.name || 'Player 2';
+            }
+            
+            if (phase === 'ban') {
+                indicator.textContent = `${playerName}'s turn to ban`;
+            } else if (phase === 'pick') {
+                indicator.textContent = `${playerName}'s turn to pick`;
+            } else {
+                indicator.textContent = 'Waiting for match result...';
+            }
+        }
+
+        function updateMappoolDisplay(data) {
+            // Use actual mappool data from the API
+            const mappoolData = data.mappool || {};
+            
+            // Convert mappool object to array for easier handling
+            let mappoolArray = [];
+            if (Array.isArray(mappoolData)) {
+                mappoolArray = mappoolData;
+            } else if (typeof mappoolData === 'object') {
+                // Flatten all categories into a single array
+                for (const [category, maps] of Object.entries(mappoolData)) {
+                    if (Array.isArray(maps)) {
+                        mappoolArray = mappoolArray.concat(maps);
+                    }
+                }
+            }
+            
+            console.log('Updating mappool display with data:', {
+                mappool_length: mappoolArray.length,
+                mappool_sample: mappoolArray.slice(0, 2),
+                banned_maps: data.banned_maps,
+                picked_maps: data.picked_maps,
+                full_data: data
+            });
+            
+            if (mappoolArray.length === 0) {
+                console.log('No mappool data received - setting empty state');
+                document.getElementById('overlayP1Maps').innerHTML = '<div class="no-maps">No maps available</div>';
+                document.getElementById('overlayP2Maps').innerHTML = '<div class="no-maps">No maps available</div>';
+                return;
+            }
+            
+            // Update Player 1 maps (first half of mappool)
+            updatePlayerMapsFromPool('overlayP1Maps', mappoolArray.slice(0, Math.ceil(mappoolArray.length / 2)), data);
+            
+            // Update Player 2 maps (second half of mappool)
+            updatePlayerMapsFromPool('overlayP2Maps', mappoolArray.slice(Math.ceil(mappoolArray.length / 2)), data);
+        }
+
+        function updatePlayerMapsFromPool(containerId, maps, data) {
+            const container = document.getElementById(containerId);
+            if (!container) {
+                console.log('Container not found:', containerId);
+                return;
+            }
+            
+            console.log(`Updating ${containerId} with ${maps.length} maps:`, maps.slice(0, 2));
+            
+            const bannedMaps = data.banned_maps || [];
+            const pickedMaps = data.picked_maps || [];
+            
+            container.innerHTML = '';
+            maps.forEach((map, index) => {
+                const mapDiv = document.createElement('div');
+                mapDiv.className = 'overlay-map-card';
+                mapDiv.id = `overlay-map-${map.id}`;
+                
+                // Check if map is banned or picked
+                const isBanned = bannedMaps.includes(map.id.toString());
+                const pickedInfo = pickedMaps.find(p => p.map_id === map.id.toString());
+                
+                if (isBanned) {
+                    mapDiv.classList.add('banned');
+                } else if (pickedInfo) {
+                    mapDiv.classList.add('picked');
+                    if (pickedInfo.picked_by === 'player1') {
+                        mapDiv.classList.add('picked-p1');
+                    } else {
+                        mapDiv.classList.add('picked-p2');
+                    }
+                }
+                
+                mapDiv.innerHTML = `
+                    <div class="overlay-map-title">${map.title || 'Unknown'}</div>
+                    <div class="overlay-map-artist">${map.artist || 'Unknown'}</div>
+                    <div class="overlay-map-diff">[${map.difficulty_name || map.version || 'Unknown'}]</div>
+                `;
+                
+                container.appendChild(mapDiv);
+            });
+            
+            console.log(`Updated ${containerId} with ${container.children.length} map cards`);
+        }
+
+        function updateActionFeed(data) {
+            const feed = document.getElementById('overlayActionFeed');
+            if (!feed) return;
+            
+            const actionLog = data.action_log || [];
+            
+            if (actionLog.length === 0) {
+                feed.innerHTML = '<div class="action-item system">🎲 Match starting soon...</div>';
+                return;
+            }
+            
+            feed.innerHTML = '';
+            // Show last 8 actions
+            actionLog.slice(-8).reverse().forEach(action => {
+                const actionDiv = document.createElement('div');
+                actionDiv.className = `action-item ${action.type}`;
+                
+                let actionText = '';
+                if (action.type === 'ban') {
+                    actionText = `🚫 ${action.player} banned ${action.map}`;
+                } else if (action.type === 'pick') {
+                    actionText = `🎯 ${action.player} picked ${action.map}`;
+                } else if (action.type === 'ability') {
+                    actionText = `⚡ ${action.player} used ${action.ability}`;
+                } else if (action.type === 'system') {
+                    actionText = `🎲 ${action.message}`;
+                }
+                
+                actionDiv.textContent = actionText;
+                feed.appendChild(actionDiv);
+            });
+        }
+
+        function updatePickedMapsDisplay(data) {
+            const container = document.getElementById('overlayPickedMapsList');
+            if (!container) return;
+            
+            const pickedMaps = data.picked_maps || [];
+            
+            if (pickedMaps.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: rgba(255, 255, 255, 0.5); font-size: 12px;">No maps picked yet</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            pickedMaps.forEach((pickedMap, index) => {
+                const mapDiv = document.createElement('div');
+                mapDiv.className = 'picked-map-item';
+                
+                // Find map details from mappool
+                const mapDetails = data.mappool?.find(m => m.id.toString() === pickedMap.map_id);
+                const mapName = mapDetails ? `${mapDetails.title} [${mapDetails.difficulty_name || mapDetails.version}]` : `Map ${pickedMap.map_id}`;
+                const pickerName = pickedMap.picked_by === 'player1' ? data.player1?.name || 'Player 1' : data.player2?.name || 'Player 2';
+                
+                mapDiv.innerHTML = `
+                    <div class="picked-map-round">Round ${index + 1}</div>
+                    <div class="picked-map-name">${mapName}</div>
+                    <div class="picked-map-picker">Picked by ${pickerName}</div>
+                `;
+                
+                container.appendChild(mapDiv);
+            });
+        }
+
+        function updateAbilityStatus(data) {
+            // Update ability status display if needed
+            const abilitiesUsed = data.abilities_used || {};
+            
+            // This would show which abilities have been used by each player
+            // Implementation depends on UI requirements
         }
 
     </script>

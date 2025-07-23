@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Match Logic Test</title>
+</head>
+<body>
+    <h1>Match Logic Test</h1>
+    <div id="output"></div>
+
+    <script>
+        // Test the match logic
+        class TestMatchInterface {
+            constructor() {
+                this.currentStep = 0;
+                this.turnOrder = ['player1', 'player2', 'player1', 'player2', 'player1', 'player2', 
+                                 'player1', 'player1', 'both', 'player2', 'player2', 'both',
+                                 'player1', 'player1', 'both', 'player2', 'player2', 'both'];
+                this.actionTypes = ['ban', 'ban', 'ban', 'ban', 'ban', 'ban', 
+                                   'pick', 'ability', 'play', 'pick', 'ability', 'play',
+                                   'pick', 'ability', 'play', 'pick', 'ability', 'play'];
+                this.isPlayer1 = true;
+            }
+            
+            get currentActionType() {
+                if (this.currentStep < 6) return 'ban';
+                if (this.currentStep >= 18) return 'complete';
+                
+                const stepInCycle = (this.currentStep - 6) % 3;
+                if (stepInCycle === 0) return 'pick';
+                if (stepInCycle === 1) return 'ability';
+                return 'play';
+            }
+            
+            get currentRound() {
+                if (this.currentStep < 6) return 0;
+                return Math.floor((this.currentStep - 6) / 3) + 1;
+            }
+            
+            get isYourTurn() {
+                const currentTurnPlayer = this.turnOrder[this.currentStep];
+                const yourPlayerKey = this.isPlayer1 ? 'player1' : 'player2';
+                return currentTurnPlayer === yourPlayerKey && this.currentStep < 18;
+            }
+            
+            testSteps() {
+                let output = '<table border="1"><tr><th>Step</th><th>Action Type</th><th>Round</th><th>Turn Player</th><th>Your Turn</th></tr>';
+                
+                for (let step = 0; step < 20; step++) {
+                    this.currentStep = step;
+                    const actionType = this.currentActionType;
+                    const round = this.currentRound;
+                    const turnPlayer = this.turnOrder[step] || 'N/A';
+                    const yourTurn = this.isYourTurn;
+                    
+                    output += `<tr><td>${step}</td><td>${actionType}</td><td>${round}</td><td>${turnPlayer}</td><td>${yourTurn}</td></tr>`;
+                }
+                
+                output += '</table>';
+                return output;
+            }
+        }
+        
+        const test = new TestMatchInterface();
+        document.getElementById('output').innerHTML = test.testSteps();
+    </script>
+</body>
+</html>
