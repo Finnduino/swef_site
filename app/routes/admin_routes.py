@@ -39,7 +39,7 @@ def host_required(f):
         
         data = get_tournament_data()
         is_host = admin_user_id in data.get('host_admins', [])
-        is_full_admin = admin_user_id in data.get('full_admins', []) or admin_user_id == ADMIN_OSU_ID
+        is_full_admin = admin_user_id in data.get('full_admins', []) or str(admin_user_id) in ADMIN_OSU_ID
         
         if not (is_host or is_full_admin):
             flash('You do not have sufficient permissions to access this page.', 'error')
@@ -62,7 +62,7 @@ def full_admin_required(f):
             return redirect(url_for('public.index'))
         
         data = get_tournament_data()
-        is_full_admin = admin_user_id in data.get('full_admins', []) or admin_user_id in ADMIN_OSU_ID
+        is_full_admin = admin_user_id in data.get('full_admins', []) or str(admin_user_id) in ADMIN_OSU_ID
         
         if not is_full_admin:
             flash('You need full administrator permissions to access this feature.', 'error')
@@ -93,7 +93,7 @@ def admin_callback():
 
     # Check if user is main admin or has permissions
     data = get_tournament_data()
-    is_main_admin = user_id in ADMIN_OSU_ID
+    is_main_admin = str(user_id) in ADMIN_OSU_ID
     is_full_admin = user_id in data.get('full_admins', [])
     is_host_admin = user_id in data.get('host_admins', [])
 
@@ -1093,7 +1093,7 @@ def revoke_admin_perms():
         user_id = int(user_id)
         
         # Prevent revoking permissions from the main admin
-        if user_id in ADMIN_OSU_ID:
+        if str(user_id) in ADMIN_OSU_ID:
             flash('Cannot revoke permissions from the main administrator.', 'error')
             return redirect(url_for('admin.admin_panel'))
         
