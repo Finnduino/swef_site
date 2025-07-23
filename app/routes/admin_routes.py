@@ -622,3 +622,84 @@ def overlay_hide_outro():
     add_overlay_event('hide_outro')
     flash('Outro screen hidden on overlay', 'success')
     return redirect(url_for('admin.admin_panel'))
+
+
+# Developer Authentication Endpoints
+@admin_bp.route('/dev_login_as_user', methods=['POST'])
+@admin_required
+def dev_login_as_user():
+    """Developer-only endpoint to log in as any user for testing purposes"""
+    user_identifier = request.form.get('user_id', '').strip()
+    
+    if not user_identifier:
+        flash('Please provide a user ID or username', 'error')
+        return redirect(url_for('admin.admin_panel'))
+    
+    try:
+        data = get_tournament_data()
+        user = None
+        
+        # First, try to find user in competitors
+        if user_identifier.isdigit():
+            # Search by ID
+            user_id = int(user_identifier)
+            user = next((c for c in data.get('competitors', []) if c['id'] == user_id), None)
+        else:
+            # Search by username
+            user = next((c for c in data.get('competitors', []) if c['name'].lower() == user_identifier.lower()), None)
+        
+        # If not found in competitors, try to fetch from osu! API
+        if not user:
+            try:
+                # Try to fetch user data from osu! API using ossapi
+                if user_identifier.isdigit():
+                    user_data = api.user(int(user_identifier))
+                else:
+                    user_data = api.user(user_identifier)
+                
+                if user_data:
+                    user = {
+                        'id': user_data.id,
+                        'name': user_data.username,
+                        'avatar_url': user_data.avatar_url,
+                        'country_code': user_data.country_code,
+                        'is_dev_login': True  # Flag to indicate this is a dev login
+                    }
+                else:
+                    flash(f'User "{user_identifier}" not found in tournament or osu! API', 'error')
+                    return redirect(url_for('admin.admin_panel'))
+                    
+            except Exception as e:
+                flash(f'Failed to fetch user from osu! API: {str(e)}', 'error')
+                return redirect(url_for('admin.admin_panel'))
+        
+        # Set session data
+        session['user_id'] = user['id']
+        session['username'] = user['name']
+        session['avatar_url'] = user.get('avatar_url', '')
+        session['country_code'] = user.get('country_code', '')
+        session['is_dev_login'] = True  # Mark as developer login
+        
+        flash(f'Successfully logged in as {user["name"]} (ID: {user["id"]}) - DEV MODE', 'success')
+        
+    except Exception as e:
+        flash(f'Error during developer login: {str(e)}', 'error')
+    
+    return redirect(url_for('admin.admin_panel'))
+
+
+@admin_bp.route('/dev_logout', methods=['POST'])
+@admin_required
+def dev_logout():
+    """Developer logout endpoint"""
+    username = session.get('username', 'Unknown')
+    
+    # Clear user session data but keep admin session
+    session.pop('user_id', None)
+    session.pop('username', None)
+    session.pop('avatar_url', None)
+    session.pop('country_code', None)
+    session.pop('is_dev_login', None)
+    
+    flash(f'Logged out from user session ({username}) - Admin session maintained', 'success')
+    return redirect(url_for('admin.admin_panel'))

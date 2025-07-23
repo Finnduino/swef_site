@@ -531,6 +531,103 @@
             {% endif %}
         </div>
 
+        <!-- Developer User Login Section -->
+        <div class="bg-gray-800 p-6 rounded-lg mb-8 dev-mode-content">
+            <h2 class="text-2xl text-red-400 mb-4">🔧 Developer User Login</h2>
+            <div class="bg-red-900 border border-red-600 p-4 rounded-lg mb-4">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-red-300 text-sm font-bold">⚠️ DEVELOPMENT ONLY</span>
+                </div>
+                <p class="text-red-200 text-sm mb-4">
+                    This section allows you to instantly log in as any user for testing purposes. 
+                    Use this to test player-specific views and functionality.
+                </p>
+                
+                <!-- Quick Login Buttons for Competitors -->
+                {% if data.competitors %}
+                <div class="mb-4">
+                    <h3 class="text-lg text-red-300 mb-3">🏃 Quick Login as Competitor:</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {% for competitor in data.competitors %}
+                        <form action="{{ url_for('admin.dev_login_as_user') }}" method="POST" class="inline">
+                            <input type="hidden" name="user_id" value="{{ competitor.id }}">
+                            <button type="submit" 
+                                    class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-3 rounded text-sm transition-colors">
+                                {{ competitor.name }}
+                                {% if competitor.get('placement') %}
+                                    <span class="text-blue-200">#{{ competitor.placement }}</span>
+                                {% endif %}
+                            </button>
+                        </form>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Manual User ID Login -->
+                <div class="border-t border-red-600 pt-4">
+                    <h3 class="text-lg text-red-300 mb-3">🎯 Manual User Login:</h3>
+                    <form action="{{ url_for('admin.dev_login_as_user') }}" method="POST" class="flex gap-2">
+                        <input type="text" name="user_id" 
+                               placeholder="Enter osu! User ID or Username" 
+                               class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                            🚀 Login as User
+                        </button>
+                    </form>
+                    <p class="text-xs text-red-300 mt-2">
+                        💡 Enter either a numeric user ID or username. If user doesn't exist locally, system will attempt to fetch from osu! API.
+                    </p>
+                </div>
+                
+                <!-- Current Login Status -->
+                <div class="border-t border-red-600 pt-4 mt-4">
+                    <h3 class="text-lg text-red-300 mb-2">👤 Current Session:</h3>
+                    {% if session.get('user_id') %}
+                    <div class="flex items-center justify-between bg-gray-800 p-3 rounded">
+                        <div class="flex items-center gap-2">
+                            <span class="text-green-400">✅ Logged in as:</span>
+                            <span class="font-bold text-white">
+                                {{ session.get('username', 'Unknown User') }} 
+                                (ID: {{ session.get('user_id') }})
+                            </span>
+                        </div>
+                        <form action="{{ url_for('admin.dev_logout') }}" method="POST" class="inline">
+                            <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded text-sm">
+                                🚪 Logout
+                            </button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <div class="bg-gray-800 p-3 rounded">
+                        <span class="text-gray-400">❌ No user currently logged in</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Navigation Links -->
+                <div class="border-t border-red-600 pt-4 mt-4">
+                    <h3 class="text-lg text-red-300 mb-2">🔗 Quick Navigation:</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{{ url_for('public.tournament') }}" target="_blank" 
+                           class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm">
+                            🏆 Tournament Page
+                        </a>
+                        {% if session.get('user_id') %}
+                        <a href="{{ url_for('player.profile') }}" target="_blank" 
+                           class="bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded text-sm">
+                           👤 My Profile
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('public.index') }}" target="_blank" 
+                           class="bg-purple-600 hover:bg-purple-700 text-white py-1 px-3 rounded text-sm">
+                            🏠 Home Page
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Competitors Management -->
         <div class="bg-gray-800 p-6 rounded-lg mb-8 dev-mode-content">
             <h2 class="text-2xl text-pink-500 mb-4">Competitors ({{ data.competitors|length }})</h2>

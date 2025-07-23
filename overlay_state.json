@@ -1,77 +1,57 @@
 {
   "afk_mode": false,
   "victory_screen_hidden": false,
-  "last_updated": "2025-07-21T23:14:18.198807",
+  "last_updated": "2025-07-22T19:12:01.275769",
   "events": [
     {
-      "type": "match_update",
+      "type": "hide_victory_screens",
       "data": {},
-      "timestamp": "2025-07-21T23:12:30.195396"
+      "timestamp": "2025-07-22T18:57:58.511628"
     },
     {
-      "type": "match_victory",
-      "data": {
-        "winner": "Pottoust",
-        "final_score": "4-0",
-        "advancement": "Advances to next round"
-      },
-      "timestamp": "2025-07-21T23:12:30.209897"
-    },
-    {
-      "type": "match_update",
+      "type": "hide_victory_screens",
       "data": {},
-      "timestamp": "2025-07-21T23:12:31.383717"
+      "timestamp": "2025-07-22T18:58:04.925339"
     },
     {
-      "type": "match_victory",
-      "data": {
-        "winner": "XBisch_LasagnaX",
-        "final_score": "4-0",
-        "advancement": "Advances to next round"
-      },
-      "timestamp": "2025-07-21T23:12:31.397717"
+      "type": "toggle_afk",
+      "data": {},
+      "timestamp": "2025-07-22T18:58:10.777733"
     },
     {
       "type": "match_update",
       "data": {},
-      "timestamp": "2025-07-21T23:12:33.523903"
+      "timestamp": "2025-07-22T19:09:38.223745"
     },
     {
-      "type": "match_victory",
-      "data": {
-        "winner": "Pottoust",
-        "final_score": "4-0",
-        "advancement": "Advances to next round"
-      },
-      "timestamp": "2025-07-21T23:12:33.537904"
-    },
-    {
-      "type": "match_update",
+      "type": "exit_afk",
       "data": {},
-      "timestamp": "2025-07-21T23:14:16.639311"
+      "timestamp": "2025-07-22T19:09:38.230243"
     },
     {
-      "type": "match_victory",
-      "data": {
-        "winner": "finnduino",
-        "final_score": "4-0",
-        "advancement": "Advances to next round"
-      },
-      "timestamp": "2025-07-21T23:14:16.650811"
-    },
-    {
-      "type": "match_update",
+      "type": "flip_players",
       "data": {},
-      "timestamp": "2025-07-21T23:14:18.182806"
+      "timestamp": "2025-07-22T19:09:42.507409"
     },
     {
-      "type": "match_victory",
-      "data": {
-        "winner": "fungus664",
-        "final_score": "4-0",
-        "advancement": "Advances to next round"
-      },
-      "timestamp": "2025-07-21T23:14:18.198807"
+      "type": "flip_players",
+      "data": {},
+      "timestamp": "2025-07-22T19:11:40.955988"
+    },
+    {
+      "type": "flip_players",
+      "data": {},
+      "timestamp": "2025-07-22T19:11:47.328937"
+    },
+    {
+      "type": "flip_players",
+      "data": {},
+      "timestamp": "2025-07-22T19:11:52.738798"
+    },
+    {
+      "type": "flip_players",
+      "data": {},
+      "timestamp": "2025-07-22T19:12:01.275769"
     }
   ]
 }

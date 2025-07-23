@@ -64,6 +64,14 @@ def osu_login():
     return redirect(auth_url)
 
 
+@public_bp.route('/logout')
+def logout():
+    from flask import session
+    session.clear()
+    flash('Logged out successfully.', 'info')
+    return redirect(url_for('public.index'))
+
+
 @public_bp.route('/callback/osu')
 def osu_callback():
     code = request.args.get('code')
@@ -75,6 +83,12 @@ def osu_callback():
     me_response = requests.get(f'{OSU_API_BASE_URL}/me', headers=headers)
     user_json = me_response.json()
     user_id = user_json.get('id')
+    
+    # Store user session
+    from flask import session
+    session['user_id'] = user_id
+    session['username'] = user_json.get('username')
+    session['avatar_url'] = user_json.get('avatar_url')
     
     data = get_tournament_data()
     if not any(c.get('id') == user_id for c in data.get('competitors', [])):
@@ -91,7 +105,12 @@ def osu_callback():
         save_tournament_data(data)
         generate_bracket()
     
-    return redirect(url_for('public.tournament'))
+    # Check if user is a tournament participant and redirect accordingly
+    if any(c.get('id') == user_id for c in data.get('competitors', [])):
+        flash(f'Welcome back, {user_json.get("username")}!', 'success')
+        return redirect(url_for('player.profile'))
+    else:
+        return redirect(url_for('public.tournament'))
 
 
 @public_bp.route('/user/<int:user_id>')

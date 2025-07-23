@@ -89,6 +89,12 @@
         <ul class="flex space-x-6 text-sm font-mono">
             <li><a href="{{ url_for('public.index') }}" class="text-gray-300 hover:text-yellow-400 transition-colors">Home</a></li>
             <li><a href="{{ url_for('public.tournament') }}" class="text-gray-300 hover:text-yellow-400 transition-colors">Tournament</a></li>
+            {% if session.get('user_id') %}
+            <li><a href="{{ url_for('player.profile') }}" class="text-gray-300 hover:text-yellow-400 transition-colors">Profile</a></li>
+            <li><a href="{{ url_for('public.logout') }}" class="text-gray-300 hover:text-red-400 transition-colors">Logout</a></li>
+            {% else %}
+            <li><a href="{{ url_for('public.osu_login') }}" class="bg-pink-500 hover:bg-pink-600 text-white px-3 py-1 rounded transition-colors">Login</a></li>
+            {% endif %}
         </ul>
     </nav>
 
@@ -111,6 +117,16 @@
                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full text-sm font-bold transition-all transform hover:scale-105 shadow-lg">
                         🎮 View Multiplayer Room
                     </a>
+                    {% endif %}
+                    
+                    <!-- Player Match Management Button -->
+                    {% if session.get('user_id') and match.get('status') in ['next_up', 'in_progress'] %}
+                        {% if session.get('user_id') == match.player1.id or session.get('user_id') == match.player2.id %}
+                        <a href="{{ url_for('player.match_interface', match_id=match.id) }}" 
+                           class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-full text-sm font-bold transition-all transform hover:scale-105 shadow-lg">
+                            🎯 Manage Match
+                        </a>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>

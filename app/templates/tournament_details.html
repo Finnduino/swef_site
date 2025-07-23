@@ -45,6 +45,12 @@
     <ul class="flex space-x-6 text-sm font-mono">
       <li><a href="{{ url_for('public.index') }}" class="text-gray-300 hover:text-yellow-400">Home</a></li>
       <li><a href="{{ url_for('public.tournament') }}" class="text-gray-300 hover:text-yellow-400">Tournament</a></li>
+      {% if session.get('user_id') %}
+      <li><a href="{{ url_for('player.profile') }}" class="text-gray-300 hover:text-yellow-400">Profile</a></li>
+      <li><a href="{{ url_for('public.logout') }}" class="text-gray-300 hover:text-red-400">Logout</a></li>
+      {% else %}
+      <li><a href="{{ url_for('public.osu_login') }}" class="bg-pink-500 hover:bg-pink-600 text-white px-3 py-1 rounded">Login</a></li>
+      {% endif %}
     </ul>
   </nav>
 
