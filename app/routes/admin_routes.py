@@ -118,11 +118,12 @@ def reset_competitors():
 def reset_bracket():
     data = get_tournament_data()
     
-    # Preserve only competitors with their placements, and streaming settings
+    # Preserve only competitors with their placements, streaming settings, and seeding data
     preserved_data = {
         'competitors': data.get('competitors', []),
         'twitch_channel': data.get('twitch_channel', ''),
-        'stream_live': data.get('stream_live', False)
+        'stream_live': data.get('stream_live', False),
+        'seeding_playlist_url': data.get('seeding_playlist_url', None)
     }
     
     # Clear all match/bracket related data
