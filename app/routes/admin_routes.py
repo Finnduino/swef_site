@@ -110,6 +110,39 @@ def admin_callback():
 @admin_required
 def admin_panel():
     data = get_tournament_data()
+    data_changed = False
+    
+    # Clean up competitors data - ensure all competitors have valid IDs
+    if 'competitors' in data:
+        valid_competitors = []
+        for competitor in data['competitors']:
+            if isinstance(competitor, dict) and competitor.get('id') is not None:
+                valid_competitors.append(competitor)
+            else:
+                print(f"Warning: Found invalid competitor data: {competitor}")
+                data_changed = True
+        if len(valid_competitors) != len(data['competitors']):
+            data['competitors'] = valid_competitors
+            data_changed = True
+    
+    # Clean up pending signups data - ensure all signups have valid IDs
+    if 'pending_signups' in data:
+        valid_signups = []
+        for signup in data['pending_signups']:
+            if isinstance(signup, dict) and signup.get('id') is not None:
+                valid_signups.append(signup)
+            else:
+                print(f"Warning: Found invalid pending signup data: {signup}")
+                data_changed = True
+        if len(valid_signups) != len(data['pending_signups']):
+            data['pending_signups'] = valid_signups
+            data_changed = True
+    
+    # Save cleaned data if any changes were made
+    if data_changed:
+        save_tournament_data(data)
+        print("Cleaned and saved tournament data")
+    
     return render_template('admin.html', data=data)
 
 

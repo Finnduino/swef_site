@@ -602,6 +602,7 @@
                     <h3 class="text-lg text-red-300 mb-3">🏃 Quick Login as Competitor:</h3>
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                         {% for competitor in data.competitors %}
+                        {% if competitor.get('id') %}
                         <form action="{{ url_for('admin.dev_login_as_user') }}" method="POST" class="inline">
                             <input type="hidden" name="user_id" value="{{ competitor.id }}">
                             <button type="submit" 
@@ -612,6 +613,7 @@
                                 {% endif %}
                             </button>
                         </form>
+                        {% endif %}
                         {% endfor %}
                     </div>
                 </div>
@@ -725,6 +727,7 @@
                         </div>
                         
                         <div class="flex gap-2">
+                            {% if signup.get('id') %}
                             <form action="{{ url_for('admin.approve_signup', user_id=signup.id) }}" method="POST" class="flex-1">
                                 <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded text-sm font-bold">
                                     ✅ Approve
@@ -736,6 +739,9 @@
                                     ❌ Reject
                                 </button>
                             </form>
+                            {% else %}
+                            <div class="text-red-400 text-xs">Invalid signup data (no ID)</div>
+                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}
@@ -829,24 +835,29 @@
                 </div>
                 {% endif %}
                 
-                <!-- Seed Placement Form (only show if seeding not in progress) -->
-                {% if not data.get('seeding_in_progress') %}
-                <form action="{{ url_for('admin.set_seed', user_id=c.id) }}" method="POST" class="flex items-center gap-2">
-                  <input
-                    type="number"
-                    name="placement"
-                    min="1"
-                    placeholder="Seed"
-                    value="{{ c.get('placement','') }}"
-                    class="bg-gray-900 border border-gray-600 rounded px-2 py-1 w-16 focus:outline-none focus:ring-2 focus:ring-pink-500"
-                  />
-                  <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1 px-3 rounded">Set Seed</button>
-                </form>
+                <!-- Only show forms if competitor has a valid ID -->
+                {% if c.get('id') %}
+                  <!-- Seed Placement Form (only show if seeding not in progress) -->
+                  {% if not data.get('seeding_in_progress') %}
+                  <form action="{{ url_for('admin.set_seed', user_id=c.id) }}" method="POST" class="flex items-center gap-2">
+                    <input
+                      type="number"
+                      name="placement"
+                      min="1"
+                      placeholder="Seed"
+                      value="{{ c.get('placement','') }}"
+                      class="bg-gray-900 border border-gray-600 rounded px-2 py-1 w-16 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    />
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1 px-3 rounded">Set Seed</button>
+                  </form>
+                  {% endif %}
+                  
+                  <form action="{{ url_for('admin.remove_competitor', user_id=c.id) }}" method="POST" onsubmit="return confirm('Remove {{ c.name }}?');">
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1 px-2 rounded">Remove</button>
+                  </form>
+                {% else %}
+                  <div class="text-red-400 text-xs">Invalid competitor data (no ID)</div>
                 {% endif %}
-                
-                <form action="{{ url_for('admin.remove_competitor', user_id=c.id) }}" method="POST" onsubmit="return confirm('Remove {{ c.name }}?');">
-                  <button type="submit" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-1 px-2 rounded">Remove</button>
-                </form>
               </div>
               {% endfor %}
             </div>
