@@ -1132,7 +1132,7 @@
         </div>
         <!-- Admin Permission Management (Full Admin Only) -->
         {% set admin_user_id = session.get('admin_user_id') %}
-        {% set is_main_admin = admin_user_id == config.ADMIN_OSU_ID if config else false %}
+        {% set is_main_admin = admin_user_id in config.ADMIN_OSU_ID if config else false %}
         {% set is_full_admin = admin_user_id in data.get('full_admins', []) or is_main_admin %}
         
         {% if is_full_admin %}
