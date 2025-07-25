@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
+    <title>{% if panel_type == 'dev' %}Developer{% elif panel_type == 'host' %}Host{% else %}Admin{% endif %} Panel</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code&family=Orbitron:wght@600&display=swap');
@@ -51,11 +51,85 @@
         }
     </style>
 </head>
+
+{% macro admin_url(endpoint) -%}
+    {%- set panel_specific_endpoints = {
+        'host_panel': 'host',
+        'admin_panel': 'admin', 
+        'dev_panel': 'dev'
+    } -%}
+    {%- set full_admin_only_endpoints = [
+        'remove', 'reset_competitors', 'reset_bracket', 'approve_signup', 
+        'reject_signup', 'toggle_signups'
+    ] -%}
+    {%- set dev_only_endpoints = [
+        'dev_login_as_user', 'dev_logout', 'dev_reset_all', 'dev_populate_test_data',
+        'dev_simulate_tournament', 'dev_export_data', 'dev_import_data',
+        'grant_host_perms', 'revoke_host_perms', 'grant_admin_perms', 'revoke_admin_perms'
+    ] -%}
+    {%- if endpoint in panel_specific_endpoints -%}
+        {%- set blueprint = panel_specific_endpoints[endpoint] -%}
+    {%- elif endpoint in dev_only_endpoints -%}
+        {%- set blueprint = 'dev' -%}
+    {%- elif endpoint in full_admin_only_endpoints -%}
+        {%- set blueprint = 'admin' if panel_type == 'admin' else 'dev' -%}
+    {%- else -%}
+        {%- set blueprint = panel_type -%}
+    {%- endif -%}
+    {{ url_for(blueprint + '.' + endpoint) }}
+{%- endmacro %}
+
 <body class="p-8">
     <div class="max-w-7xl mx-auto">
-        <h1 class="text-4xl text-yellow-400 mb-8">Tournament Admin Panel</h1>
+        <h1 class="text-4xl text-yellow-400 mb-8">
+            {% if panel_type == 'dev' %}
+                🛠️ Developer Panel
+            {% elif panel_type == 'host' %}
+                🎯 Host Panel
+            {% else %}
+                ⚙️ Admin Panel
+            {% endif %}
+        </h1>
 
-        <!-- Dev Mode Toggle -->
+        <!-- Permission Level Indicator -->
+        <div class="bg-gray-800 border border-gray-600 p-4 rounded-lg mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-blue-400">
+                        {% if panel_type == 'dev' %}
+                            🔧 Developer Access
+                        {% elif panel_type == 'host' %}
+                            🎪 Host Access
+                        {% else %}
+                            👑 Admin Access
+                        {% endif %}
+                    </h3>
+                    <p class="text-sm text-gray-300">
+                        {% if panel_type == 'dev' %}
+                            Full system access including user management and dangerous operations
+                        {% elif panel_type == 'host' %}
+                            Tournament hosting capabilities: matches, seeding, streaming, overlay control
+                        {% else %}
+                            Administrative access: signups, advanced tournament management
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="flex gap-2">
+                    {% if panel_type != 'host' %}
+                        <a href="{{ url_for('host.host_panel') }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold">Host Panel</a>
+                    {% endif %}
+                    {% if panel_type != 'admin' and permission_level in ['full_admin', 'main_admin'] %}
+                        <a href="{{ admin_url('admin_panel') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold">Admin Panel</a>
+                    {% endif %}
+                    {% if panel_type != 'dev' and permission_level == 'main_admin' %}
+                        <a href="{{ url_for('dev.dev_panel') }}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold">Dev Panel</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Dev Mode Toggle (only show on dev panel) -->
+        {% if panel_type == 'dev' %}
         <div class="bg-orange-900 border border-orange-600 p-4 rounded-lg mb-6">
             <div class="flex items-center justify-between">
                 <div>
@@ -68,6 +142,7 @@
                 </button>
             </div>
         </div>
+        {% endif %}
 
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -90,7 +165,7 @@
             <h2 class="text-2xl text-pink-500 mb-4">Twitch Stream</h2>
             
             <div class="flex flex-wrap gap-4 items-start mb-6">
-                <form action="{{ url_for('admin.set_stream') }}" method="POST" class="flex gap-2">
+                <form action="{{ admin_url('set_stream') }}" method="POST" class="flex gap-2">
                     <input type="text" name="twitch_channel" 
                            placeholder="Twitch channel name (e.g., shroud)" 
                            value="{{ data.get('twitch_channel', '') }}"
@@ -101,7 +176,7 @@
                 </form>
                 
                 {% if data.get('twitch_channel') %}
-                <form action="{{ url_for('admin.toggle_stream') }}" method="POST" class="inline">
+                <form action="{{ admin_url('toggle_stream') }}" method="POST" class="inline">
                     <button type="submit" 
                             class="{% if data.get('stream_live') %}bg-red-600 hover:bg-red-700{% else %}bg-green-600 hover:bg-green-700{% endif %} text-white font-bold py-2 px-4 rounded">
                         {% if data.get('stream_live') %}
@@ -112,7 +187,7 @@
                     </button>
                 </form>
                 
-                <form action="{{ url_for('admin.clear_stream') }}" method="POST" class="inline"
+                <form action="{{ admin_url('clear_stream') }}" method="POST" class="inline"
                       onsubmit="return confirm('Clear stream settings?');">
                     <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
                         Clear Stream
@@ -163,7 +238,7 @@
             <div class="bg-gray-700 p-4 rounded-lg mb-4">
                 <h3 class="text-lg text-blue-400 mb-3">🎯 Seeding Mappool</h3>
                 
-                <form action="{{ url_for('admin.set_seeding_playlist') }}" method="POST" class="flex gap-2 mb-3">
+                <form action="{{ admin_url('set_seeding_playlist') }}" method="POST" class="flex gap-2 mb-3">
                     <input type="url" name="playlist_url" 
                            placeholder="osu! playlist URL (e.g., https://osu.ppy.sh/playlists/123456)" 
                            value="{{ data.get('seeding_playlist_url', '') }}"
@@ -179,7 +254,7 @@
                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-sm">
                         🎵 View Current Playlist
                     </a>
-                    <form action="{{ url_for('admin.set_seeding_playlist') }}" method="POST" class="inline"
+                    <form action="{{ admin_url('set_seeding_playlist') }}" method="POST" class="inline"
                           onsubmit="return confirm('Clear seeding playlist URL?');">
                         <input type="hidden" name="playlist_url" value="">
                         <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded text-sm">
@@ -204,21 +279,21 @@
             <!-- Main Controls -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                 <!-- AFK Toggle -->
-                <form action="{{ url_for('admin.overlay_toggle_afk') }}" method="POST" class="inline">
+                <form action="{{ admin_url('overlay_toggle_afk') }}" method="POST" class="inline">
                     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors">
                         📺 Toggle AFK Screen
                     </button>
                 </form>
                 
                 <!-- Hide Victory Screens -->
-                <form action="{{ url_for('admin.overlay_hide_victory') }}" method="POST" class="inline">
+                <form action="{{ admin_url('overlay_hide_victory') }}" method="POST" class="inline">
                     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors">
                         ❌ Hide Victory Screens
                     </button>
                 </form>
                 
                 <!-- Show Match Victory -->
-                <form action="{{ url_for('admin.overlay_show_match_victory') }}" method="POST" class="inline">
+                <form action="{{ admin_url('overlay_show_match_victory') }}" method="POST" class="inline">
                     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors">
                         🏆 Show Match Victory
                     </button>
@@ -231,7 +306,7 @@
                 </a>
 
                 <!-- Flip Players -->
-                <form action="{{ url_for('admin.overlay_flip_players') }}" method="POST" class="inline">
+                <form action="{{ admin_url('overlay_flip_players') }}" method="POST" class="inline">
                     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors">
                         🔄 Flip Players
                     </button>
@@ -241,28 +316,35 @@
             <!-- Welcome/Outro Screen Controls -->
             <div class="border-t border-gray-600 pt-4">
                 <h3 class="text-lg text-blue-400 mb-3">✨ Special Screens</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-8 gap-4">
                     <!-- Welcome Screen -->
-                    <form action="{{ url_for('admin.overlay_show_welcome') }}" method="POST" class="inline">
+                    <form action="{{ admin_url('overlay_show_welcome') }}" method="POST" class="inline">
                         <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition-colors">
                             🌟 Show Welcome Screen
                         </button>
                     </form>
                     
-                    <form action="{{ url_for('admin.overlay_hide_welcome') }}" method="POST" class="inline">
+                    <form action="{{ admin_url('overlay_hide_welcome') }}" method="POST" class="inline">
                         <button type="submit" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors">
                             ❌ Hide Welcome
                         </button>
                     </form>
                     
+                    <!-- Seeding Mode Toggle -->
+                    <form action="{{ admin_url('overlay_toggle_seeding') }}" method="POST" class="inline">
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                            🎯 Toggle Seeding Mode
+                        </button>
+                    </form>
+                    
                     <!-- Match Interface -->
-                    <form action="{{ url_for('admin.overlay_show_match_interface') }}" method="POST" class="inline">
+                    <form action="{{ admin_url('overlay_show_match_interface') }}" method="POST" class="inline">
                         <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors">
                             🎯 Show Match Interface
                         </button>
                     </form>
                     
-                    <form action="{{ url_for('admin.overlay_hide_match_interface') }}" method="POST" class="inline">
+                    <form action="{{ admin_url('overlay_hide_match_interface') }}" method="POST" class="inline">
                         <button type="submit" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors">
                             ❌ Hide Match Interface
                         </button>
@@ -273,7 +355,7 @@
                         🎉 Show Outro Screen
                     </button>
                     
-                    <form action="{{ url_for('admin.overlay_hide_outro') }}" method="POST" class="inline">
+                    <form action="{{ admin_url('overlay_hide_outro') }}" method="POST" class="inline">
                         <button type="submit" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors">
                             ❌ Hide Outro
                         </button>
@@ -283,7 +365,7 @@
                 <!-- Outro Form (Hidden by default) -->
                 <div id="outroForm" class="mt-4 p-4 bg-gray-700 rounded-lg hidden">
                     <h4 class="text-lg font-semibold mb-3">🏆 Tournament Outro Details</h4>
-                    <form action="{{ url_for('admin.overlay_show_outro') }}" method="POST">
+                    <form action="{{ admin_url('overlay_show_outro') }}" method="POST">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label for="champion" class="block text-sm font-medium text-gray-300 mb-2">Champion Name:</label>
@@ -440,7 +522,7 @@
                         {% endif %}
                         
                         <!-- Set/Update Room URL and optional start -->
-                        <form action="{{ url_for('admin.set_match_room') }}" method="POST" class="flex gap-2">
+                        <form action="{{ admin_url('set_match_room') }}" method="POST" class="flex gap-2">
                             <input type="hidden" name="match_id" value="{{ ns.current_match.id }}">
                             <input type="url" name="mp_room_url" 
                                    placeholder="https://osu.ppy.sh/multiplayer/rooms/..." 
@@ -459,7 +541,7 @@
                         <p class="text-sm text-gray-300 mb-3">
                             Refresh scores from the multiplayer room. Use this after maps are completed.
                         </p>
-                        <form action="{{ url_for('admin.refresh_match_scores') }}" method="POST" class="inline">
+                        <form action="{{ admin_url('refresh_match_scores') }}" method="POST" class="inline">
                             <input type="hidden" name="match_id" value="{{ ns.current_match.id }}">
                             <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded font-bold">
                                 🔄 Refresh Scores from osu!
@@ -486,7 +568,7 @@
                         </div>
                         {% endif %}
                         
-                        <form action="{{ url_for('admin.set_tiebreaker_map') }}" method="POST" class="flex gap-2">
+                        <form action="{{ admin_url('set_tiebreaker_map') }}" method="POST" class="flex gap-2">
                             <input type="hidden" name="match_id" value="{{ ns.current_match.id }}">
                             <input type="url" name="tiebreaker_map_url" 
                                    placeholder="https://osu.ppy.sh/beatmapsets/123456#osu/789012" 
@@ -498,7 +580,7 @@
                         </form>
                         
                         {% if ns.current_match.get('tiebreaker_map_url') %}
-                        <form action="{{ url_for('admin.clear_tiebreaker_map') }}" method="POST" class="inline mt-2">
+                        <form action="{{ admin_url('clear_tiebreaker_map') }}" method="POST" class="inline mt-2">
                             <input type="hidden" name="match_id" value="{{ ns.current_match.id }}">
                             <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
                                 Clear Tiebreaker
@@ -513,7 +595,7 @@
                         <h4 class="text-md font-bold text-green-400 mb-3">⚡ Match Controls</h4>
                         <div class="flex flex-wrap gap-2">
                             {% if ns.current_match.get('status') == 'next_up' %}
-                            <form action="{{ url_for('admin.start_match') }}" method="POST" class="inline">
+                            <form action="{{ admin_url('start_match') }}" method="POST" class="inline">
                                 <input type="hidden" name="match_id" value="{{ ns.current_match.id }}">
                                 <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold">
                                     ▶️ Start Match
@@ -522,7 +604,7 @@
                             {% endif %}
                             
                             {% if ns.current_match.get('status') == 'in_progress' %}
-                            <form action="{{ url_for('admin.reset_match') }}" method="POST" class="inline"
+                            <form action="{{ admin_url('reset_match') }}" method="POST" class="inline"
                                   onsubmit="return confirm('Reset this match to Next Up status?');">
                                 <input type="hidden" name="match_id" value="{{ ns.current_match.id }}">
                                 <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">
@@ -548,7 +630,7 @@
             
             <!-- Seeding Room Management -->
             <div class="flex flex-wrap gap-4 items-start mb-6">
-                <form action="{{ url_for('admin.start_seeding') }}" method="POST" class="flex gap-2">
+                <form action="{{ admin_url('start_seeding') }}" method="POST" class="flex gap-2">
                     <input type="url" name="seeding_room_url" placeholder="https://osu.ppy.sh/multiplayer/rooms/..." 
                            class="bg-gray-900 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500 w-80">
                     <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
@@ -557,13 +639,13 @@
                 </form>
                 
                 {% if data.get('seeding_room_url') %}
-                <form action="{{ url_for('admin.update_seeding_scores') }}" method="POST" class="inline">
+                <form action="{{ admin_url('update_seeding_scores') }}" method="POST" class="inline">
                     <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                         🔄 Update Seeding Scores
                     </button>
                 </form>
                 
-                <form action="{{ url_for('admin.finalize_seeding') }}" method="POST" class="inline"
+                <form action="{{ admin_url('finalize_seeding') }}" method="POST" class="inline"
                       onsubmit="return confirm('Finalize seeding and lock placements?');">
                     <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
                         ✅ Finalize Seeding
@@ -603,7 +685,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                         {% for competitor in data.competitors %}
                         {% if competitor.get('id') %}
-                        <form action="{{ url_for('admin.dev_login_as_user') }}" method="POST" class="inline">
+                        <form action="{{ admin_url('dev_login_as_user') }}" method="POST" class="inline">
                             <input type="hidden" name="user_id" value="{{ competitor.id }}">
                             <button type="submit" 
                                     class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-3 rounded text-sm transition-colors">
@@ -622,7 +704,7 @@
                 <!-- Manual User ID Login -->
                 <div class="border-t border-red-600 pt-4">
                     <h3 class="text-lg text-red-300 mb-3">🎯 Manual User Login:</h3>
-                    <form action="{{ url_for('admin.dev_login_as_user') }}" method="POST" class="flex gap-2">
+                    <form action="{{ admin_url('dev_login_as_user') }}" method="POST" class="flex gap-2">
                         <input type="text" name="user_id" 
                                placeholder="Enter osu! User ID or Username" 
                                class="flex-1 bg-gray-900 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500">
@@ -647,7 +729,7 @@
                                 (ID: {{ session.get('user_id') }})
                             </span>
                         </div>
-                        <form action="{{ url_for('admin.dev_logout') }}" method="POST" class="inline">
+                        <form action="{{ admin_url('dev_logout') }}" method="POST" class="inline">
                             <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded text-sm">
                                 🚪 Logout
                             </button>
@@ -690,7 +772,7 @@
                 <h2 class="text-2xl text-green-500">Tournament Signups</h2>
                 
                 <!-- Signup Lock/Unlock Toggle -->
-                <form action="{{ url_for('admin.toggle_signups') }}" method="POST" class="inline">
+                <form action="{{ admin_url('toggle_signups') }}" method="POST" class="inline">
                     {% if data.get('signups_locked', False) %}
                         <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded flex items-center gap-2">
                             🔒 Signups Locked - Click to Unlock
@@ -783,7 +865,7 @@
             <!-- Add/Reset Competitors & Seeding -->
             <div class="flex flex-wrap gap-4 items-start mb-6">
                 <!-- Manual Add Form -->
-                <form action="{{ url_for('admin.add_competitor') }}" method="POST" class="flex gap-2">
+                <form action="{{ admin_url('add_competitor') }}" method="POST" class="flex gap-2">
                     <input type="text" name="username" placeholder="Enter osu! Username" class="bg-gray-900 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500">
                     <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Add Competitor</button>
                 </form>
@@ -793,12 +875,12 @@
                     <div class="flex gap-4 items-center border border-red-500 bg-red-900 p-3 rounded">
                         <span class="text-red-300 text-sm font-bold">DEV DANGER ZONE:</span>
                         <!-- Reset Competitors Button -->
-                        <form action="{{ url_for('admin.reset_competitors') }}" method="POST" onsubmit="return confirm('DANGER! This will remove ALL competitors and reset the entire tournament. Are you absolutely sure?');">
+                        <form action="{{ admin_url('reset_competitors') }}" method="POST" onsubmit="return confirm('DANGER! This will remove ALL competitors and reset the entire tournament. Are you absolutely sure?');">
                             <button type="submit" class="bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-4 rounded">Reset All Competitors</button>
                         </form>
 
                         <!-- Reset All Seed Placements -->
-                        <form action="{{ url_for('admin.reset_seeding') }}" method="POST" onsubmit="return confirm('This will clear all seed placements. Continue?');">
+                        <form action="{{ admin_url('reset_seeding') }}" method="POST" onsubmit="return confirm('This will clear all seed placements. Continue?');">
                             <button type="submit"
                                     class="bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-2 px-4 rounded">
                               Reset Seeding
@@ -806,7 +888,7 @@
                         </form>
                         
                         <!-- Regenerate Bracket (also dangerous) -->
-                        <form method="POST" action="{{ url_for('admin.reset_bracket') }}" class="inline">
+                        <form method="POST" action="{{ admin_url('reset_bracket') }}" class="inline">
                             <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold"
                                     onclick="return confirm('Are you sure you want to regenerate the bracket? This will reset all match progress.')">
                                 🔄 Regenerate Bracket
@@ -952,7 +1034,7 @@
                 {% if not is_bye_match %}
                 <div class="flex items-center justify-between mb-3 gap-2">
                     {% if match.get('status') == 'next_up' %}
-                    <form action="{{ url_for('admin.start_match') }}" method="POST" class="inline">
+                    <form action="{{ admin_url('start_match') }}" method="POST" class="inline">
                         <input type="hidden" name="match_id" value="{{ match.id }}">
                         <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm">
                             ▶️ Start Match
@@ -965,7 +1047,7 @@
                         </span>
                         <!-- Auto-refresh match results button -->
                         {% if match.get('mp_room_url') %}
-                        <form action="{{ url_for('admin.refresh_match_scores') }}" method="POST" class="inline">
+                        <form action="{{ admin_url('refresh_match_scores') }}" method="POST" class="inline">
                             <input type="hidden" name="match_id" value="{{ match.id }}">
                             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded text-sm">
                                 🔄 Refresh Scores
@@ -982,7 +1064,7 @@
                     <!-- Reset Match Button (DEV MODE ONLY) -->
                     {% if match.get('status') != 'next_up' %}
                     <div class="dev-mode-content">
-                        <form action="{{ url_for('admin.reset_match') }}" method="POST" class="inline" 
+                        <form action="{{ admin_url('reset_match') }}" method="POST" class="inline" 
                               onsubmit="return confirm('Reset this match to Next Up status?');">
                             <input type="hidden" name="match_id" value="{{ match.id }}">
                             <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded text-sm">
@@ -997,7 +1079,7 @@
                 {% if match.get('status') != 'completed' %}
                 <div class="dev-mode-content mb-3">
                     <div class="flex items-center justify-between border border-orange-500 bg-orange-900 p-2 rounded">
-                        <form action="{{ url_for('admin.set_winner') }}" method="POST" class="inline">
+                        <form action="{{ admin_url('set_winner') }}" method="POST" class="inline">
                             <input type="hidden" name="match_id" value="{{ match.id }}">
                             <input type="hidden" name="winner_id" value="{{ match.player1.id }}">
                             <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm">
@@ -1005,7 +1087,7 @@
                             </button>
                         </form>
                         <span class="text-orange-300 text-sm font-bold">DEV: Quick Actions</span>
-                        <form action="{{ url_for('admin.set_winner') }}" method="POST" class="inline">
+                        <form action="{{ admin_url('set_winner') }}" method="POST" class="inline">
                             <input type="hidden" name="match_id" value="{{ match.id }}">
                             <input type="hidden" name="winner_id" value="{{ match.player2.id }}">
                             <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm">
@@ -1023,7 +1105,7 @@
                         <div class="mb-2 text-center">
                             <span class="text-orange-300 text-sm font-bold">DEV: Manual Score Control</span>
                         </div>
-                        <form action="{{ url_for('admin.set_score') }}" method="POST">
+                        <form action="{{ admin_url('set_score') }}" method="POST">
                             <input type="hidden" name="match_id" value="{{ match.id }}">
                             
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1157,7 +1239,7 @@
                                 <span class="text-blue-300">🏠</span>
                                 <span class="text-white">Host ID: {{ host_id }}</span>
                             </div>
-                            <form action="{{ url_for('admin.revoke_host_perms') }}" method="POST" class="inline"
+                            <form action="{{ admin_url('revoke_host_perms') }}" method="POST" class="inline"
                                   onsubmit="return confirm('Revoke host permissions from this user?');">
                                 <input type="hidden" name="user_id" value="{{ host_id }}">
                                 <button type="submit" class="bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded text-xs">
@@ -1171,7 +1253,7 @@
                 {% endif %}
                 
                 <!-- Add Host Admin Form -->
-                <form action="{{ url_for('admin.grant_host_perms') }}" method="POST" class="flex gap-2">
+                <form action="{{ admin_url('grant_host_perms') }}" method="POST" class="flex gap-2">
                     <input type="number" name="user_id" placeholder="osu! User ID" 
                            class="bg-gray-900 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
@@ -1210,7 +1292,7 @@
                                 <span class="text-red-400">👑</span>
                                 <span class="text-white">Admin ID: {{ admin_id }}</span>
                             </div>
-                            <form action="{{ url_for('admin.revoke_admin_perms') }}" method="POST" class="inline"
+                            <form action="{{ admin_url('revoke_admin_perms') }}" method="POST" class="inline"
                                   onsubmit="return confirm('Revoke full admin permissions from this user?');">
                                 <input type="hidden" name="user_id" value="{{ admin_id }}">
                                 <button type="submit" class="bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded text-xs">
@@ -1223,7 +1305,7 @@
                 </div>
                 
                 <!-- Add Full Admin Form -->
-                <form action="{{ url_for('admin.grant_admin_perms') }}" method="POST" class="flex gap-2">
+                <form action="{{ admin_url('grant_admin_perms') }}" method="POST" class="flex gap-2">
                     <input type="number" name="user_id" placeholder="osu! User ID" 
                            class="bg-gray-900 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500">
                     <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">

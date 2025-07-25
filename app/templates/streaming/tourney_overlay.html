@@ -1182,6 +1182,97 @@
         .current-map-tiebreaker .current-map-label::after {
             content: " ⚡";
         }
+
+        /* Seeding Mode Styles */
+        .match-hud.seeding-mode .players-container {
+            display: none;
+        }
+        
+        .match-hud.seeding-mode .bracket-info {
+            display: none;
+        }
+        
+        .match-hud.seeding-mode .hud-container {
+            /* Keep exact same dimensions as normal match HUD */
+            padding: 20px 40px;
+            min-height: auto;
+        }
+        
+        .seeding-content {
+            display: none;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: space-between;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        
+        .match-hud.seeding-mode .seeding-content {
+            display: flex;
+        }
+        
+        .seeding-left {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .seeding-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+            flex: 1;
+            text-align: right;
+        }
+        
+        .seeding-logo {
+            font-size: 120px;
+            font-weight: 900;
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 30%, #d97706 70%, #92400e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 50px rgba(251, 191, 36, 0.4);
+            letter-spacing: 8px;
+            animation: pulse 3s ease-in-out infinite;
+            line-height: 1;
+        }
+        
+        .seeding-title {
+            font-size: 42px;
+            font-weight: 700;
+            font-family: 'Orbitron', monospace;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+            text-shadow: 0 3px 25px rgba(0, 0, 0, 0.8);
+            animation: slideUp 0.8s ease-out 0.2s both;
+            line-height: 1;
+        }
+        
+        .seeding-subtitle {
+            font-size: 24px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.85);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            animation: slideUp 0.8s ease-out 0.4s both;
+            line-height: 1;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { 
+                transform: scale(1); 
+                text-shadow: 0 0 50px rgba(251, 191, 36, 0.4);
+            }
+            50% { 
+                transform: scale(1.02); 
+                text-shadow: 0 0 60px rgba(251, 191, 36, 0.6);
+            }
+        }
     </style>
 </head>
 <body>
@@ -1189,7 +1280,7 @@
     <div class="screen gradient-dark-alt welcome-screen hidden" id="welcomeScreen">
         <div class="screen-content welcome-content">
             <div class="welcome-logo">SWEF</div>
-            <div class="welcome-subtitle text-uppercase letter-spacing-lg">Sand World OSU Cup</div>
+            <div class="welcome-subtitle text-uppercase letter-spacing-lg">SWEF OSU Cup</div>
             <div class="welcome-year gradient-gold-text">2025</div>
             <div class="welcome-message">Welcome to the ultimate rhythm tournament!</div>
         </div>
@@ -1200,6 +1291,17 @@
         <div class="hud-container gradient-dark bordered rounded-lg backdrop-blur shadow-lg">
             <div class="bracket-info font-orbitron text-uppercase letter-spacing-lg gradient-primary" id="bracketInfo">
                 SWEF CUP 2025 - Upper Bracket - Round 1
+            </div>
+            
+            <!-- Seeding Mode Content -->
+            <div class="seeding-content" id="seedingContent">
+                <div class="seeding-left">
+                    <div class="seeding-logo">SWEF</div>
+                </div>
+                <div class="seeding-right">
+                    <div class="seeding-title">Seeding Round</div>
+                    <div class="seeding-subtitle">SWEF OSU Cup 2025</div>
+                </div>
             </div>
             
             <div class="players-container">
@@ -1263,7 +1365,7 @@
         <div class="screen-content outro-content">
             <div class="outro-title">Tournament Complete!</div>
             <div class="outro-subtitle text-uppercase letter-spacing-lg">Congratulations Champion!</div>
-            <div class="outro-message">Thank you for watching the Sand World OSU Cup 2025</div>
+            <div class="outro-message">Thank you for watching the Sand World Evil Financing OSU Cup 2025</div>
             <div class="outro-thanks">See you next tournament!</div>
         </div>
     </div>
@@ -1272,7 +1374,7 @@
     <div class="screen afk-screen hidden" id="afkScreen">
         <div class="screen-content brb-content">
             <div class="brb-title">Be Right Back</div>
-            <div class="tournament-title text-uppercase letter-spacing-lg">Sand World OSU Cup 2025</div>
+            <div class="tournament-title text-uppercase letter-spacing-lg">SWEF OSU Cup 2025</div>
             <div class="next-match" id="nextMatch">Loading tournament data...</div>
         </div>
     </div>
@@ -1462,6 +1564,15 @@
                         break;
                     case 'flip_players':
                         flipPlayers();
+                        break;
+                    case 'toggle_seeding':
+                        toggleSeedingMode();
+                        break;
+                    case 'show_seeding':
+                        showSeedingMode();
+                        break;
+                    case 'hide_seeding':
+                        hideSeedingMode();
                         break;
                     case 'show_welcome':
                         showWelcomeScreen();
@@ -1883,6 +1994,48 @@
             matchHud.classList.remove('hidden');
             
             console.log('Exited AFK screen - showing match HUD');
+        }
+        
+        function toggleSeedingMode() {
+            const matchHud = document.getElementById('matchHud');
+            
+            if (matchHud.classList.contains('seeding-mode')) {
+                // Exit seeding mode
+                matchHud.classList.remove('seeding-mode');
+                console.log('Exited seeding mode - showing normal match HUD');
+            } else {
+                // Enter seeding mode
+                matchHud.classList.add('seeding-mode');
+                console.log('Entered seeding mode - showing seeding display');
+            }
+        }
+        
+        function showSeedingMode() {
+            const matchHud = document.getElementById('matchHud');
+            const afkScreen = document.getElementById('afkScreen');
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            const outroScreen = document.getElementById('outroScreen');
+            
+            // Hide other screens
+            afkScreen.classList.add('hidden');
+            welcomeScreen.classList.add('hidden');
+            outroScreen.classList.add('hidden');
+            hideVictoryScreens();
+            
+            // Show match HUD in seeding mode
+            matchHud.classList.add('seeding-mode');
+            matchHud.classList.remove('hidden');
+            
+            console.log('Seeding mode activated');
+        }
+        
+        function hideSeedingMode() {
+            const matchHud = document.getElementById('matchHud');
+            
+            // Exit seeding mode
+            matchHud.classList.remove('seeding-mode');
+            
+            console.log('Seeding mode deactivated - showing normal match HUD');
         }
         
         function hideVictoryScreens() {

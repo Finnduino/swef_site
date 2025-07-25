@@ -12,11 +12,13 @@ def create_app():
 
     with app.app_context():
         # Import routes after initializing the app to avoid circular imports
-        from .routes import public_bp, admin_bp, player_bp
+        from .routes import public_bp, admin_bp, host_bp, dev_bp, player_bp
 
         # Register blueprints
         app.register_blueprint(public_bp)
         app.register_blueprint(admin_bp)
+        app.register_blueprint(host_bp)
+        app.register_blueprint(dev_bp)
         app.register_blueprint(player_bp)
 
     return app

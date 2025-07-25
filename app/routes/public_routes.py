@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, request, url_for, flash, jsonify, session
 import requests
 from datetime import datetime, timedelta
-from config import OSU_CLIENT_ID, OSU_CLIENT_SECRET, OSU_CALLBACK_URL, AUTHORIZATION_URL, TOKEN_URL, OSU_API_BASE_URL
+from config import OSU_CLIENT_ID, OSU_CLIENT_SECRET, OSU_CALLBACK_URL, AUTHORIZATION_URL, TOKEN_URL, OSU_API_BASE_URL, ADMIN_OSU_ID
 from ..data_manager import get_tournament_data, save_tournament_data
 from ..bracket_logic import generate_bracket
 from .. import api
@@ -13,6 +13,36 @@ public_bp = Blueprint('public', __name__)
 @public_bp.route('/')
 def index():
     return render_template('index.html')
+
+
+@public_bp.route('/admin-redirect')
+def admin_redirect():
+    """Smart admin redirect that routes users to the appropriate admin panel based on their permission level"""
+    # If not logged in as admin, redirect to login
+    if not session.get('is_admin'):
+        return redirect(url_for('admin.admin_login'))
+    
+    admin_user_id = session.get('admin_user_id')
+    if not admin_user_id:
+        return redirect(url_for('admin.admin_login'))
+    
+    data = get_tournament_data()
+    
+    # Check permission levels and redirect accordingly
+    # Main admin (highest level) - redirect to dev panel
+    if str(admin_user_id) in ADMIN_OSU_ID:
+        return redirect(url_for('dev.dev_panel'))
+    
+    # Full admin - redirect to admin panel
+    if admin_user_id in data.get('full_admins', []):
+        return redirect(url_for('admin.admin_panel'))
+    
+    # Host admin - redirect to host panel
+    if admin_user_id in data.get('host_admins', []):
+        return redirect(url_for('host.host_panel'))
+    
+    # If they have admin session but no permissions, redirect to login
+    return redirect(url_for('admin.admin_login'))
 
 
 @public_bp.route('/legal')

@@ -1,57 +1,58 @@
 {
   "afk_mode": false,
   "victory_screen_hidden": false,
-  "last_updated": "2025-07-23T16:35:31.379577",
+  "last_updated": "2025-07-25T15:46:51.320800",
   "events": [
     {
-      "type": "exit_afk",
+      "type": "show_seeding",
       "data": {},
-      "timestamp": "2025-07-23T15:26:48.917240"
+      "timestamp": "2025-07-25T15:39:47.013800"
+    },
+    {
+      "type": "hide_seeding",
+      "data": {},
+      "timestamp": "2025-07-25T15:41:50.754298"
     },
     {
       "type": "match_update",
       "data": {},
-      "timestamp": "2025-07-23T15:29:13.236350"
+      "timestamp": "2025-07-25T15:41:55.174301"
     },
     {
       "type": "exit_afk",
       "data": {},
-      "timestamp": "2025-07-23T15:29:13.244351"
+      "timestamp": "2025-07-25T15:41:55.182799"
     },
     {
       "type": "match_update",
       "data": {},
-      "timestamp": "2025-07-23T15:29:33.735673"
+      "timestamp": "2025-07-25T15:42:15.943300"
     },
     {
       "type": "show_match_interface",
       "data": {},
-      "timestamp": "2025-07-23T15:29:45.925124"
+      "timestamp": "2025-07-25T15:42:23.894301"
     },
     {
       "type": "hide_match_interface",
       "data": {},
-      "timestamp": "2025-07-23T15:29:50.394216"
+      "timestamp": "2025-07-25T15:42:26.423300"
     },
     {
-      "type": "show_match_interface",
+      "type": "toggle_afk",
       "data": {},
-      "timestamp": "2025-07-23T15:29:59.345052"
+      "timestamp": "2025-07-25T15:42:33.904799"
     },
     {
-      "type": "show_match_interface",
+      "type": "toggle_afk",
       "data": {},
-      "timestamp": "2025-07-23T16:34:06.218757"
+      "timestamp": "2025-07-25T15:42:35.408801"
     },
     {
-      "type": "show_match_interface",
+      "type": "show_seeding",
       "data": {},
-      "timestamp": "2025-07-23T16:35:13.456757"
-    },
-    {
-      "type": "show_match_interface",
-      "data": {},
-      "timestamp": "2025-07-23T16:35:31.379577"
+      "timestamp": "2025-07-25T15:46:51.320800"
     }
-  ]
+  ],
+  "seeding_mode": true
 }
