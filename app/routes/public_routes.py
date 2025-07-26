@@ -304,29 +304,68 @@ def get_match_interface_state():
         data = get_tournament_data()
         current_match = None
         
-        # Find the current match in the bracket structure
-        if 'grand_finals' in data.get('brackets', {}):
+        # Find the current match in the bracket structure using round-based priority
+        # Determine max rounds to search through
+        max_rounds = 10
+        if 'upper' in data.get('brackets', {}):
+            max_rounds = len(data['brackets']['upper'])
+        if 'lower' in data.get('brackets', {}) and len(data['brackets']['lower']) > max_rounds:
+            max_rounds = len(data['brackets']['lower'])
+        
+        # First look for in_progress matches with round priority
+        for round_num in range(1, max_rounds + 1):
+            if current_match:
+                break
+                
+            # Check upper bracket round first
+            if 'upper' in data.get('brackets', {}) and len(data['brackets']['upper']) >= round_num:
+                round_matches = data['brackets']['upper'][round_num - 1]
+                for match in round_matches:
+                    if match and match.get('status') == 'in_progress':
+                        current_match = match
+                        break
+            
+            # Then check lower bracket round
+            if not current_match and 'lower' in data.get('brackets', {}) and len(data['brackets']['lower']) >= round_num:
+                round_matches = data['brackets']['lower'][round_num - 1]
+                for match in round_matches:
+                    if match and match.get('status') == 'in_progress':
+                        current_match = match
+                        break
+        
+        # Check grand finals for in_progress
+        if not current_match and 'grand_finals' in data.get('brackets', {}):
             match = data['brackets']['grand_finals']
-            if match and match.get('status') in ['in_progress', 'next_up']:
+            if match and match.get('status') == 'in_progress':
                 current_match = match
         
-        if not current_match and 'upper' in data.get('brackets', {}):
-            for round_matches in data['brackets']['upper']:
-                for match in round_matches:
-                    if match and match.get('status') in ['in_progress', 'next_up']:
-                        current_match = match
-                        break
+        # If no in_progress match found, look for next_up matches with same round priority
+        if not current_match:
+            for round_num in range(1, max_rounds + 1):
                 if current_match:
                     break
-        
-        if not current_match and 'lower' in data.get('brackets', {}):
-            for round_matches in data['brackets']['lower']:
-                for match in round_matches:
-                    if match and match.get('status') in ['in_progress', 'next_up']:
-                        current_match = match
-                        break
-                if current_match:
-                    break
+                    
+                # Check upper bracket round first
+                if 'upper' in data.get('brackets', {}) and len(data['brackets']['upper']) >= round_num:
+                    round_matches = data['brackets']['upper'][round_num - 1]
+                    for match in round_matches:
+                        if match and match.get('status') == 'next_up':
+                            current_match = match
+                            break
+                
+                # Then check lower bracket round
+                if not current_match and 'lower' in data.get('brackets', {}) and len(data['brackets']['lower']) >= round_num:
+                    round_matches = data['brackets']['lower'][round_num - 1]
+                    for match in round_matches:
+                        if match and match.get('status') == 'next_up':
+                            current_match = match
+                            break
+            
+            # Check grand finals for next_up
+            if not current_match and 'grand_finals' in data.get('brackets', {}):
+                match = data['brackets']['grand_finals']
+                if match and match.get('status') == 'next_up':
+                    current_match = match
         
         if not current_match:
             return jsonify({
