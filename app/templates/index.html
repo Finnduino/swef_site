@@ -68,10 +68,17 @@
     <div class="absolute inset-0 z-5 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/asfalt-light.png')] mix-blend-overlay"></div>
     <h1 class="text-5xl md:text-7xl font-extrabold text-yellow-400 drop-shadow-lg">Sand World Evil Financing</h1>
     <p class="mt-6 text-xl text-gray-400 max-w-xl">You evil?</p>
+    {% if session.get('user_id') %}
     <a href="https://discord.gg/bsdmezX8yD"
        class="mt-10 inline-block bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-8 rounded-full shadow-xl transition transform hover:scale-105">
       I'm Finna Bridge
     </a>
+    {% else %}
+    <a href="{{ url_for('public.legal') }}"
+       class="mt-10 inline-block bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-8 rounded-full shadow-xl transition transform hover:scale-105">
+      I'm Finna Bridge
+    </a>
+    {% endif %}
   </section>
 
   <!-- Tournament Preview -->
@@ -90,8 +97,8 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
 
         <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl hover:scale-105 transform transition duration-300">
-          <h3 class="text-2xl font-semibold text-yellow-300">Shadow Loans</h3>
-          <p class="mt-4 text-gray-400">We provide a wide variety of financial services—strictly for the advancement of evil activities.</p>
+          <h3 class="text-2xl font-semibold text-yellow-300">Dark Consultancy</h3>
+          <p class="mt-4 text-gray-400">Strategic planning for world domination schemes and villainous plot development services.</p>
         </div>
 
         <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl hover:scale-105 transform transition duration-300">
@@ -112,11 +119,13 @@
   <section class="py-20 bg-black text-center border-t border-gray-800">
     <div class="grid grid-cols-2 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
       <div>
-        <div class="text-4xl font-bold text-yellow-400">999+</div>
-        <div class="text-gray-400 mt-2">Evil Loans</div>
+        <div class="text-4xl font-bold text-yellow-400">42</div>
+        <div class="text-gray-400 mt-2">Evil Schemes</div>
       </div>
       <div>
-        <div class="text-4xl font-bold text-yellow-400">7</div>
+        <div class="text-4xl font-bold text-yellow-400 relative">
+          <span class="text-xs text-gray-700 opacity-30 absolute -left-6 top-0">wyfsi</span>7
+        </div>
         <div class="text-gray-400 mt-2">Esports Teams</div>
       </div>
       <div>
