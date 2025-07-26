@@ -435,68 +435,113 @@
           {% set current_bracket_type = None %}
           
           {# Look for current match with priority: in_progress > next_up #}
-          {# initialize namespace for mutable variables #}
+          {# Search by round priority: Round 1 upper, Round 1 lower, Round 2 upper, Round 2 lower, etc. #}
           {% set ns = namespace(current_match=None, current_bracket_type=None) %}
 
-          {# Check for in_progress matches first #}
-          {% for bracket_type in ['upper', 'lower', 'grand_finals'] %}
-            {% if not ns.current_match and bracket_type in data.get('brackets', {}) %}
-              {% if bracket_type == 'grand_finals' %}
-                {% set match = data.brackets[bracket_type] %}
-                {% if match and match.get('status') == 'in_progress' %}
-                  {% set p1_name = match.get('player1', {}).get('name', '') %}
-                  {% set p2_name = match.get('player2', {}).get('name', '') %}
-                  {% if p1_name and p2_name and p1_name != 'BYE' and p2_name != 'BYE' %}
-                    {% set ns.current_match = match %}
-                    {% set ns.current_bracket_type = bracket_type %}
-                  {% endif %}
-                {% endif %}
-              {% else %}
-                {% for round_matches in data.brackets[bracket_type] %}
-                  {% for match in round_matches %}
-                    {% if not ns.current_match and match and match.get('status') == 'in_progress' %}
-                      {% set p1_name = match.get('player1', {}).get('name', '') %}
-                      {% set p2_name = match.get('player2', {}).get('name', '') %}
-                      {% if p1_name and p2_name and p1_name != 'BYE' and p2_name != 'BYE' %}
-                        {% set ns.current_match = match %}
-                        {% set ns.current_bracket_type = bracket_type %}
-                      {% endif %}
+          {# Determine max rounds to search through #}
+          {% set max_rounds = 10 %}
+          {% if data.brackets.upper %}
+            {% set max_rounds = data.brackets.upper | length %}
+          {% endif %}
+          {% if data.brackets.lower and data.brackets.lower | length > max_rounds %}
+            {% set max_rounds = data.brackets.lower | length %}
+          {% endif %}
+
+          {# Check for in_progress matches first, prioritizing by round #}
+          {% for round_num in range(1, max_rounds + 1) %}
+            {% if not ns.current_match %}
+              {# Check upper bracket round first #}
+              {% if 'upper' in data.get('brackets', {}) and data.brackets.upper | length >= round_num %}
+                {% set round_matches = data.brackets.upper[round_num - 1] %}
+                {% for match in round_matches %}
+                  {% if not ns.current_match and match and match.get('status') == 'in_progress' %}
+                    {% set p1_name = match.get('player1', {}).get('name', '') %}
+                    {% set p2_name = match.get('player2', {}).get('name', '') %}
+                    {% if p1_name and p2_name and p1_name != 'BYE' and p2_name != 'BYE' %}
+                      {% set ns.current_match = match %}
+                      {% set ns.current_bracket_type = 'upper' %}
                     {% endif %}
-                  {% endfor %}
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+              
+              {# Then check lower bracket round #}
+              {% if not ns.current_match and 'lower' in data.get('brackets', {}) and data.brackets.lower | length >= round_num %}
+                {% set round_matches = data.brackets.lower[round_num - 1] %}
+                {% for match in round_matches %}
+                  {% if not ns.current_match and match and match.get('status') == 'in_progress' %}
+                    {% set p1_name = match.get('player1', {}).get('name', '') %}
+                    {% set p2_name = match.get('player2', {}).get('name', '') %}
+                    {% if p1_name and p2_name and p1_name != 'BYE' and p2_name != 'BYE' %}
+                      {% set ns.current_match = match %}
+                      {% set ns.current_bracket_type = 'lower' %}
+                    {% endif %}
+                  {% endif %}
                 {% endfor %}
               {% endif %}
             {% endif %}
           {% endfor %}
           
-          {# If no in_progress match found, look for next_up matches #}
-          {% for bracket_type in ['upper', 'lower', 'grand_finals'] %}
-            {% if not ns.current_match and bracket_type in data.get('brackets', {}) %}
-              {% if bracket_type == 'grand_finals' %}
-                {% set match = data.brackets[bracket_type] %}
-                {% if match and match.get('status') == 'next_up' %}
-                  {% set p1_name = match.get('player1', {}).get('name', '') %}
-                  {% set p2_name = match.get('player2', {}).get('name', '') %}
-                  {% if p1_name and p2_name and p1_name != 'BYE' and p2_name != 'BYE' %}
-                    {% set ns.current_match = match %}
-                    {% set ns.current_bracket_type = bracket_type %}
-                  {% endif %}
-                {% endif %}
-              {% else %}
-                {% for round_matches in data.brackets[bracket_type] %}
-                  {% for match in round_matches %}
-                    {% if not ns.current_match and match and match.get('status') == 'next_up' %}
-                      {% set p1_name = match.get('player1', {}).get('name', '') %}
-                      {% set p2_name = match.get('player2', {}).get('name', '') %}
-                      {% if p1_name and p2_name and p1_name != 'BYE' and p2_name != 'BYE' %}
-                        {% set ns.current_match = match %}
-                        {% set ns.current_bracket_type = bracket_type %}
-                      {% endif %}
+          {# Check grand finals for in_progress #}
+          {% if not ns.current_match and 'grand_finals' in data.get('brackets', {}) %}
+            {% set match = data.brackets.grand_finals %}
+            {% if match and match.get('status') == 'in_progress' %}
+              {% set p1_name = match.get('player1', {}).get('name', '') %}
+              {% set p2_name = match.get('player2', {}).get('name', '') %}
+              {% if p1_name and p2_name and p1_name != 'BYE' and p2_name != 'BYE' %}
+                {% set ns.current_match = match %}
+                {% set ns.current_bracket_type = 'grand_finals' %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+          
+          {# If no in_progress match found, look for next_up matches with same round priority #}
+          {% for round_num in range(1, max_rounds + 1) %}
+            {% if not ns.current_match %}
+              {# Check upper bracket round first #}
+              {% if 'upper' in data.get('brackets', {}) and data.brackets.upper | length >= round_num %}
+                {% set round_matches = data.brackets.upper[round_num - 1] %}
+                {% for match in round_matches %}
+                  {% if not ns.current_match and match and match.get('status') == 'next_up' %}
+                    {% set p1_name = match.get('player1', {}).get('name', '') %}
+                    {% set p2_name = match.get('player2', {}).get('name', '') %}
+                    {% if p1_name and p2_name and p1_name != 'BYE' and p2_name != 'BYE' %}
+                      {% set ns.current_match = match %}
+                      {% set ns.current_bracket_type = 'upper' %}
                     {% endif %}
-                  {% endfor %}
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+              
+              {# Then check lower bracket round #}
+              {% if not ns.current_match and 'lower' in data.get('brackets', {}) and data.brackets.lower | length >= round_num %}
+                {% set round_matches = data.brackets.lower[round_num - 1] %}
+                {% for match in round_matches %}
+                  {% if not ns.current_match and match and match.get('status') == 'next_up' %}
+                    {% set p1_name = match.get('player1', {}).get('name', '') %}
+                    {% set p2_name = match.get('player2', {}).get('name', '') %}
+                    {% if p1_name and p2_name and p1_name != 'BYE' and p2_name != 'BYE' %}
+                      {% set ns.current_match = match %}
+                      {% set ns.current_bracket_type = 'lower' %}
+                    {% endif %}
+                  {% endif %}
                 {% endfor %}
               {% endif %}
             {% endif %}
           {% endfor %}
+          
+          {# Check grand finals for next_up #}
+          {% if not ns.current_match and 'grand_finals' in data.get('brackets', {}) %}
+            {% set match = data.brackets.grand_finals %}
+            {% if match and match.get('status') == 'next_up' %}
+              {% set p1_name = match.get('player1', {}).get('name', '') %}
+              {% set p2_name = match.get('player2', {}).get('name', '') %}
+              {% if p1_name and p2_name and p1_name != 'BYE' and p2_name != 'BYE' %}
+                {% set ns.current_match = match %}
+                {% set ns.current_bracket_type = 'grand_finals' %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
           
           {# Display current match if found #}
           {% if ns.current_match %}

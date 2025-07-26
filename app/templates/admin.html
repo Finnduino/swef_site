@@ -400,53 +400,91 @@
             {% set ns = namespace(current_match=None, current_bracket_type=None) %}
 
             {# --- Find the current match with priority: in_progress then next_up --- #}
+            {# Search by round priority: Round 1 upper, Round 1 lower, Round 2 upper, Round 2 lower, etc. #}
 
-            {# 1) First look for any in_progress match #}
-            {% if not ns.current_match %}
-              {% for bracket_type in ['upper','lower','grand_finals'] %}
-                {% if bracket_type in data.get('brackets',{}) and not ns.current_match %}
-                  {% if bracket_type == 'grand_finals' %}
-                    {% set match = data.brackets[bracket_type] %}
-                    {% if match and match.status == 'in_progress' %}
-                      {% set ns.current_match = match %}
-                      {% set ns.current_bracket_type = bracket_type %}
-                    {% endif %}
-                  {% else %}
-                    {% for round_matches in data.brackets[bracket_type] %}
-                      {% for match in round_matches %}
-                        {% if not ns.current_match and match and match.status == 'in_progress' %}
-                          {% set ns.current_match = match %}
-                          {% set ns.current_bracket_type = bracket_type %}
-                        {% endif %}
-                      {% endfor %}
-                    {% endfor %}
-                  {% endif %}
-                {% endif %}
-              {% endfor %}
+            {# Determine max rounds to search through #}
+            {% set max_rounds = 10 %}
+            {% if data.brackets.upper %}
+              {% set max_rounds = data.brackets.upper | length %}
+            {% endif %}
+            {% if data.brackets.lower and data.brackets.lower | length > max_rounds %}
+              {% set max_rounds = data.brackets.lower | length %}
             {% endif %}
 
-            {# 2) If none are in_progress, fall back to next_up #}
+            {# 1) First look for any in_progress match with round priority #}
             {% if not ns.current_match %}
-              {% for bracket_type in ['upper','lower','grand_finals'] %}
-                {% if bracket_type in data.get('brackets',{}) and not ns.current_match %}
-                  {% if bracket_type == 'grand_finals' %}
-                    {% set match = data.brackets[bracket_type] %}
-                    {% if match and match.status == 'next_up' %}
-                      {% set ns.current_match = match %}
-                      {% set ns.current_bracket_type = bracket_type %}
-                    {% endif %}
-                  {% else %}
-                    {% for round_matches in data.brackets[bracket_type] %}
-                      {% for match in round_matches %}
-                        {% if not ns.current_match and match and match.status == 'next_up' %}
-                          {% set ns.current_match = match %}
-                          {% set ns.current_bracket_type = bracket_type %}
-                        {% endif %}
-                      {% endfor %}
+              {% for round_num in range(1, max_rounds + 1) %}
+                {% if not ns.current_match %}
+                  {# Check upper bracket round first #}
+                  {% if 'upper' in data.get('brackets', {}) and data.brackets.upper | length >= round_num %}
+                    {% set round_matches = data.brackets.upper[round_num - 1] %}
+                    {% for match in round_matches %}
+                      {% if not ns.current_match and match and match.status == 'in_progress' %}
+                        {% set ns.current_match = match %}
+                        {% set ns.current_bracket_type = 'upper' %}
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                  
+                  {# Then check lower bracket round #}
+                  {% if not ns.current_match and 'lower' in data.get('brackets', {}) and data.brackets.lower | length >= round_num %}
+                    {% set round_matches = data.brackets.lower[round_num - 1] %}
+                    {% for match in round_matches %}
+                      {% if not ns.current_match and match and match.status == 'in_progress' %}
+                        {% set ns.current_match = match %}
+                        {% set ns.current_bracket_type = 'lower' %}
+                      {% endif %}
                     {% endfor %}
                   {% endif %}
                 {% endif %}
               {% endfor %}
+              
+              {# Check grand finals for in_progress #}
+              {% if not ns.current_match and 'grand_finals' in data.get('brackets', {}) %}
+                {% set match = data.brackets.grand_finals %}
+                {% if match and match.status == 'in_progress' %}
+                  {% set ns.current_match = match %}
+                  {% set ns.current_bracket_type = 'grand_finals' %}
+                {% endif %}
+              {% endif %}
+            {% endif %}
+
+            {# 2) If none are in_progress, fall back to next_up with same round priority #}
+            {% if not ns.current_match %}
+              {% for round_num in range(1, max_rounds + 1) %}
+                {% if not ns.current_match %}
+                  {# Check upper bracket round first #}
+                  {% if 'upper' in data.get('brackets', {}) and data.brackets.upper | length >= round_num %}
+                    {% set round_matches = data.brackets.upper[round_num - 1] %}
+                    {% for match in round_matches %}
+                      {% if not ns.current_match and match and match.status == 'next_up' %}
+                        {% set ns.current_match = match %}
+                        {% set ns.current_bracket_type = 'upper' %}
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                  
+                  {# Then check lower bracket round #}
+                  {% if not ns.current_match and 'lower' in data.get('brackets', {}) and data.brackets.lower | length >= round_num %}
+                    {% set round_matches = data.brackets.lower[round_num - 1] %}
+                    {% for match in round_matches %}
+                      {% if not ns.current_match and match and match.status == 'next_up' %}
+                        {% set ns.current_match = match %}
+                        {% set ns.current_bracket_type = 'lower' %}
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+              
+              {# Check grand finals for next_up #}
+              {% if not ns.current_match and 'grand_finals' in data.get('brackets', {}) %}
+                {% set match = data.brackets.grand_finals %}
+                {% if match and match.status == 'next_up' %}
+                  {% set ns.current_match = match %}
+                  {% set ns.current_bracket_type = 'grand_finals' %}
+                {% endif %}
+              {% endif %}
             {% endif %}
             
             {% if ns.current_match %}
