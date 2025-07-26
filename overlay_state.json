@@ -1,38 +1,8 @@
 {
   "afk_mode": false,
   "victory_screen_hidden": false,
-  "last_updated": "2025-07-25T15:46:51.320800",
+  "last_updated": "2025-07-26T02:38:47.831035",
   "events": [
-    {
-      "type": "show_seeding",
-      "data": {},
-      "timestamp": "2025-07-25T15:39:47.013800"
-    },
-    {
-      "type": "hide_seeding",
-      "data": {},
-      "timestamp": "2025-07-25T15:41:50.754298"
-    },
-    {
-      "type": "match_update",
-      "data": {},
-      "timestamp": "2025-07-25T15:41:55.174301"
-    },
-    {
-      "type": "exit_afk",
-      "data": {},
-      "timestamp": "2025-07-25T15:41:55.182799"
-    },
-    {
-      "type": "match_update",
-      "data": {},
-      "timestamp": "2025-07-25T15:42:15.943300"
-    },
-    {
-      "type": "show_match_interface",
-      "data": {},
-      "timestamp": "2025-07-25T15:42:23.894301"
-    },
     {
       "type": "hide_match_interface",
       "data": {},
@@ -52,6 +22,36 @@
       "type": "show_seeding",
       "data": {},
       "timestamp": "2025-07-25T15:46:51.320800"
+    },
+    {
+      "type": "hide_seeding",
+      "data": {},
+      "timestamp": "2025-07-26T02:38:26.494532"
+    },
+    {
+      "type": "hide_victory_screens",
+      "data": {},
+      "timestamp": "2025-07-26T02:38:27.933034"
+    },
+    {
+      "type": "show_seeding",
+      "data": {},
+      "timestamp": "2025-07-26T02:38:30.400532"
+    },
+    {
+      "type": "hide_match_interface",
+      "data": {},
+      "timestamp": "2025-07-26T02:38:31.236034"
+    },
+    {
+      "type": "hide_seeding",
+      "data": {},
+      "timestamp": "2025-07-26T02:38:42.008034"
+    },
+    {
+      "type": "show_seeding",
+      "data": {},
+      "timestamp": "2025-07-26T02:38:47.831035"
     }
   ],
   "seeding_mode": true

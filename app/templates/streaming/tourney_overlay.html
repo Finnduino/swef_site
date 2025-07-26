@@ -909,7 +909,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            max-height: 200px;
+            max-height: 5000px;
             overflow-y: auto;
         }
 
@@ -1183,6 +1183,66 @@
             content: " ⚡";
         }
 
+        /* Sponsor Display */
+        .sponsor-display {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 12vh;
+            min-height: 120px;
+            z-index: 150;
+            pointer-events: none;
+        }
+
+        .sponsor-container {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.85), rgba(20, 20, 30, 0.85));
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+            padding: 0px;
+            animation: sponsorFloat 3s ease-in-out infinite;
+        }
+
+        .sponsor-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sponsor-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .sponsor-container:hover .sponsor-logo {
+            transform: scale(1.05);
+        }
+
+        @keyframes sponsorFloat {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-3px);
+            }
+        }
+
         /* Seeding Mode Styles */
         .match-hud.seeding-mode .players-container {
             display: none;
@@ -1442,6 +1502,14 @@
             <div id="currentMapTitle" class="current-map-title"></div>
             <div id="currentMapArtist" class="current-map-artist"></div>
             <div id="currentMapDifficulty" class="current-map-difficulty font-jetbrains"></div>
+        </div>
+    </div>
+
+    <!-- Sponsor Display -->
+    <div id="sponsorDisplay" class="sponsor-display">
+        <div class="sponsor-container">
+            <div class="sponsor-label font-orbitron">Sponsored by</div>
+            <img class="sponsor-logo" src="{{ url_for('static', filename='edgar.jpg') }}" alt="Bar Edgar" onerror="this.style.display='none'">
         </div>
     </div>
 
