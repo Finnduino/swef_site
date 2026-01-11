@@ -67,25 +67,50 @@
     <div id="hero-text-wall" aria-hidden="true"></div>
 
     <div class="absolute inset-0 z-5 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/asfalt-light.png')] mix-blend-overlay"></div>
-    <h1 class="text-5xl md:text-7xl font-extrabold text-yellow-400 drop-shadow-lg">Sand World Evil Financing</h1>
-    <p class="mt-6 text-xl text-gray-400 max-w-xl">You evil?</p>
-    {% if session.get('user_id') %}
-    <a href="https://discord.gg/bsdmezX8yD"
-       class="mt-10 inline-block bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-8 rounded-full shadow-xl transition transform hover:scale-105">
-      I'm Finna Bridge
-    </a>
-    {% else %}
-    <a href="{{ url_for('public.legal') }}"
-       class="mt-10 inline-block bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-8 rounded-full shadow-xl transition transform hover:scale-105">
-      I'm Finna Bridge
-    </a>
-    {% endif %}
+    <h1 class="text-5xl md:text-7xl font-extrabold text-yellow-400 drop-shadow-lg text-center">Sand World Evil Financing</h1>
+    <p class="mt-6 text-xl text-gray-400 max-w-xl text-center">The official home of the Sand World Minecraft Server.</p>
+    
+    <div class="mt-10 flex flex-col items-center z-20">
+      <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 mb-6">
+        <code class="text-yellow-400 text-xl font-mono">mc.sandworld.biz</code>
+      </div>
+      <div class="flex space-x-4">
+        <a href="{{ url_for('public.minecraft') }}"
+           class="inline-block bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-8 rounded-full shadow-xl transition transform hover:scale-105">
+          Server Info
+        </a>
+        <a href="https://map.sandworld.biz" target="_blank"
+           class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-xl transition transform hover:scale-105">
+          Live Map
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Minecraft Section -->
+  <section class="py-16 bg-gray-900 border-t border-gray-800">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <h2 class="text-4xl font-bold text-yellow-400 mb-6">⛏️ Join the Chaos</h2>
+      <p class="text-gray-300 text-lg mb-8">
+        Experience the most evil Minecraft server in existence. Survival, community, and pure malevolence.
+      </p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+        <div class="bg-black p-6 rounded-xl border border-gray-700">
+          <h3 class="text-xl font-bold text-yellow-300 mb-2">Omnicelestia</h3>
+          <p class="text-gray-400">The heart of our world. Explore, build, and survive in the big 26.</p>
+        </div>
+        <div class="bg-black p-6 rounded-xl border border-gray-700">
+          <h3 class="text-xl font-bold text-yellow-300 mb-2">Live Web Map</h3>
+          <p class="text-gray-400">Track players and explore the terrain in real-time through our interactive map.</p>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- Tournament Preview -->
   <section class="py-12 bg-black border-t border-gray-800">
-    <div class="max-w-4xl mx-auto text-center">
-      <h2 class="text-3xl font-bold text-yellow-400 mb-4">🔥SWEF OSU Cup 2025</h2>
+    <div class="max-w-4xl mx-auto text-center px-6">
+      <h2 class="text-3xl font-bold text-yellow-400 mb-4">🔥 SWEF OSU Cup 2025</h2>
       <p class="text-gray-400">Witness peak evil gameplay. Check standings, matchups, and stream schedules.</p>
       <a href="{{ url_for('public.tournament') }}" class="mt-6 inline-block bg-yellow-500 text-black font-bold py-2 px-6 rounded-full shadow-md hover:bg-yellow-600 transition">View Tournament</a>
     </div>
