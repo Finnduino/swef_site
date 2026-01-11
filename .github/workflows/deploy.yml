@@ -21,4 +21,4 @@ jobs:
           script: |
             cd ~/swef_site
             git pull origin main
-            docker-compose up -d --build
+            sudo /snap/bin/docker compose up -d --build
