@@ -19,11 +19,11 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Go to the new clean folder
-            cd ~/Documents/servers/sandworld
+            # Go to the specific folder we fixed
+            cd /home/nahiserver/Documents/servers/swef_site
             
-            # Pull the latest code
+            # Pull changes from your 'finnduino' repo
             git pull origin main
             
-            # Rebuild and restart the container (using standard Docker)
+            # Restart containers (Standard Docker, no Sudo needed)
             docker compose up -d --build
