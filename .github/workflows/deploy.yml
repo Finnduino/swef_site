@@ -19,6 +19,11 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/swef_site
+            # Go to the new clean folder
+            cd ~/Documents/servers/sandworld
+            
+            # Pull the latest code
             git pull origin main
-            sudo /snap/bin/docker compose up -d --build
+            
+            # Rebuild and restart the container (using standard Docker)
+            docker compose up -d --build
