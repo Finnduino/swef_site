@@ -208,6 +208,7 @@
     <ul class="flex space-x-6 text-sm font-mono">
       <li><a href="{{ url_for('public.index') }}" class="text-gray-300 hover:text-yellow-400">Home</a></li>
       <li><a href="{{ url_for('public.tournament_details') }}" class="text-gray-300 hover:text-yellow-400">Details</a></li>
+      <li><a href="{{ url_for('public.minecraft') }}" class="text-gray-300 hover:text-yellow-400">Minecraft</a></li>
       {% if session.get('user_id') %}
       <li><a href="{{ url_for('player.profile') }}" class="text-gray-300 hover:text-yellow-400">Profile</a></li>
       <li><a href="{{ url_for('public.logout') }}" class="text-gray-300 hover:text-red-400">Logout</a></li>

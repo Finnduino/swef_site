@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minecraft Server - Sand World Evil Financing LLC LTD OY</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
+    body { font-family: 'Fira Code', monospace; background: #000; }
+    .omnicelestia-title { font-size: 26px; }
+  </style>
+</head>
+<body class="text-gray-100 min-h-screen flex flex-col">
+
+  <!-- Navigation -->
+  <nav class="bg-black border-b border-gray-800 px-6 py-4 flex justify-between items-center">
+    <div class="text-yellow-400 font-bold text-2xl tracking-wider">SAND WORLD</div>
+    <ul class="flex space-x-6 text-sm font-mono">
+      <li><a href="{{ url_for('public.index') }}" class="text-gray-300 hover:text-yellow-400">Home</a></li>
+      <li><a href="{{ url_for('public.tournament') }}" class="text-gray-300 hover:text-yellow-400">OSU Cup</a></li>
+      <li><a href="{{ url_for('public.minecraft') }}" class="text-yellow-400">Minecraft</a></li>
+      {% if session.get('user_id') %}
+      <li><a href="{{ url_for('player.profile') }}" class="text-gray-300 hover:text-yellow-400">Profile</a></li>
+      <li><a href="{{ url_for('public.logout') }}" class="text-gray-300 hover:text-red-400">Logout</a></li>
+      {% else %}
+      <li><a href="{{ url_for('public.osu_login') }}" class="bg-pink-500 hover:bg-pink-600 text-white px-3 py-1 rounded">Login</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+
+  <!-- Minecraft Server Content -->
+  <main class="flex-grow">
+    <section class="py-16 px-6 bg-black">
+      <div class="max-w-4xl mx-auto">
+        <h1 class="omnicelestia-title font-bold text-yellow-400 text-center mb-12">omnicelestia in the big 26?????</h1>
+        
+        <div class="bg-gray-900 p-8 rounded-2xl shadow-2xl border border-gray-700">
+          <div class="space-y-8">
+            
+            <!-- Server Info Card -->
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-600">
+              <h2 class="text-2xl font-semibold text-yellow-300 mb-4">Server Information</h2>
+              <div class="space-y-4">
+                <div>
+                  <p class="text-gray-400 text-sm mb-1">Server Address</p>
+                  <div class="bg-black p-4 rounded-lg border border-gray-700">
+                    <code class="text-yellow-400 text-lg font-mono">mc.nahi.online</code>
+                  </div>
+                </div>
+                <div class="mt-6">
+                  <a href="https://map.nahi.online" target="_blank" rel="noopener noreferrer"
+                     class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition transform hover:scale-105">
+                    🗺️ View Map
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Map Link Card -->
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-600">
+              <h2 class="text-2xl font-semibold text-yellow-300 mb-4">Server Map</h2>
+              <p class="text-gray-300 mb-4">
+                Explore the server world from your browser. The interactive map shows the entire server landscape.
+              </p>
+              <a href="https://map.nahi.online" target="_blank" rel="noopener noreferrer"
+                 class="inline-block bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-8 rounded-lg shadow-md transition transform hover:scale-105">
+                Open Interactive Map →
+              </a>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="text-center mt-8">
+          <a href="{{ url_for('public.index') }}" 
+             class="inline-block bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-6 rounded-full shadow-md transition">
+            Return to Home
+          </a>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  {% include 'footer.html' %}
+
+</body>
+</html>

@@ -50,6 +50,11 @@ def legal():
     return render_template('legal.html')
 
 
+@public_bp.route('/minecraft')
+def minecraft():
+    return render_template('minecraft.html')
+
+
 @public_bp.route('/tournament')
 def tournament():
     data = get_tournament_data()

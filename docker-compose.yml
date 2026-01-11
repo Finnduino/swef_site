@@ -1,0 +1,13 @@
+services:
+  web:
+    build: .
+    container_name: swef_site
+    restart: always
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_ENV=production

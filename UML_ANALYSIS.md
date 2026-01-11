@@ -1,0 +1,816 @@
+# UML Analysis
+
+## File Analysis Results
+
+### run.py (Application Entry Point)
+- **Purpose**: Development server entry point
+- **Dependencies**: 
+  - `app.create_app()` - Flask app factory
+  - `config.OSU_CALLBACK_URL` - Configuration constant
+- **Functionality**:
+  - Extracts port from OSU_CALLBACK_URL for consistency
+  - Runs Flask app in debug mode
+  - Fallback to port 5000 if parsing fails
+- **UML Notes**: 
+  - This is the main entry point for development
+  - Creates dependency on app module and config module
+
+### passenger_wsgi.py (Production Entry Point)
+- **Purpose**: WSGI entry point for Namecheap hosting
+- **Dependencies**: 
+  - `app.create_app()` - Flask app factory
+  - sys, os modules for path manipulation
+- **Functionality**:
+  - Adds project directory to Python path
+  - Creates Flask app without SocketIO (Namecheap compatibility)
+  - Exposes `application` variable for WSGI server
+- **UML Notes**: 
+  - Alternative entry point for production
+  - Same dependency on app.create_app() as run.py
+
+### config.py (Configuration Module)
+- **Purpose**: Centralized configuration management
+- **Dependencies**: 
+  - os module for environment variables
+  - dotenv for .env file loading
+- **Constants Defined**:
+  - `SECRET_KEY` - Flask secret key from env
+  - `OSU_CLIENT_ID`, `OSU_CLIENT_SECRET`, `OSU_CALLBACK_URL` - osu! OAuth config
+  - `ADMIN_REDIRECT_URI` - Derived from callback URL
+  - `ADMIN_OSU_ID` - Hardcoded admin user ID list
+  - `OSU_API_BASE_URL`, `TOKEN_URL`, `AUTHORIZATION_URL` - osu! API endpoints
+  - `TOURNAMENT_FILE`, `COMPETITORS_FILE` - File paths for data storage
+- **UML Notes**: 
+  - Pure configuration module, no classes
+  - Used by other modules for constants
+
+### app/__init__.py (Flask App Factory)
+- **Purpose**: Flask application factory and osu! API client initialization
+- **Dependencies**: 
+  - Flask framework
+  - ossapi.Ossapi - osu! API client
+  - config module for OAuth credentials
+- **Global Objects**:
+  - `api` - Ossapi client instance (shared across app)
+- **Functions**:
+  - `create_app()` - Factory function that creates Flask app
+- **Blueprint Registration**:
+  - public_bp, admin_bp, host_bp, dev_bp, player_bp
+- **UML Notes**: 
+  - Factory pattern implementation
+  - Creates shared API client
+  - Registers all route blueprints
+
+### app/data_manager.py (File-based Data Persistence)
+- **Purpose**: Handles reading/writing tournament data to JSON files
+- **Dependencies**: 
+  - json module for serialization
+  - config.TOURNAMENT_FILE for file path
+- **Functions**:
+  - `get_tournament_data()` - Reads tournament.json, returns default structure if missing
+  - `save_tournament_data(data)` - Writes tournament data, auto-sorts competitors by PP
+- **Data Structure**: 
+  - Returns/expects: `{'competitors': [], 'brackets': {'upper': [], 'lower': []}}`
+- **UML Notes**: 
+  - Pure utility module with file I/O functions
+  - Implements automatic competitor sorting by PP ranking
+
+### app/overlay_state.py (Overlay State Management)
+- **Purpose**: File-based state management for streaming overlays (Namecheap compatibility)
+- **Dependencies**: 
+  - json, os, datetime modules
+  - typing for type hints
+- **Constants**:
+  - `OVERLAY_STATE_FILE` = 'overlay_state.json'
+- **Functions**:
+  - `get_overlay_state()` - Reads overlay state, returns default if missing
+  - `update_overlay_state(updates)` - Updates overlay state with new data
+  - `add_overlay_event(event_type, data)` - Adds timestamped event (keeps last 10)
+  - `clear_overlay_events()` - Clears all overlay events
+- **State Structure**:
+  - `afk_mode`, `victory_screen_hidden` - Boolean flags
+  - `last_updated` - ISO timestamp
+  - `events` - List of timestamped events (max 10)
+- **UML Notes**: 
+  - File-based alternative to SocketIO for Namecheap hosting
+  - Event management with automatic cleanup
+
+### app/http_events.py (HTTP-based Event System)
+- **Purpose**: Replacement for SocketIO - provides HTTP polling for overlay updates
+- **Dependencies**: 
+  - .data_manager.get_tournament_data
+  - .overlay_state module for event broadcasting
+- **Main Function**:
+  - `get_current_match_data()` - Complex logic to find current/next match with round priority
+- **Match Finding Logic**:
+  - Searches for 'in_progress' matches first (round priority: 1, 2, 3...)
+  - Falls back to 'next_up' matches if no active matches
+  - Checks upper bracket, then lower bracket, then grand finals
+- **Legacy Compatibility Functions**:
+  - `broadcast_match_update()`, `broadcast_map_victory()`, `broadcast_match_victory()`
+  - `broadcast_exit_afk()`, `broadcast_flip_players()`
+  - All now use overlay_state.add_overlay_event()
+- **UML Notes**: 
+  - Implements complex tournament match discovery algorithm
+  - Bridges old SocketIO interface to new HTTP polling system
+
+### app/bracket_logic.py (Tournament Bracket Management)
+- **Purpose**: Core tournament bracket generation and advancement logic
+- **Dependencies**: 
+  - uuid for unique IDs
+  - copy for data manipulation
+  - .data_manager for persistence
+- **Main Functions**:
+  - `generate_bracket()` - Creates initial double-elimination bracket from competitors
+  - `advance_round_if_ready(data)` - Complex tournament advancement logic
+- **Bracket Generation**:
+  - Sorts competitors by qualifier placement, then by PP
+  - Pads to power of 2 with BYE players
+  - Uses snake seeding for fair matchups
+  - Auto-completes BYE matches
+- **Advancement Logic**:
+  - Tracks upper bracket losers in `pending_upper_losers` queue
+  - Manages eliminated players list
+  - Handles complex lower bracket pairing logic
+  - Implements grand finals with bracket reset capability
+- **Data Structures**:
+  - Match: `{id, bracket, round_index, player1, player2, winner, score_p1, score_p2, mp_room_url, status}`
+  - Status values: 'next_up', 'in_progress', 'completed'
+  - Bracket structure: `{upper: [[matches]], lower: [[matches]], grand_finals: match}`
+- **UML Notes**: 
+  - Most complex module - implements full double-elimination tournament logic
+  - Manages state transitions and player elimination flows
+
+### app/routes/__init__.py (Blueprint Exports)
+- **Purpose**: Centralizes all Flask blueprints for easy import
+- **Exports**: 
+  - public_bp - Public routes (from public_routes.py)
+  - admin_bp, host_bp, dev_bp - Admin routes (from admin_routes.py)
+  - player_bp - Player routes (from player_routes.py)
+- **UML Notes**: 
+  - Simple module aggregator for blueprints
+
+### app/routes/public_routes.py (Public Web Routes)
+- **Purpose**: Handles public-facing web routes and API endpoints
+- **Dependencies**: 
+  - Flask, requests, datetime
+  - config constants (OAuth, API URLs)
+  - ..data_manager, ..bracket_logic, .. import api
+  - ..http_events, ..overlay_state for streaming
+- **Blueprint**: public_bp
+- **Main Routes**:
+  - `/` - index page
+  - `/admin-redirect` - Smart admin routing based on permissions
+  - `/legal` - Legal page
+  - `/tournament` - Main tournament view with auto-refresh
+  - `/tournament/details` - Tournament details page
+  - `/login/osu`, `/logout`, `/callback/osu` - osu! OAuth flow
+  - `/user/<user_id>` - User profile pages
+  - `/match/<match_id>` - Match details with map breakdown
+  - `/overlay` - Tournament streaming overlay
+- **API Endpoints (HTTP Polling)**:
+  - `/api/match-data` - Current match for overlay
+  - `/api/overlay-events` - Event data (victory screens, AFK)
+  - `/api/match-interface-state` - Detailed match interface state
+  - `/api/user/<user_id>` - Simple user data API
+- **OAuth Features**:
+  - User signup with pending approval system
+  - Session management
+  - Permission-based admin redirects
+- **UML Notes**: 
+  - Main user-facing interface
+  - Implements complex OAuth flow and user management
+  - Provides HTTP polling APIs for Namecheap compatibility
+
+### app/routes/player_routes.py (Player Management Routes)
+- **Purpose**: Player-specific routes for tournament participants
+- **Dependencies**: 
+  - Flask, requests, re, random, datetime
+  - config OAuth constants
+  - ..data_manager, .. import api
+- **Blueprint**: player_bp (prefix: '/player')
+- **Decorator**: `@player_required` - Ensures user is authenticated tournament participant
+- **Main Routes**:
+  - `/profile` - Player profile with mappool management
+  - `/upload_mappool` [POST] - Upload mappool from multiplayer room or paste links
+  - `/match/<match_id>` - Match interface for pick/ban phase
+  - `/match/<match_id>/action` [POST] - Handle pick/ban/ability actions
+  - `/match/<match_id>/state` - Get current match state JSON
+- **Mappool Features**:
+  - Supports multiplayer room URL or pasted beatmap links
+  - Validates exactly 10 beatmaps
+  - Fetches detailed beatmap info from osu! API (title, artist, mapper, stats)
+  - Stores mappool_ids, mappool_details, mappool_url in competitor data
+- **Match Interface Features**:
+  - Complex pick/ban/ability system with phases: ban -> pick -> play
+  - Random coin flip to determine first player
+  - Ban phase: 6 total bans (3 each), alternating turns
+  - Pick phase: Alternating picks, interface locks after each pick until point scored
+  - Abilities: Force NoMod (once), Force Mod (once), Personal Mod (twice)
+  - Force NoMod counters Personal Mod abilities
+  - Action history tracking
+- **Data Structures**:
+  - match_state: `{phase, current_turn, first_player, banned_maps, picked_maps, abilities_used, map_mods, action_history}`
+  - picked_maps: `[{map_id, picked_by, order}]`
+  - abilities_used: `{player1/2: {force_nomod: bool, force_mod: bool, personal_mod: int}}`
+- **UML Notes**: 
+  - Complex tournament match management with strategic abilities
+  - Implements full pick/ban workflow with validation
+  - Integrates osu! API for detailed mappool information
+
+### app/routes/admin_routes.py (Administrative Routes)
+- **Purpose**: Multi-level administrative interface with permission-based access
+- **Dependencies**: 
+  - Flask, requests, datetime, functools
+  - config OAuth and admin constants
+  - ..data_manager, ..bracket_logic, ..services.*, .. import api
+  - ..http_events for broadcasting
+- **Blueprints**: admin_bp (/admin), host_bp (/host), dev_bp (/dev)
+- **Permission System**:
+  - `main_admin_required` - Highest level (ADMIN_OSU_ID hardcoded)
+  - `full_admin_required` - Full admin access (stored in data.full_admins)
+  - `host_required` - Host admin access (stored in data.host_admins)
+  - `admin_required` - Any admin level
+- **Authentication Routes**:
+  - `/login`, `/callback` - Shared OAuth flow for all admin levels
+  - Smart redirection based on permission level after login
+- **Panel Routes**:
+  - Dev Panel (main admin) - Full access to all features
+  - Admin Panel (full admin) - User management and tournament control
+  - Host Panel (host admin) - Limited tournament hosting features
+- **Core Features** (based on file size ~1414 lines):
+  - Competitor management (add/remove/approve signups)
+  - Tournament bracket management and seeding
+  - Match scoring and progression
+  - Streaming overlay controls
+  - User permission management
+  - Administrative utilities
+- **Services Integration**:
+  - MatchService, SeedingService, StreamingService
+  - Broadcasting via overlay state system
+- **UML Notes**: 
+  - Implements hierarchical permission system with role-based access
+  - Large complex module handling all administrative functions
+  - Integrates with service layer for business logic
+
+### app/services/__init__.py (Service Layer Exports)
+- **Purpose**: Centralizes service classes for easy import
+- **Exports**: 
+  - MatchService - Match management logic
+  - SeedingService - Tournament seeding logic  
+  - StreamingService - Streaming overlay logic
+- **UML Notes**: 
+  - Service layer pattern implementation
+  - Provides business logic abstraction
+
+### app/services/match_service.py (Match Management Service)
+- **Purpose**: Business logic for tournament match management
+- **Dependencies**: 
+  - re, datetime modules
+  - ..data_manager, ..bracket_logic, ..utils.match_utils
+  - .. import api (osu! API client)
+- **Class**: MatchService
+- **Key Methods**:
+  - `find_match(match_id)` - Locate match across all brackets
+  - `start_match(match_id)` - Set status to 'in_progress'
+  - `reset_match(match_id)` - Reset match to 'next_up' state
+  - `set_match_score(match_id, score_p1, score_p2, mp_room_url)` - Update scores with validation
+  - `set_winner(match_id, winner_id)` - Set winner directly (4-0 score)
+  - `extract_room_id(url)` - Parse multiplayer room ID from URLs
+  - `get_match_results(room_id, player1_id, player2_id)` - Fetch results from osu! API
+  - `refresh_match_scores(match_id)` - Auto-update scores from multiplayer room
+  - `cache_all_match_details()` - Cache detailed results for all matches
+  - `set_match_room(match_id, mp_room_url)` - Set multiplayer room URL
+- **Score Validation**:
+  - Best-of-7 format (0-4 range)
+  - Prevents both players having 4 points
+  - Auto-determines winner when score reaches 4
+- **Match State Integration**:
+  - Updates pick/ban turn order based on round winners
+  - Manages match phases during scoring
+- **API Integration**:
+  - Fetches room data and scores from osu! multiplayer API
+  - Caches detailed match results for later viewing
+- **UML Notes**: 
+  - Core business logic for match lifecycle
+  - Integrates tournament bracket progression
+  - Heavy osu! API integration for live score tracking
+
+### app/services/seeding_service.py (Tournament Seeding Service)
+- **Purpose**: Manages tournament seeding process using multiplayer room scores
+- **Dependencies**: 
+  - re module for URL parsing
+  - ..data_manager, ..bracket_logic
+  - .. import api (osu! API client)
+- **Class**: SeedingService
+- **Key Methods**:
+  - `extract_room_id(url)` - Parse multiplayer room ID from URL
+  - `get_seeding_scores(room_id, competitor_ids)` - Fetch cumulative scores from all maps in room
+  - `start_seeding(seeding_room_url)` - Initialize seeding process with multiplayer room
+  - `update_seeding_scores()` - Update provisional placements based on room scores
+  - `finalize_seeding()` - Lock in final seeding and regenerate bracket
+- **Seeding Process**:
+  1. Set seeding room URL and validate access
+  2. Competitors play seeding maps in multiplayer room
+  3. Fetch cumulative scores across all seeding maps
+  4. Assign provisional placements (highest score = 1st seed)
+  5. Finalize seeding and regenerate tournament bracket
+- **Data Management**:
+  - Stores seeding_room_url, seeding_room_id, seeding_in_progress
+  - Updates competitor data with seeding_score and provisional_placement
+  - Converts provisional_placement to final placement on finalization
+- **Integration**: 
+  - Calls generate_bracket() after seeding finalization
+  - Cleans up temporary seeding data after completion
+- **UML Notes**: 
+  - Implements complete seeding workflow
+  - Integrates with osu! multiplayer API for score aggregation
+  - Manages tournament state transitions from seeding to bracket
+
+### app/services/streaming_service.py (Streaming Management Service)
+- **Purpose**: Manages tournament streaming settings and status
+- **Dependencies**: 
+  - re module for input validation
+  - ..data_manager for persistence
+- **Class**: StreamingService
+- **Key Methods**:
+  - `set_stream_channel(twitch_channel)` - Set Twitch channel with validation
+  - `toggle_stream()` - Toggle stream live status on/off
+  - `clear_stream()` - Remove all stream settings
+- **Channel Management**:
+  - Cleans Twitch URLs to extract channel name
+  - Validates channel name format (alphanumeric + underscore)
+  - Stores twitch_channel in tournament data
+- **Stream Status**:
+  - Manages stream_live boolean flag
+  - Controls visibility on tournament public pages
+  - Provides user feedback on status changes
+- **Integration**: 
+  - Used by admin interface for stream control
+  - Affects public tournament page display
+- **UML Notes**: 
+  - Simple service for streaming configuration
+  - Minimal dependencies, focused utility class
+
+### app/utils/__init__.py (Utility Module Exports)
+- **Purpose**: Centralizes utility functions for easy import
+- **Exports**: 
+  - get_detailed_match_results - Match detail fetching utility
+- **UML Notes**: 
+  - Utility layer for common functions
+
+### app/utils/match_utils.py (Match Utilities)
+- **Purpose**: Utility functions for detailed match result processing
+- **Dependencies**: 
+  - datetime module
+  - .. import api (osu! API client)
+- **Key Function**:
+  - `get_detailed_match_results(room_id, player1_id, player2_id)` - Fetches comprehensive match data
+- **Functionality**:
+  - Gets room and player details from osu! API
+  - Processes each map in multiplayer room playlist
+  - Extracts detailed scores, statistics, and mod usage
+  - Handles beatmap metadata (title, artist, difficulty stats)
+  - Converts API objects to JSON-serializable dictionaries
+  - Provides map-by-map breakdown with winner determination
+- **Data Processing**:
+  - Statistics: count_300, count_100, count_50, count_miss
+  - Mods: Extracts mod acronyms from score data
+  - Beatmap: Full metadata including beatmapset info and covers
+  - Error handling for missing/invalid data
+- **UML Notes**: 
+  - Heavy osu! API processing utility
+  - Transforms complex API responses into usable data structures
+  - Used by MatchService for detailed result caching
+
+### app/templates/index.html (Homepage Template)
+- **Purpose**: Main landing page template with hero animation and navigation
+- **Dependencies**: 
+  - Jinja2 templating (url_for, session, include)
+  - Tailwind CSS framework
+  - Google Fonts (Fira Code)
+  - Transparent textures background pattern
+- **Functionality**:
+  - Responsive navigation with conditional login/logout links
+  - Animated hero section with scrolling text wall
+  - Tournament preview section linking to main tournament page
+  - Services showcase (consultancy, gaming, alcohol)
+  - Evil metrics display
+  - Hidden admin access button (bottom-right corner)
+- **JavaScript Features**:
+  - DOMContentLoaded event listener for initialization
+  - Dynamic creation of 12 scrolling text rows
+  - Horizontal scrolling animation using requestAnimationFrame
+  - Text repetition and offset positioning for seamless scroll
+  - Constant speed animation with position wrapping
+- **Template Logic**:
+  - Session-based conditional rendering (login state)
+  - URL generation for internal routes
+  - Footer inclusion via Jinja2 include directive
+- **UML Notes**: 
+  - Client-side animation for visual impact
+  - Minimal interactivity, primarily static content
+  - Admin access hidden for security
+
+### app/templates/tournament.html (Tournament Overview Template)
+- **Purpose**: Main tournament page with bracket visualization, live streams, and match tracking
+- **Dependencies**: 
+  - Jinja2 templating with complex macros and conditionals
+  - Tailwind CSS framework with custom bracket styling
+  - Google Fonts (Fira Code, Orbitron)
+  - Tournament data structure with brackets, competitors, matches
+- **Functionality**:
+  - Tournament information display with prize pool and signup buttons
+  - Live Twitch stream embedding with responsive design
+  - Current match and upcoming matches queue display
+  - Competitor showcase with seeding, PP, and placement information
+  - Complete double elimination bracket visualization (upper/lower brackets)
+  - Grand finals handling with bracket reset logic
+  - Match status indicators (live, upcoming, completed)
+  - BYE match handling and auto-advance visualization
+- **JavaScript Features**:
+  - DOMContentLoaded event listener for initialization
+  - Tournament date conversion from UTC to user's local timezone
+  - Dynamic date formatting with European locale (dd/mm/yyyy)
+  - Real-time local time display with timezone information
+- **Template Logic**:
+  - Complex Jinja2 macros for bracket structure calculation and player display
+  - Session-based conditional rendering for signup states
+  - Tournament seeding status detection and disclaimer display
+  - Dynamic bracket generation with placeholders for future rounds
+  - Match priority logic (in_progress > next_up, round-based ordering)
+  - Eliminated player tracking and placement calculation
+  - Multiplayer room URL integration for live match viewing
+- **Data Processing**:
+  - Competitor filtering and sorting by seeding status
+  - Match aggregation across all brackets for queue display
+  - Bracket structure calculation based on competitor count
+  - Power-of-two tournament size determination
+- **UML Notes**: 
+  - Most complex template with extensive tournament logic
+  - Heavy use of Jinja2 for dynamic bracket rendering
+  - Client-side date localization for global user base
+  - Comprehensive tournament state visualization
+
+### app/templates/admin.html (Administrative Interface Template)
+- **Purpose**: Comprehensive administrative dashboard for tournament management with hierarchical permissions
+- **Dependencies**: 
+  - Jinja2 templating with complex macros and permission-based conditionals
+  - Tailwind CSS framework with custom admin styling
+  - Google Fonts (Fira Code, Orbitron)
+  - Tournament data structures and admin configuration
+- **Functionality**:
+  - Hierarchical permission system (Developer/Host/Admin panels)
+  - Twitch stream configuration and live status management
+  - Tournament seeding playlist management
+  - Comprehensive overlay controls (AFK, victory screens, welcome/outro)
+  - Current match management with multiplayer room integration
+  - Tiebreaker map handling for 3-3 matches
+  - Signup approval/rejection workflow
+  - Competitor management with seeding controls
+  - Detailed bracket management with manual score overrides
+  - Admin permission management (host/full admin roles)
+- **JavaScript Features**:
+  - Keyboard shortcuts for overlay control (Ctrl+Shift combinations)
+  - Dev mode toggle with localStorage state persistence
+  - Dynamic notification system for user feedback
+  - Outro screen form management (show/hide)
+  - Scroll position preservation across page reloads
+  - Admin-specific keyboard shortcuts for quick overlay actions
+  - Event listeners for keyboard input and DOM manipulation
+- **Template Logic**:
+  - Complex Jinja2 macro for URL generation based on permission levels
+  - Session-based conditional rendering for different admin levels
+  - Tournament state management with bracket traversal
+  - Form handling with CSRF protection and confirmation dialogs
+  - Dynamic match finding algorithms with priority ordering
+  - Permission-based feature gating (dev-only, admin-only sections)
+  - Complex data aggregation for statistics and match queues
+- **Data Processing**:
+  - Match status prioritization (in_progress > next_up)
+  - Bracket structure iteration with round-based organization
+  - Competitor filtering and seeding status tracking
+  - Permission level validation and access control
+- **UML Notes**: 
+  - Most complex template with extensive administrative functionality
+  - Heavy JavaScript integration for enhanced admin experience
+  - Sophisticated permission system with role-based access control
+  - Real-time tournament management capabilities
+
+### app/templates/footer.html (Site Footer Template)
+- **Purpose**: Simple site footer with copyright and legal links
+- **Dependencies**: 
+  - Jinja2 templating for URL generation
+  - Tailwind CSS for styling
+- **Functionality**:
+  - Copyright notice for Sand World Evil Financing
+  - Link to legal/privacy disclaimer page
+  - Responsive footer styling
+- **Template Logic**:
+  - URL generation for legal page route
+  - Static copyright text with year
+- **UML Notes**: 
+  - Minimal template included in other pages
+  - No JavaScript functionality
+  - Pure static content with single dynamic URL
+
+### app/templates/legal.html (Legal Disclaimer Template)
+- **Purpose**: Legal disclaimer and privacy policy page for the tournament website
+- **Dependencies**: 
+  - Jinja2 templating for navigation and URL generation
+  - Tailwind CSS for styling
+  - Google Fonts (Fira Code)
+- **Functionality**:
+  - Comprehensive legal disclaimer explaining fictional nature of company
+  - Privacy policy detailing data collection practices
+  - Contact information for data controller
+  - Navigation back to home page
+  - Footer inclusion
+- **Template Logic**:
+  - Session-based conditional navigation rendering
+  - Static content with legal disclaimers
+  - URL generation for internal routes
+- **Data Collection Details**:
+  - osu! user ID collection for authentication
+  - Public game statistics from osu! API
+  - Server logs for security and analytics
+  - Essential cookies for functionality
+- **UML Notes**: 
+  - Static legal compliance page
+  - No JavaScript functionality
+  - Comprehensive privacy and disclaimer information
+
+### app/templates/match_details.html (Match Details Template)
+- **Purpose**: Comprehensive match details page with mappool visualization and detailed results
+- **Dependencies**: 
+  - Jinja2 templating with complex match data structures
+  - Tailwind CSS with custom gradient styling
+  - Google Fonts (Fira Code, Orbitron)
+  - Tournament match state and detailed results data
+- **Functionality**:
+  - Match header with live status indicators and player profiles
+  - Interactive mappool overview with expandable/collapsible views
+  - Map-by-map results with detailed statistics (score, accuracy, combo, mods)
+  - Ban/pick/ability state visualization with color coding
+  - Winner highlighting and match progression tracking
+  - Multiplayer room integration and player management links
+- **JavaScript Features**:
+  - toggleMappool() function for view switching between collapsed/expanded states
+  - DOM manipulation for dynamic UI state changes
+  - SVG icon rotation animation for expand/collapse indicator
+  - Event listener for DOMContentLoaded initialization
+  - State persistence for mappool view preference
+- **Template Logic**:
+  - Complex match state processing (ban/pick/ability phases)
+  - Mappool data aggregation from both players' maps
+  - Detailed results rendering with error handling
+  - Conditional rendering based on match status and data availability
+  - Winner determination and visual highlighting
+- **Data Processing**:
+  - Match state analysis for ban/pick/ability tracking
+  - Player statistics calculation and formatting
+  - Mappool status determination (banned/picked/available)
+  - Map result aggregation with winner calculation
+- **UML Notes**: 
+  - Interactive match visualization with complex state management
+  - Heavy JavaScript integration for enhanced user experience
+  - Comprehensive tournament match data presentation
+
+### app/templates/match_interface.html (Interactive Match Management Interface)
+- **Purpose**: Complex interactive interface for players to participate in tournament matches with pick/ban mechanics, ability systems, and real-time state management
+- **Dependencies**: 
+  - Jinja2 templating engine for server-side rendering
+  - Tailwind CSS framework for responsive styling
+  - Vanilla JavaScript for comprehensive client-side functionality
+  - Flask backend routes for AJAX state updates and action processing
+  - Tournament data structures (match state, mappool details, player information)
+- **Template Structure**:
+  - Match header with player profiles, scores, and status indicators
+  - Interactive mappool display with detailed beatmap information (CS/AR/OD/HP/BPM/length/star rating)
+  - Ability system interface with Force NoMod, Force Mod, and Personal Mod cards
+  - Real-time action feed showing ban/pick/ability history
+  - Modal dialogs for ability selection, mod choice, and action history
+  - Picked maps display with mod status and round information
+  - Loading overlays and notification system for user feedback
+- **JavaScript Features**:
+  - **MatchInterface Class** (1200+ lines): Comprehensive match management system
+    - State management for match phases (ban/pick/ability/play)
+    - Real-time polling for match state updates (3-second intervals)
+    - Turn-based action handling with validation
+    - Ability system with usage tracking and mod selection
+    - Map interaction handling (ban/pick clicks)
+    - Modal management for complex user interactions
+    - Error handling and user feedback notifications
+    - Interface locking mechanism for turn management
+  - **Key Methods**:
+    - `loadMatchState()` - AJAX polling for current match state
+    - `updateUI()` - Complete interface refresh based on state
+    - `performAction()` - Server communication for game actions
+    - `banMap()`, `pickMap()` - Map selection logic
+    - `useAbility()`, `selectAbility()` - Ability system management
+    - `showAbilityChoiceDialog()`, `openModModal()` - Modal interactions
+    - `updateMapVisualStates()` - Dynamic map card styling
+    - `shouldLockInterface()` - Turn-based locking logic
+  - **Event Handling**:
+    - DOMContentLoaded initialization
+    - Map card click events with action routing
+    - Modal background click-to-close
+    - Ability selection and mod choice workflows
+    - Real-time state synchronization
+  - **Data Processing**:
+    - Mappool details integration with beatmap metadata
+    - Action history tracking and visualization
+    - Mod state management (NoMod, Force Mod, Personal Mod)
+    - Player turn determination and validation
+    - Match score tracking and interface locking
+- **Template Logic**:
+  - Complex conditional rendering based on match phase and player turn
+  - Mappool data injection via Jinja2 template variables
+  - Dynamic content generation for map cards and ability states
+  - Error handling for missing data with fallback displays
+  - Responsive design with mobile-friendly interactions
+- **Integration Points**:
+  - AJAX endpoints: `/player/match/{matchId}/action` for state updates
+  - Template variables: `match`, `player_mappool_details`, `opponent_mappool_details`
+  - Global functions for onclick handlers (selectAbility, selectMod, etc.)
+  - Real-time synchronization with server state
+- **Advanced Features**:
+  - **Pick/Ban System**: Turn-based map selection with visual feedback
+  - **Ability System**: Strategic gameplay modifiers (Force NoMod, Force Mod, Personal Mod)
+  - **Mod Management**: Complex mod selection and application logic
+  - **State Synchronization**: Polling-based real-time updates
+  - **User Experience**: Loading states, error notifications, success feedback
+  - **Interface Locking**: Prevents invalid actions during opponent turns
+- **UML Notes**: 
+  - Most complex template with extensive client-side logic
+  - Implements full game client for tournament matches
+  - Heavy JavaScript integration replacing traditional form-based interactions
+  - Real-time multiplayer interface with sophisticated state management
+  - Critical component for tournament functionality requiring careful maintenance
+
+### app/templates/player_profile.html (Player Profile and Match Management)
+- **Purpose**: Comprehensive player dashboard showing profile information, match history, and mappool management capabilities
+- **Dependencies**: 
+  - Jinja2 templating engine for dynamic content rendering
+  - Tailwind CSS framework for responsive styling
+  - Tournament data structures (player info, match data, bracket information)
+  - Flask routing system for navigation and form submission
+- **Template Structure**:
+  - Navigation header with tournament links
+  - Player profile card with avatar, name, PP, rank, and seeding information
+  - Match listing section with status indicators and action buttons
+  - Mappool management interface with upload forms and detailed map display
+  - Status-based conditional rendering for match actions and mappool requirements
+- **Template Logic**:
+  - Complex match filtering to show only player's matches across all brackets
+  - Mappool status checking (uploaded vs. required)
+  - Conditional rendering based on match status and mappool availability
+  - Dynamic form handling for mappool uploads (playlist URL or direct beatmap links)
+  - Player data aggregation from tournament data structures
+- **Data Processing**:
+  - Match collection across upper/lower/grand finals brackets
+  - Player match filtering by player ID
+  - Mappool data validation and display formatting
+  - Beatmap metadata rendering (title, artist, difficulty, star rating, stats)
+  - Status-based UI state management
+- **Interactive Features**:
+  - Match management links (conditional based on mappool status)
+  - Mappool upload forms with validation requirements display
+  - Direct beatmap link input as alternative to playlist URLs
+  - Hover effects and transitions for enhanced UX
+- **Styling Features**:
+  - Gradient backgrounds and custom fonts (Orbitron for headers, Fira Code for body)
+  - Status-specific color coding (yellow for next up, red for live, green for completed)
+  - Card-based layout with shadows and hover animations
+  - Responsive grid layouts for mappool display
+- **Integration Points**:
+  - Routes: `public.index`, `public.tournament`, `player.profile`, `player.match_interface`, `public.match_details`, `player.upload_mappool`
+  - Template variables: `player`, `data` (tournament data)
+  - Form submission handling for mappool uploads
+- **Business Logic**:
+  - Mappool requirements enforcement (10 maps, 2+ minutes each)
+  - Match action availability based on player preparation status
+  - Tournament progression visualization through match statuses
+- **UML Notes**: 
+  - Player-centric view combining profile, matches, and preparation tools
+  - Complex conditional logic for tournament state management
+  - Integration point between player preparation and match execution
+  - Critical for tournament workflow requiring mappool upload before matches
+
+### app/templates/user_profile.html (Public User Profile View)
+- **Purpose**: Read-only public profile view for tournament participants, showing user information, match history, and mappool details
+- **Dependencies**: 
+  - Jinja2 templating engine for dynamic content rendering
+  - Tailwind CSS framework for responsive styling
+  - Tournament data structures (user info, match data, bracket information)
+  - Flask routing system for navigation
+- **Template Structure**:
+  - Navigation header with tournament links
+  - User profile card with avatar, username, and osu! statistics
+  - Match history section showing user's tournament matches
+  - Optional mappool display section (only shown if user has uploaded mappool)
+  - Footer inclusion
+- **Template Logic**:
+  - User match filtering across all tournament brackets
+  - Conditional mappool display based on availability
+  - osu! profile link generation using user ID
+  - Statistics formatting with proper number formatting
+  - Tournament seeding display when available
+- **Data Processing**:
+  - Match collection and filtering by user ID across bracket types
+  - User statistics display (PP, global rank, country rank)
+  - Mappool data rendering with beatmap metadata
+  - Status-based match visualization
+- **Styling Features**:
+  - Gradient backgrounds and custom fonts (Orbitron for headers, Fira Code for body)
+  - Status-specific color coding for match states
+  - Card-based layout with hover animations
+  - Responsive design for mobile and desktop
+  - Radial gradient background for dramatic effect
+- **Integration Points**:
+  - Routes: `public.index`, `public.tournament`, `public.match_details`
+  - Template variables: `user`, `data` (tournament data)
+  - External links to osu! profiles
+- **Business Logic**:
+  - Public profile visibility for tournament transparency
+  - Match history display for spectator interest
+  - Mappool showcase for competitive analysis
+  - User statistics integration from osu! API data
+- **Key Differences from player_profile.html**:
+  - Read-only view (no mappool upload functionality)
+  - Public navigation (no profile link highlighting)
+  - Simplified match actions (view details only)
+  - No conditional match management based on preparation status
+- **UML Notes**: 
+  - Public-facing profile view for tournament spectators and participants
+  - Read-only counterpart to player_profile.html
+  - Focus on information display rather than user interaction
+  - Supports tournament transparency and community engagement
+
+### app/templates/streaming/tourney_overlay.html (Tournament Streaming Overlay)
+- **Purpose**: Comprehensive streaming overlay interface for tournament broadcasts, providing real-time match visualization, player information, and interactive elements for live tournament coverage
+- **Dependencies**: 
+  - Multiple Google Fonts (Inter, JetBrains Mono, Fira Code, Orbitron) for typography
+  - HTTP polling system replacing WebSocket for Namecheap compatibility
+  - Tournament data structures from Flask backend APIs
+  - Complex CSS animations and transitions for dynamic visual effects
+- **Template Structure**:
+  - Welcome screen with tournament branding and animated logo
+  - Main match HUD displaying player profiles, scores, and bracket information
+  - Victory screens for map and match completions with celebration animations
+  - AFK/BRB screen for broadcast breaks
+  - Outro screen with tournament completion celebration and confetti effects
+  - Match interface overlay showing detailed pick/ban mechanics
+  - Current map display for active gameplay visualization
+  - Sponsor display for promotional content
+  - Seeding mode for tournament initialization
+- **JavaScript Features**:
+  - **HTTP Polling System**: Replaces WebSocket with 1.2-3 second interval polling for real-time updates
+  - **Event Handling**: Processes overlay events (AFK toggle, victory screens, player flipping, seeding mode)
+  - **Dynamic UI Updates**: Real-time score tracking, player information, bracket progression
+  - **Match Interface Management**: Detailed pick/ban visualization with mappool display and action feeds
+  - **Animation System**: CSS transitions, keyframe animations, and timed visual effects
+  - **State Management**: Interface locking, player flipping, seeding mode toggles
+  - **Responsive Design**: Adaptive layouts for different screen sizes and streaming resolutions
+- **Template Logic**:
+  - Complex conditional rendering based on match state and tournament phase
+  - Player data flipping for broadcast camera positioning
+  - Score visualization with Best-of-7 dot tracking system
+  - Mappool state management (banned/picked/available maps)
+  - Action history display with categorized event types
+  - Tiebreaker map special handling and visual distinction
+- **Data Processing**:
+  - Match state polling from `/api/match-data` and `/api/overlay-events`
+  - Match interface data from `/api/match-interface-state`
+  - Player statistics and avatar integration
+  - Mappool data aggregation and filtering
+  - Action log processing and timeline visualization
+- **Advanced Features**:
+  - **Real-time Synchronization**: HTTP polling maintains live tournament state
+  - **Broadcast Controls**: Admin-triggered screen transitions and visual effects
+  - **Player Flipping**: Dynamic player position swapping for camera work
+  - **Seeding Mode**: Special display for tournament initialization phase
+  - **Victory Celebrations**: Animated screens with confetti effects for match completions
+  - **Interface Auto-hide**: Automatic minimization during active gameplay
+  - **Sponsor Integration**: Branded display areas for promotional content
+- **Styling Features**:
+  - Gradient backgrounds and custom color schemes for different states
+  - Backdrop blur effects and glassmorphism design elements
+  - Custom fonts (Orbitron for headers, JetBrains Mono for technical data)
+  - Responsive breakpoints for various streaming resolutions
+  - Animation keyframes for smooth transitions and celebrations
+- **Integration Points**:
+  - Flask routes for data APIs (`/api/match-data`, `/api/overlay-events`, `/api/match-interface-state`)
+  - Static asset serving for sponsor logos
+  - Tournament state management through backend data structures
+- **Technical Architecture**:
+  - **Polling-based Updates**: Circumvents WebSocket limitations for shared hosting
+  - **Event-driven UI**: Processes server-sent events for state synchronization
+  - **Modular Screen System**: Separate overlays for different tournament phases
+  - **Performance Optimization**: Efficient DOM updates and memory management
+- **UML Notes**: 
+  - Most technically complex template with extensive real-time functionality
+  - Critical for live tournament broadcasting and spectator experience
+  - Implements full streaming overlay system with professional presentation
+  - Requires careful synchronization with tournament backend state
+  - Serves as primary interface for live tournament visualization and control
