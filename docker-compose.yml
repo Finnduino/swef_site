@@ -1,4 +1,21 @@
 services:
+  db:
+    image: postgres:15-alpine
+    container_name: umami-db
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_DB=umami
+      - POSTGRES_USER=umami
+    volumes:
+      - umami-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U umami -d umami"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+
   web:
     build: .
     container_name: swef_site
@@ -27,22 +44,7 @@ services:
         condition: service_healthy
     restart: always
 
-  db:
-    image: postgres:15-alpine
-    container_name: umami-db
-    env_file:
-      - .env
-    environment:
-      - POSTGRES_DB=umami
-      - POSTGRES_USER=umami
-    volumes:
-      - umami-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U umami -d umami"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: always
+  
 
 volumes:
   umami-db-data:
