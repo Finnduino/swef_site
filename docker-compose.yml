@@ -15,10 +15,12 @@ services:
       - umami
 
   umami:
-    image: ghcr.io/umami-software/umami:sqlite-latest
+    image: ghcr.io/maxime-j/umami-sqlite:latest
     container_name: umami
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     environment:
       DATABASE_URL: file:/data/umami.db
       DATABASE_TYPE: sqlite
