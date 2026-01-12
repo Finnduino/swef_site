@@ -22,9 +22,9 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: file:/data/umami.db
-      DATABASE_TYPE: sqlite
-      APP_SECRET: ${APP_SECRET}
+      - DATABASE_URL=file:/data/umami.db
+      - DATABASE_TYPE=sqlite
+      - APP_SECRET=${APP_SECRET}
     volumes:
       - ./umami-data:/data
     restart: always
