@@ -11,3 +11,21 @@ services:
       - .:/app
     environment:
       - FLASK_ENV=production
+    depends_on:
+      - umami
+
+  umami:
+    image: ghcr.io/umami-software/umami:sqlite-latest
+    container_name: umami
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: file:/data/umami.db
+      DATABASE_TYPE: sqlite
+      APP_SECRET: ${APP_SECRET}
+    volumes:
+      - ./umami-data:/data
+    restart: always
+
+volumes:
+  umami-db-data:
