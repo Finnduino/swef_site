@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+    h1 {
+        color: #1a73e8;
+        border-bottom: 2px solid #1a73e8;
+        padding-bottom: 10px;
+        text-align: center;
+    }
+    h2 {
+        color: #202124;
+        border-bottom: 1px solid #ccc;
+        margin-top: 30px;
+    }
+    .meta {
+        font-style: italic;
+        text-align: center;
+        margin-bottom: 30px;
+        color: #666;
+    }
+    .section {
+        margin-bottom: 20px;
+    }
+    ul {
+        margin-bottom: 20px;
+    }
+    li {
+        margin-bottom: 8px;
+    }
+    strong {
+        color: #000;
+    }
+    .footer {
+        margin-top: 50px;
+        font-size: 0.9em;
+        text-align: center;
+        color: #888;
+        border-top: 1px solid #eee;
+        padding-top: 20px;
+    }
+</style>
+<title>osu! Tournament Structure Reflection</title>
+</head>
+<body>
+
+<h1>osu! Tournament Structure Reflection (Current State)</h1>
+<div class="meta">
+    Technical Analysis baseline for the 2026 Tournament Cycle
+</div>
+
+<div class="section">
+    <h2>1. Tournament Format</h2>
+    <p>The system follows a multi-phase competition structure designed for fair progression:</p>
+    <ul>
+        <li><strong>Seeding Round (Qualifiers):</strong> A preliminary phase where all participants play a set of predetermined maps. Performance in this round determines the global ranking and seed position for the bracket phase.</li>
+        <li><strong>Upper Bracket:</strong> The primary path for participants, seeded based on their performance in the Seeding Round.</li>
+        <li><strong>Lower Bracket:</strong> A secondary path for players who sustain a single loss during the bracket phase, providing a path back to the Grand Finals.</li>
+        <li><strong>Grand Finals:</strong> The final showdown between the undefeated Upper Bracket champion and the winner of the Lower Bracket.</li>
+        <li><strong>Bracket Reset:</strong> A competitive safety mechanism where the Lower Bracket winner must defeat the the undefeated finalist twice to claim the championship.</li>
+    </ul>
+</div>
+
+<div class="section">
+    <h2>2. Seeding Logic</h2>
+    <p>Bracket placement is dynamically generated using the results of the <strong>Seeding Round</strong>:</p>
+    <ul>
+        <li><strong>Primary Seeding:</strong> Placement rankings derived from total score or average performance during the Seeding Round.</li>
+        <li><strong>Tie-Breaking:</strong> osu! Performance Points (PP) act as the secondary determinant for players with identical seeding round results.</li>
+        <li><strong>Snake Seed Distribution:</strong> Participants are manually or automatically distributed into the bracket using a snake pattern to ensure the highest-ranked seeds do not face each other prematurely.</li>
+        <li><strong>Structural Padding:</strong> Automatic "BYE" matches are generated to fill the bracket to the nearest power-of-two (e.g., 16 or 32 players).</li>
+    </ul>
+</div>
+
+<div class="section">
+    <h2>3. Mappool System</h2>
+    <p>The tournament currently runs a <strong>User-Submitted Mappool</strong> model, which emphasizes individual player strategy:</p>
+    <ul>
+        <li><strong>Dynamic Metadata:</strong> Real-time syncing with the osu! API to pull Star Rating, Difficulty names, and map statistics (AR, CS, OD, HP, BPM).</li>
+        <li><strong>Interactive Match Interface:</strong> A dedicated UI for players and spectators to view selected map pools and stats during pick/ban phases.</li>
+        <li><strong>Caching:</strong> Beatmap details are stored within the tournament state to minimize API dependency during live broadcasts.</li>
+    </ul>
+</div>
+
+<div class="section">
+    <h2>4. Platform Infrastructure</h2>
+    <p>The technical foundation is designed for broadcast stability and ease of use:</p>
+    <ul>
+        <li><strong>Backend:</strong> Flask-based Python services handling match progression and bracket state.</li>
+        <li><strong>Data Persistence:</strong> State is managed via a centralized JSON structure for high portability.</li>
+        <li><strong>Broadcast Integration:</strong> A 1080p fixed-aspect-ratio overlay system with automated state-machine transitions for live streams.</li>
+    </ul>
+</div>
+
+<div class="section">
+    <h2>5. Identified Challenges for 2026</h2>
+    <p>Key areas targeted for the upcoming development cycle include:</p>
+    <ul>
+        <li><strong>Data Integrity:</strong> Transitioning from file-based storage to a relational database (SQLite/PostgreSQL) to handle concurrent operations safely.</li>
+        <li><strong>Architectural Decoupling:</strong> Separating bracket logic from I/O to support varied formats like Swiss System or Round Robin.</li>
+        <li><strong>Frontend Evolution:</strong> Moving to a modern component architecture to improve UI responsiveness and maintainability.</li>
+        <li><strong>Access Control:</strong> Implementing database-backed roles for tournament staff and moderators.</li>
+    </ul>
+</div>
+
+<div class="footer">
+    Created for the 2026 Tournament Improvement Initiative<br>
+    Internal Documentation - SWEF Tournament Platform
+</div>
+
+</body>
+</html>

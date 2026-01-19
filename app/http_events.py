@@ -137,35 +137,71 @@ def get_current_match_data():
             'message': f'Error loading match data: {str(e)}'
         }
 
-# Legacy compatibility functions (no longer use SocketIO)
+# Legacy compatibility functions - now emit both WebSocket and file-based events
 def broadcast_match_update():
-    """Legacy function - now handled by overlay state system"""
+    """Broadcast match update via WebSocket and file-based system"""
     from .overlay_state import add_overlay_event
     add_overlay_event('match_update')
+    
+    # Also emit WebSocket event
+    try:
+        from .websocket_events import broadcast_match_update as ws_broadcast
+        ws_broadcast()
+    except Exception as e:
+        print(f"[WS] Failed to broadcast match_update: {e}")
 
 def broadcast_map_victory(winner_name, map_info=None):
-    """Legacy function - now handled by overlay state system"""
+    """Broadcast map victory via WebSocket and file-based system"""
     from .overlay_state import add_overlay_event
-    add_overlay_event('map_victory', {
+    data = {
         'winner': winner_name,
         'map_info': map_info or {'title': 'Map Complete'}
-    })
+    }
+    add_overlay_event('map_victory', data)
+    
+    # Also emit WebSocket event
+    try:
+        from .websocket_events import broadcast_map_victory as ws_broadcast
+        ws_broadcast(winner_name, map_info)
+    except Exception as e:
+        print(f"[WS] Failed to broadcast map_victory: {e}")
 
 def broadcast_match_victory(winner_name, final_score, advancement_info=""):
-    """Legacy function - now handled by overlay state system"""
+    """Broadcast match victory via WebSocket and file-based system"""
     from .overlay_state import add_overlay_event
     add_overlay_event('match_victory', {
         'winner': winner_name,
         'final_score': final_score,
         'advancement': advancement_info
     })
+    
+    # Also emit WebSocket event
+    try:
+        from .websocket_events import broadcast_match_victory as ws_broadcast
+        ws_broadcast(winner_name, final_score, advancement_info)
+    except Exception as e:
+        print(f"[WS] Failed to broadcast match_victory: {e}")
 
 def broadcast_exit_afk():
-    """Legacy function - now handled by overlay state system"""
+    """Broadcast exit AFK via WebSocket and file-based system"""
     from .overlay_state import add_overlay_event
     add_overlay_event('exit_afk')
+    
+    # Also emit WebSocket event
+    try:
+        from .websocket_events import broadcast_exit_afk as ws_broadcast
+        ws_broadcast()
+    except Exception as e:
+        print(f"[WS] Failed to broadcast exit_afk: {e}")
 
 def broadcast_flip_players():
-    """Legacy function - now handled by overlay state system"""
+    """Broadcast flip players via WebSocket and file-based system"""
     from .overlay_state import add_overlay_event
     add_overlay_event('flip_players')
+    
+    # Also emit WebSocket event
+    try:
+        from .websocket_events import broadcast_flip_players as ws_broadcast
+        ws_broadcast()
+    except Exception as e:
+        print(f"[WS] Failed to broadcast flip_players: {e}")

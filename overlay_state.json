@@ -1,48 +1,8 @@
 {
   "afk_mode": false,
   "victory_screen_hidden": false,
-  "last_updated": "2025-07-26T04:18:25.621602",
+  "last_updated": "2026-01-16T13:01:15.789982",
   "events": [
-    {
-      "type": "show_welcome",
-      "data": {},
-      "timestamp": "2025-07-26T04:17:03.554105"
-    },
-    {
-      "type": "hide_welcome",
-      "data": {},
-      "timestamp": "2025-07-26T04:17:06.960106"
-    },
-    {
-      "type": "hide_seeding",
-      "data": {},
-      "timestamp": "2025-07-26T04:17:08.867602"
-    },
-    {
-      "type": "show_seeding",
-      "data": {},
-      "timestamp": "2025-07-26T04:17:10.545603"
-    },
-    {
-      "type": "hide_welcome",
-      "data": {},
-      "timestamp": "2025-07-26T04:18:07.808105"
-    },
-    {
-      "type": "show_welcome",
-      "data": {},
-      "timestamp": "2025-07-26T04:18:15.341602"
-    },
-    {
-      "type": "hide_welcome",
-      "data": {},
-      "timestamp": "2025-07-26T04:18:17.553603"
-    },
-    {
-      "type": "flip_players",
-      "data": {},
-      "timestamp": "2025-07-26T04:18:20.140103"
-    },
     {
       "type": "flip_players",
       "data": {},
@@ -52,6 +12,50 @@
       "type": "show_match_interface",
       "data": {},
       "timestamp": "2025-07-26T04:18:25.621602"
+    },
+    {
+      "type": "toggle_afk",
+      "data": {},
+      "timestamp": "2026-01-16T12:59:37.269043"
+    },
+    {
+      "type": "toggle_afk",
+      "data": {},
+      "timestamp": "2026-01-16T12:59:44.551083"
+    },
+    {
+      "type": "hide_victory_screens",
+      "data": {},
+      "timestamp": "2026-01-16T12:59:45.605540"
+    },
+    {
+      "type": "match_victory",
+      "data": {
+        "winner": "finnduino",
+        "final_score": "4-3",
+        "advancement": "Advances in Grand Finals"
+      },
+      "timestamp": "2026-01-16T12:59:46.541745"
+    },
+    {
+      "type": "flip_players",
+      "data": {},
+      "timestamp": "2026-01-16T12:59:48.039248"
+    },
+    {
+      "type": "hide_match_interface",
+      "data": {},
+      "timestamp": "2026-01-16T13:01:05.515909"
+    },
+    {
+      "type": "toggle_afk",
+      "data": {},
+      "timestamp": "2026-01-16T13:01:11.676646"
+    },
+    {
+      "type": "hide_victory_screens",
+      "data": {},
+      "timestamp": "2026-01-16T13:01:15.789982"
     }
   ],
   "seeding_mode": true

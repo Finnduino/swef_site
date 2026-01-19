@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tournament Overlay</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Fira+Code&family=Orbitron:wght@600&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <style>
         /* Base & Resets */
         * {
@@ -1680,30 +1681,103 @@
             }
         }
         
-        // Simulate SocketIO events for compatibility
-        const socket = {
-            connected: () => isConnected,
-            emit: (event, data) => {
-                console.log('Simulated emit:', event, data);
-                // Handle specific events that were previously sent via SocketIO
-                if (event === 'join_overlay') {
-                    // Just start polling
-                    return;
-                }
+        // --- Real Socket.IO Connection (Hybrid Mode) ---
+        // WebSocket is primary, polling is fallback
+        let socket = null;
+        let useWebSocket = true;
+        
+        function initializeSocket() {
+            try {
+                socket = io({
+                    reconnection: true,
+                    reconnectionDelay: 1000,
+                    reconnectionAttempts: 5
+                });
+                
+                socket.on('connect', () => {
+                    console.log('[WS] Connected to server');
+                    isConnected = true;
+                    socket.emit('join_overlay');
+                    
+                    // Reduce polling frequency when WebSocket is active
+                    if (pollingInterval) {
+                        clearInterval(pollingInterval);
+                        pollingInterval = setInterval(pollMatchData, 10000); // Fallback every 10s
+                    }
+                });
+                
+                socket.on('disconnect', () => {
+                    console.log('[WS] Disconnected from server');
+                    // Increase polling frequency as fallback
+                    if (pollingInterval) {
+                        clearInterval(pollingInterval);
+                        pollingInterval = setInterval(pollMatchData, 2000);
+                    }
+                });
+                
+                socket.on('match_update', (data) => {
+                    console.log('[WS] Received match_update:', data);
+                    if (data.match_found) {
+                        updateOverlay(data);
+                    } else {
+                        showNoMatchMessage();
+                    }
+                });
+                
+                socket.on('map_victory', (data) => {
+                    console.log('[WS] Received map_victory:', data);
+                    showMapVictory(data);
+                });
+                
+                socket.on('match_victory', (data) => {
+                    console.log('[WS] Received match_victory:', data);
+                    showMatchVictory(data);
+                });
+                
+                socket.on('toggle_afk', () => {
+                    console.log('[WS] Received toggle_afk');
+                    toggleAFK();
+                });
+                
+                socket.on('exit_afk', () => {
+                    console.log('[WS] Received exit_afk');
+                    exitAFK();
+                });
+                
+                socket.on('flip_players', () => {
+                    console.log('[WS] Received flip_players');
+                    flipPlayers();
+                });
+                
+                socket.on('connect_error', (error) => {
+                    console.log('[WS] Connection error, falling back to polling:', error.message);
+                    useWebSocket = false;
+                });
+                
+            } catch (e) {
+                console.log('[WS] Socket.IO not available, using polling only:', e.message);
+                useWebSocket = false;
             }
-        };
+        }
         
         // Start polling when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Tournament overlay loaded - starting HTTP polling');
+            console.log('Tournament overlay loaded');
+            
+            // Initialize WebSocket connection
+            initializeSocket();
+            
+            // Start polling as fallback (reduced frequency if WS active)
             startPolling();
+            
             // Create initial empty score tracker
             updateScoreTracker(0, 0);
         });
         
-        // Stop polling when page unloads
+        // Cleanup on page unload
         window.addEventListener('beforeunload', function() {
             stopPolling();
+            if (socket) socket.disconnect();
         });
 
         // Function to swap player UI elements (for admin controls)

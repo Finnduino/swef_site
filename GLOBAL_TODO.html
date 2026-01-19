@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 20px;
+        background-color: #f8f9fa;
+    }
+    h1 {
+        color: #d93025;
+        border-bottom: 3px solid #d93025;
+        padding-bottom: 10px;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    h2 {
+        color: #1a73e8;
+        background-color: #e8f0fe;
+        padding: 10px 15px;
+        border-radius: 5px;
+        margin-top: 40px;
+        display: flex;
+        align-items: center;
+    }
+    h2::before {
+        content: "📌";
+        margin-right: 10px;
+    }
+    h3 {
+        color: #202124;
+        border-left: 4px solid #1a73e8;
+        padding-left: 10px;
+        margin-top: 25px;
+    }
+    .priority-high { color: #d93025; font-weight: bold; }
+    .priority-med { color: #f29900; font-weight: bold; }
+    .priority-low { color: #188038; font-weight: bold; }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    th, td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    th {
+        background-color: #f1f3f4;
+        font-weight: bold;
+    }
+    .checkbox {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #5f6368;
+        border-radius: 3px;
+        display: inline-block;
+        vertical-align: middle;
+        margin-right: 10px;
+    }
+    .task-item {
+        padding: 8px 0;
+        border-bottom: 1px solid #f1f1f1;
+    }
+    .footer {
+        margin-top: 60px;
+        font-size: 0.85em;
+        text-align: center;
+        color: #70757a;
+        padding: 20px;
+        border-top: 1px solid #dadce0;
+    }
+    .tag {
+        font-size: 0.75em;
+        padding: 2px 8px;
+        border-radius: 10px;
+        margin-left: 10px;
+        text-transform: uppercase;
+    }
+    .tag-fix { background: #fce8e6; color: #d93025; }
+    .tag-feature { background: #e8f0fe; color: #1a73e8; }
+    .tag-refactor { background: #e6ffed; color: #188038; }
+</style>
+<title>SWEF Tournament Global TODO List</title>
+</head>
+<body>
+
+<h1>🔥 Global Tournament System Repair & Rebuild TODO</h1>
+
+<div class="section">
+    <h2>1. Data & Infrastructure (CRITICAL)</h2>
+    <p>Current file-based JSON storage is prone to race conditions and corruption.</p>
+    
+    <div class="task-item"><span class="checkbox"></span> <strong>Migrate to SQL Database</strong> <span class="tag tag-fix">FIX</span>
+        <br><small>Replace <code>tournament.json</code> with SQLite (local) or PostgreSQL. Implement proper migrations via Alembic.</small>
+    </div>
+    
+    <div class="task-item"><span class="checkbox"></span> <strong>Atomic File Operations</strong> <span class="tag tag-fix">TEMP FIX</span>
+        <br><small>If migration is delayed, implement file locking/temporary swap files in <code>data_manager.py</code> to prevent loss.</small>
+    </div>
+    
+    <div class="task-item"><span class="checkbox"></span> <strong>Validation Layer</strong> <span class="tag tag-feature">NEW</span>
+        <br><small>Build a validation schema for tournament data to ensure no <code>None</code> players or broken match IDs enter the state.</small>
+    </div>
+</div>
+
+<div class="section">
+    <h2>2. Bracket Logic & Seeding</h2>
+    <p>The core algorithm is monolithic and hard to extend for 2026 needs.</p>
+    
+    <div class="task-item"><span class="checkbox"></span> <strong>Decompose <code>Bracket Service</code></strong> <span class="tag tag-refactor">REFACTOR</span>
+        <br><small>Break down the 443-line <code>advance_round_if_ready</code> function into smaller, testable state-machine steps.</small>
+    </div>
+    
+    <div class="task-item"><span class="checkbox"></span> <strong>Qualifiers System Refinement</strong> <span class="tag tag-feature">NEW</span>
+        <br><small>Formalize the Seeding Round (Qualifiers) logic within the backend. Currently, it's handled as a sort-and-snake operation only.</small>
+    </div>
+    
+    <div class="task-item"><span class="checkbox"></span> <strong>Multi-Format Support</strong> <span class="tag tag-feature">NEW</span>
+        <br><small>Implement abstract classes for <code>TournamentFormat</code> to support Round Robin or Swiss System in 2026.</small>
+    </div>
+</div>
+
+<div class="section">
+    <h2>3. Frontend & Streaming Overlay</h2>
+    <p>The current templates are massive "disaster-class" monolithic files.</p>
+    
+    <div class="task-item"><span class="checkbox"></span> <strong>Componentize Overlay</strong> <span class="tag tag-refactor">REFACTOR</span>
+        <br><small>Split <code>tourney_overlay.html</code> (2500+ lines) into separate components for Welcome, Bracket, Match, and AFK states.</small>
+    </div>
+    
+    <div class="task-item"><span class="checkbox"></span> <strong>WebSocket Migration</strong> <span class="tag tag-fix">SPEED</span>
+        <br><small>Replace high-frequency HTTP polling with WebSockets to reduce server load and improve transition smoothness on stream.</small>
+    </div>
+    
+    <div class="task-item"><span class="checkbox"></span> <strong>Admin Interface Cleanup</strong> <span class="tag tag-fix">UI</span>
+        <br><small>Fix the "back-and-forth" redirection bugs when viewing player profiles from the admin dashboard.</small>
+    </div>
+</div>
+
+<div class="section">
+    <h2>4. Mappools & API Integration</h2>
+    
+    <div class="task-item"><span class="checkbox"></span> <strong>Mappool Detail Caching</strong> <span class="tag tag-fix">API</span>
+        <br><small>Ensure all OSU API map metadata is cached on upload. Currently, some map statistics fail gracefully but leave empty slots.</small>
+    </div>
+    
+    <div class="task-item"><span class="checkbox"></span> <strong>Batch Result Retrieval</strong> <span class="tag tag-fix">SPEED</span>
+        <br><small>Optimize <code>MatchService</code> to fetch multiplayer results in batches rather than individual sequential requests.</small>
+    </div>
+</div>
+
+<div class="section">
+    <h2>5. Security & Access Control</h2>
+    
+    <div class="task-item"><span class="checkbox"></span> <strong>Database RBAC</strong> <span class="tag tag-fix">SECURITY</span>
+        <br><small>Remove hardcoded admin IDs from <code>config.py</code>. Move staff permissions into a dedicated database table.</small>
+    </div>
+    
+    <div class="task-item"><span class="checkbox"></span> <strong>OAuth Session Safety</strong> <span class="tag tag-fix">SECURITY</span>
+        <br><small>Implement proper session signing and encryption for OSU OAuth callbacks.</small>
+    </div>
+</div>
+
+<div class="footer">
+    <strong>Global Priority Tracking - SWEF Project</strong><br>
+    <em>Generated for 2026 Preparation Cycle</em>
+</div>
+
+</body>
+</html>
